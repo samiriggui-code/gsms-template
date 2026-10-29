@@ -21,7 +21,8 @@ func TestNormalizeIMLocale(t *testing.T) {
 		{name: "empty", locale: "", want: ""},
 		{name: "supported", locale: "en-US", want: "en-US"},
 		{name: "trimmed", locale: "  zh-CN ", want: "zh-CN"},
-		{name: "unsupported", locale: "fr-FR", wantErr: true},
+		{name: "french", locale: "fr-FR", want: "fr-FR"},
+		{name: "unsupported", locale: "de-DE", wantErr: true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := normalizeIMLocale(tt.locale)
@@ -44,7 +45,7 @@ func TestCreateIMChannelRejectsUnsupportedLocale(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodPost,
 		"/agents/agent-1/im-channels",
-		strings.NewReader(`{"platform":"feishu","locale":"fr-FR"}`),
+		strings.NewReader(`{"platform":"feishu","locale":"de-DE"}`),
 	)
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(req.Context(), types.TenantIDContextKey, uint64(42)))

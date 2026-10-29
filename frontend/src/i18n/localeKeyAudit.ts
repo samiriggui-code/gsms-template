@@ -17,6 +17,7 @@ import { AUDIT_ACTION_LOCALE_DEFAULTS, getAuditActionLocaleDefault } from './aud
 import { writeLocaleModule } from './localeSerialize.ts'
 
 import enUS from './locales/en-US.ts'
+import frFR from './locales/fr-FR.ts'
 import jaJP from './locales/ja-JP.ts'
 import koKR from './locales/ko-KR.ts'
 import ruRU from './locales/ru-RU.ts'
@@ -25,6 +26,7 @@ import zhTW from './locales/zh-TW.ts'
 
 export const LOCALE_BUNDLES = {
   'en-US': enUS,
+  'fr-FR': frFR,
   'zh-CN': zhCN,
   'zh-TW': zhTW,
   'ko-KR': koKR,
@@ -536,7 +538,7 @@ export function findAllLocaleMessageCompileErrors(
 
 type LocaleTree = Record<string, unknown>
 
-const LOCALE_ORDER: LocaleName[] = ['en-US', 'zh-CN', 'zh-TW', 'ko-KR', 'ru-RU', 'ja-JP']
+const LOCALE_ORDER: LocaleName[] = ['en-US', 'fr-FR', 'zh-CN', 'zh-TW', 'ko-KR', 'ru-RU', 'ja-JP']
 const LOCALES_DIR = join(dirname(fileURLToPath(import.meta.url)), 'locales')
 
 function getLocaleValueAtPathParts(current: unknown, parts: string[]): unknown {

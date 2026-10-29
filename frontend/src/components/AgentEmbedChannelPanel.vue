@@ -537,12 +537,8 @@ const headerTitleModeOptions = computed(() => ([
 
 const defaultLocaleOptions = computed(() => ([
   { label: t('embedPublish.defaultLocaleBrowser'), value: '' },
-  { label: '简体中文', value: 'zh-CN' },
-  { label: '繁體中文', value: 'zh-TW' },
+  { label: 'Français', value: 'fr-FR' },
   { label: 'English', value: 'en-US' },
-  { label: '한국어', value: 'ko-KR' },
-  { label: '日本語', value: 'ja-JP' },
-  { label: 'Русский', value: 'ru-RU' },
 ]))
 
 const channelMenuOptions = (ch: EmbedChannel) => {
@@ -829,7 +825,8 @@ const fillFormFromChannel = (ch: EmbedChannel) => {
     widget_position: (ch.widget_position as WidgetPosition) || 'bottom-right',
     allow_web_search: ch.allow_web_search === true,
     allow_file_upload: ch.allow_file_upload === true,
-    default_locale: (ch.default_locale || '') as EmbedLocaleTag,
+    // Locales no longer offered (e.g. zh-CN) switch to French.
+    default_locale: (ch.default_locale ? (ch.default_locale === 'en-US' ? 'en-US' : 'fr-FR') : '') as EmbedLocaleTag,
     webhook_url: ch.webhook_url || '',
     webhook_secret: '',
   }
