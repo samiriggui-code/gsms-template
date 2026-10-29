@@ -26,6 +26,10 @@ git checkout -b sync/weknora-AAAA-MM-JJ
 git merge weknora/main
 ```
 
+## Landing
+
+Le site vitrine Global-IT-SS (FR/EN) se trouve dans [landing/](landing/README.md). Il vient de la landing du projet `samiriggui-code/global-it-ss` (commit `b567226`).
+
 ## Documentation
 
 L'audit d'architecture et la stratégie de fusion se trouvent dans [docs/gsms-audit/](docs/gsms-audit/README.md).
