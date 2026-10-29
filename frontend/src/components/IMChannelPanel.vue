@@ -687,6 +687,12 @@ const localeOptions = computed(() => ([
   { value: 'en-US' as IMLocale, label: 'English' },
 ]));
 
+// Channels saved with a locale that is no longer offered switch to French.
+function normalizeChannelLocale(locale?: string): IMLocale {
+  if (!locale) return '';
+  return (locale === 'en-US' ? 'en-US' : 'fr-FR') as IMLocale;
+}
+
 // Feishu and Lark are the same product on separate clouds, so each has its own
 // open platform console. Bots must be created on the one matching the channel.
 const openPlatformConsole = computed(() =>
@@ -999,7 +1005,7 @@ async function editChannel(channel: IMChannel | IMChannelOverview) {
     name: fullChannel.name,
     mode: fullChannel.mode,
     output_mode: fullChannel.output_mode,
-    locale: fullChannel.locale || '',
+    locale: normalizeChannelLocale(fullChannel.locale),
     session_mode: fullChannel.session_mode || 'user',
     knowledge_base_id: fullChannel.knowledge_base_id || '',
     credentials: { ...fullChannel.credentials },

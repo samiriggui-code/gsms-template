@@ -825,7 +825,8 @@ const fillFormFromChannel = (ch: EmbedChannel) => {
     widget_position: (ch.widget_position as WidgetPosition) || 'bottom-right',
     allow_web_search: ch.allow_web_search === true,
     allow_file_upload: ch.allow_file_upload === true,
-    default_locale: (ch.default_locale || '') as EmbedLocaleTag,
+    // Locales no longer offered (e.g. zh-CN) switch to French.
+    default_locale: (ch.default_locale ? (ch.default_locale === 'en-US' ? 'en-US' : 'fr-FR') : '') as EmbedLocaleTag,
     webhook_url: ch.webhook_url || '',
     webhook_secret: '',
   }
