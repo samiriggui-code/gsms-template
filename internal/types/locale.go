@@ -3,6 +3,7 @@ package types
 import "strings"
 
 var supportedLocales = map[string]struct{}{
+	"fr-FR": {},
 	"zh-CN": {},
 	"zh-TW": {},
 	"en-US": {},

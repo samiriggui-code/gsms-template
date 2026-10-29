@@ -683,6 +683,7 @@ const platformOptions = computed(() => ([
 
 const localeOptions = computed(() => ([
   { value: '' as IMLocale, label: t('agentEditor.im.replyLanguageDefault') },
+  { value: 'fr-FR' as IMLocale, label: 'Français' },
   { value: 'en-US' as IMLocale, label: 'English' },
 ]));
 
