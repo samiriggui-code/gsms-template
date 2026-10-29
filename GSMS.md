@@ -17,6 +17,10 @@ La branche `weknora-upstream` contient WeKnora tel quel, sans modification. Agen
 - Les licences et notices tierces (`LICENSE`, `THIRD_PARTY_NOTICES.md`, `licenses/`) sont conservées.
 - Aucun déploiement sur un serveur de production sans validation.
 
+## Langues
+
+L'interface est en français par défaut, avec l'anglais en seconde langue (`frontend/src/i18n/locales/fr-FR.ts`). Les autres langues de WeKnora (chinois, japonais, coréen, russe) ne sont plus proposées, mais leurs fichiers restent dans le dépôt pour faciliter les synchronisations. Tout nouveau texte d'interface doit être ajouté en `fr-FR` et en `en-US`.
+
 ## Synchroniser avec WeKnora
 
 ```bash

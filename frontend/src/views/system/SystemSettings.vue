@@ -608,7 +608,7 @@ function isDirty(item: SystemSettingItem): boolean {
 function formatDate(isoString: string): string {
   try {
     const d = new Date(isoString)
-    return d.toLocaleString('zh-CN', { hour12: false })
+    return d.toLocaleString('fr-FR', { hour12: false })
   } catch {
     return isoString
   }

@@ -1,24 +1,17 @@
 import { createI18n } from 'vue-i18n'
-import zhCN from './locales/zh-CN.ts'
-import ruRU from './locales/ru-RU.ts'
+import frFR from './locales/fr-FR.ts'
 import enUS from './locales/en-US.ts'
-import koKR from './locales/ko-KR.ts'
-import jaJP from './locales/ja-JP.ts'
-import zhTW from './locales/zh-TW.ts'
-import { BUILT_IN_DEFAULT, resolveDefaultLocale } from './resolveDefaultLocale.ts'
+import { isSupportedLocale, resolveDefaultLocale } from './resolveDefaultLocale.ts'
 import { pluralRules } from './pluralizationRules.ts'
 
 const messages = {
-  'zh-CN': zhCN,
-  'zh-TW': zhTW,
+  'fr-FR': frFR,
   'en-US': enUS,
-  'ru-RU': ruRU,
-  'ko-KR': koKR,
-  'ja-JP': jaJP
 }
 
-// User's explicit past choice wins; otherwise use the deployment default.
-const savedLocale = localStorage.getItem('locale') || resolveDefaultLocale(
+// User's explicit past choice wins (when still offered); otherwise use the deployment default.
+const storedLocale = localStorage.getItem('locale')
+const savedLocale = storedLocale && isSupportedLocale(storedLocale) ? storedLocale : resolveDefaultLocale(
   window.__RUNTIME_CONFIG__?.DEFAULT_LOCALE,
   import.meta.env.VITE_DEFAULT_LOCALE,
 )
@@ -26,7 +19,7 @@ const savedLocale = localStorage.getItem('locale') || resolveDefaultLocale(
 const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
-  fallbackLocale: BUILT_IN_DEFAULT,
+  fallbackLocale: 'en-US',
   globalInjection: true,
   pluralRules,
   // Some translations intentionally embed `<strong>` markup (e.g. agent step summaries).

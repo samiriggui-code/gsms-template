@@ -19,12 +19,8 @@
             @change="handleLanguageChange"
             style="width: 280px;"
           >
-            <t-option value="zh-CN" :label="$t('language.zhCN')">{{ $t('language.zhCN') }}</t-option>
-            <t-option value="zh-TW" :label="$t('language.zhTW')">{{ $t('language.zhTW') }}</t-option>
+            <t-option value="fr-FR" label="Français">Français</t-option>
             <t-option value="en-US" :label="$t('language.enUS')">{{ $t('language.enUS') }}</t-option>
-            <t-option value="ru-RU" :label="$t('language.ruRU')">{{ $t('language.ruRU') }}</t-option>
-            <t-option value="ko-KR" :label="$t('language.koKR')">{{ $t('language.koKR') }}</t-option>
-            <t-option value="ja-JP" :label="$t('language.jaJP')">{{ $t('language.jaJP') }}</t-option>
           </t-select>
         </div>
       </div>
@@ -143,6 +139,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
+import { isSupportedLocale } from '@/i18n/resolveDefaultLocale'
 import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme, type ThemeMode } from '@/composables/useTheme'
@@ -171,7 +168,7 @@ const {
 } = useFont()
 
 // 本地状态
-const localLanguage = ref('zh-CN')
+const localLanguage = ref('fr-FR')
 const localTheme = ref<ThemeMode>(currentTheme.value)
 const localSansFont = ref<FontKey>(currentSans.value)
 const localMonoFont = ref<MonoFontKey>(currentMono.value)
@@ -224,7 +221,7 @@ const isAutoCheckUpdateEnabled = computed({
 onMounted(() => {
   // 从 localStorage 加载语言设置
   const savedLocale = localStorage.getItem('locale')
-  if (savedLocale) {
+  if (savedLocale && isSupportedLocale(savedLocale)) {
     localLanguage.value = savedLocale
     locale.value = savedLocale
   } else {
