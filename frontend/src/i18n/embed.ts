@@ -303,6 +303,33 @@ const messages = {
       stepSummarySeparator: ' · '
     },
     agentStream: {
+      askUser: {
+        answerLabel: 'Votre réponse',
+        title: 'Question pour vous',
+        selectPlaceholder: 'Sélectionner',
+        textPlaceholder: 'Saisissez votre réponse',
+        otherPlaceholder: 'Autre (facultatif)',
+        decline: 'Passer',
+        submit: 'Envoyer',
+        declinedTag: 'Réponse refusée',
+        submitted: 'Envoyé',
+        answeredTag: 'Répondu',
+        timedOutTag: 'Pas de réponse à temps',
+        canceledTag: 'Annulé',
+        unansweredTag: 'Sans réponse',
+        submitFailed: 'Échec de l\'envoi'
+      },
+      promptDock: {
+        approvalTitle: 'Votre vérification est requise',
+        oauthTitle: 'Votre autorisation est requise',
+        waiting: 'En attente de votre action',
+        handle: 'Répondre',
+        pager: '{current} / {total}',
+        previous: 'Précédent',
+        next: 'Suivant',
+        collapse: 'Réduire',
+        expand: 'Développer'
+      },
       toolApproval: {
         banner: 'Cet outil MCP nécessite une approbation humaine. Vérifiez les paramètres avant l\'exécution.',
         waiting: 'En attente de vérification · {target}',
@@ -2655,6 +2682,33 @@ const messages = {
       "stepSummarySeparator": " · "
     },
     "agentStream": {
+      askUser: {
+        answerLabel: 'Your answer',
+        title: 'Question for you',
+        selectPlaceholder: 'Select',
+        textPlaceholder: 'Type your answer',
+        otherPlaceholder: 'Other (optional)',
+        decline: 'Skip',
+        submit: 'Submit',
+        declinedTag: 'Declined to answer',
+        submitted: 'Submitted',
+        answeredTag: 'Answered',
+        timedOutTag: 'No answer in time',
+        canceledTag: 'Canceled',
+        unansweredTag: 'Not answered',
+        submitFailed: 'Failed to submit'
+      },
+      promptDock: {
+        approvalTitle: 'Needs your review',
+        oauthTitle: 'Needs your authorization',
+        waiting: 'Waiting for you',
+        handle: 'Respond',
+        pager: '{current} / {total}',
+        previous: 'Previous',
+        next: 'Next',
+        collapse: 'Collapse',
+        expand: 'Expand'
+      },
       "toolApproval": {
         "banner": "This MCP tool requires human approval. Review parameters before execution.",
         "waiting": "Awaiting review · {target}",
