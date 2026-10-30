@@ -34,7 +34,8 @@ cp .env.example .env
 ```bash
 cd /opt/global-it-ss
 cp -a .env ".env.bak.$(date -u +%Y%m%dT%H%M%SZ)"
-git pull && git checkout main
+git checkout main
+git pull --ff-only origin main
 ```
 
 Edit `.env` — minimum:
