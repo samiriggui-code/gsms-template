@@ -13,7 +13,9 @@ describe("scripts/deploy-global-it-ss.sh", () => {
     expect(script).toMatch(/Traefik may round-robin mismatched/);
     expect(script).toMatch(/warn_traefik_router_containers gsms-landing/);
     expect(script).toMatch(/warn_traefik_router_containers gsms-app/);
+    expect(script).toMatch(/if \[\[ -z "\$\{TRAEFIK_NETWORK:-\}" \]\]/);
     expect(script).toMatch(/TRAEFIK_NETWORK="\$\{TRAEFIK_NETWORK:-traefik\}"/);
+    expect(script).toMatch(/from environment/);
     expect(script).toMatch(/label=traefik\.http\.routers\.\$\{router\}\.rule/);
     expect(script).toMatch(/WARNING \(minor\):.*Traefik router/);
   });

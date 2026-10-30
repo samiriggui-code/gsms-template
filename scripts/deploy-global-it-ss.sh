@@ -91,15 +91,19 @@ if [[ "${PROJECT_NAME}" != "${REQUIRED_PROJECT_NAME}" ]]; then
 fi
 echo "Using COMPOSE_PROJECT_NAME=${PROJECT_NAME} (from .env)"
 
-TRAEFIK_NETWORK=""
-if grep -qE '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env 2>/dev/null; then
-  TRAEFIK_NETWORK="$(
-    grep -E '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env | tail -1 \
-      | sed -E 's/^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=[[:space:]]*//' \
-      | sed -e 's/[[:space:]]*$//' -e "s/^['\"]//" -e "s/['\"]$//"
-  )"
+if [[ -z "${TRAEFIK_NETWORK:-}" ]]; then
+  if grep -qE '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env 2>/dev/null; then
+    TRAEFIK_NETWORK="$(
+      grep -E '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env | tail -1 \
+        | sed -E 's/^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=[[:space:]]*//' \
+        | sed -e 's/[[:space:]]*$//' -e "s/^['\"]//" -e "s/['\"]$//"
+    )"
+  fi
+  TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-traefik}"
+  echo "Using TRAEFIK_NETWORK=${TRAEFIK_NETWORK} (from .env or default)"
+else
+  echo "Using TRAEFIK_NETWORK=${TRAEFIK_NETWORK} (from environment)"
 fi
-TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-traefik}"
 
 echo "Validating Compose configuration…"
 docker compose "${COMPOSE_FILES[@]}" config >/dev/null
@@ -129,7 +133,10 @@ warn_duplicate_service_containers() {
     echo "WARNING: ${#ids[@]} running Compose ${service} containers for project ${PROJECT_NAME}." >&2
     echo "Traefik may round-robin mismatched landing/frontend images (stale HTML vs missing .next/static)." >&2
     echo "Inspect: docker ps ${ps_filters[*]} --format '{{.ID}} {{.Names}} {{.Image}}'" >&2
-    docker ps "${ps_filters[@]}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2
+    if ! docker ps "${ps_filters[@]}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2; then
+      echo "ERROR: docker ps failed while reporting duplicate ${service} containers." >&2
+      exit 1
+    fi
   fi
 }
 
@@ -154,7 +161,10 @@ warn_traefik_router_containers() {
     echo "" >&2
     echo "WARNING (minor): ${#ids[@]} running containers expose Traefik router ${router} on network ${TRAEFIK_NETWORK}." >&2
     echo "Stop legacy stacks from an old COMPOSE_PROJECT_NAME so Traefik does not load-balance mixed landing/frontend images." >&2
-    docker ps "${ps_filters[@]}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2
+    if ! docker ps "${ps_filters[@]}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2; then
+      echo "WARNING (minor): docker ps failed while reporting duplicate Traefik router ${router}." >&2
+      return 0
+    fi
   fi
 }
 
