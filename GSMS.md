@@ -34,6 +34,8 @@ git merge weknora/main
 
 La page d’accueil unifiée (Global-IT-SS + présentation WeKnora) se build dans [website-docs/homepage/](website-docs/homepage/README.md) avec le reste du site (`npm run build` depuis `website-docs/`).
 
+Déploiement VPS (site statique + Docker Compose) : [docs/deploy-vps.md](docs/deploy-vps.md), script `./scripts/deploy-vps.sh`.
+
 ## Documentation
 
 L'audit d'architecture et la stratégie de fusion se trouvent dans [docs/gsms-audit/](docs/gsms-audit/README.md).
