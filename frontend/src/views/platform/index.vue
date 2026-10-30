@@ -8,20 +8,6 @@
         }"
         :style="{ '--sidebar-width': `${uiStore.sidebarDisplayWidth}px` }"
     >
-        <button
-            v-if="uiStore.platformMobile && uiStore.sidebarCollapsed"
-            ref="mobileNavOpenBtn"
-            type="button"
-            class="platform-mobile-nav-open"
-            :aria-label="t('menu.expandSidebar')"
-            @click="uiStore.openMobileSidebar()"
-        >
-            <svg viewBox="0 0 20 20" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <line x1="3" y1="5.5" x2="17" y2="5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-                <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-                <line x1="3" y1="14.5" x2="17" y2="14.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-            </svg>
-        </button>
         <div
             v-if="uiStore.platformMobile && !uiStore.sidebarCollapsed"
             class="platform-mobile-sidebar-backdrop"
@@ -29,7 +15,34 @@
             @click="onMobileSidebarBackdropClick"
         />
         <Menu></Menu>
-        <div v-if="isRouterAlive" class="platform-route-outlet">
+        <div v-if="uiStore.platformMobile" class="platform-mobile-column">
+            <header class="platform-mobile-header">
+                <button
+                    ref="mobileNavOpenBtn"
+                    type="button"
+                    class="platform-mobile-header__menu"
+                    :aria-label="uiStore.sidebarCollapsed ? t('menu.expandSidebar') : t('common.close')"
+                    @click="uiStore.sidebarCollapsed ? uiStore.openMobileSidebar() : uiStore.closeMobileSidebar()"
+                >
+                    <svg v-if="uiStore.sidebarCollapsed" viewBox="0 0 20 20" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <line x1="3" y1="5.5" x2="17" y2="5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                        <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                        <line x1="3" y1="14.5" x2="17" y2="14.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                    </svg>
+                    <svg v-else viewBox="0 0 20 20" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <button type="button" class="platform-mobile-header__brand" @click="router.push('/platform/knowledge-bases')">
+                    <img src="@/assets/brand/logo-transparent.svg" alt="Global-IT-SS" width="28" height="28" />
+                    <span>Global-IT-SS</span>
+                </button>
+            </header>
+            <div v-if="isRouterAlive" class="platform-route-outlet">
+                <RouterView />
+            </div>
+        </div>
+        <div v-else-if="isRouterAlive" class="platform-route-outlet">
             <RouterView />
         </div>
         <!-- WeKnora 助手：停靠时作为布局右栏挤压页面，悬浮时浮在页面上；都不加遮罩，
@@ -339,33 +352,67 @@ onUnmounted(() => {
         min-width: 0;
     }
 
-    .main--platform-mobile .platform-route-outlet {
-        padding-top: calc(52px + env(safe-area-inset-top, 0px));
-        box-sizing: border-box;
-    }
-
     .main--mobile-sidebar-open .platform-route-outlet {
         overflow: hidden;
     }
 }
 
-.platform-mobile-nav-open {
-    position: fixed;
-    z-index: 1205;
-    top: max(12px, env(safe-area-inset-top));
-    left: max(12px, env(safe-area-inset-left));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    border: 1px solid var(--td-component-stroke);
-    border-radius: var(--app-radius-md);
-    background: var(--td-bg-color-container);
-    color: var(--td-text-color-primary);
-    box-shadow: var(--td-shadow-1);
-    cursor: pointer;
+.main--platform-mobile {
+    .platform-mobile-column {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .platform-mobile-header {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 48px;
+        padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+        border-bottom: 1px solid var(--td-component-stroke);
+        background: var(--td-bg-color-container);
+        z-index: 1200;
+    }
+
+    .platform-mobile-header__menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: none;
+        border-radius: var(--app-radius-md);
+        background: transparent;
+        color: var(--td-text-color-primary);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--td-bg-color-container-hover);
+        }
+    }
+
+    .platform-mobile-header__brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border: none;
+        border-radius: var(--app-radius-md);
+        background: transparent;
+        color: var(--td-text-color-primary);
+        font-size: var(--app-text-lg);
+        font-weight: 600;
+        cursor: pointer;
+
+        img {
+            display: block;
+        }
+    }
 }
 
 .platform-mobile-sidebar-backdrop {
