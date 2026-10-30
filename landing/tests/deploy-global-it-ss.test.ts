@@ -8,7 +8,8 @@ describe("scripts/deploy-global-it-ss.sh", () => {
     const script = readFileSync(join(import.meta.dirname, "../../scripts/deploy-global-it-ss.sh"), "utf8");
     expect(script).toMatch(/warn_duplicate_service_containers landing/);
     expect(script).toMatch(/warn_duplicate_service_containers frontend/);
-    expect(script).toMatch(/docker ps -q --filter "status=running" --filter "name=\$\{filter_name\}"/);
+    expect(script).toMatch(/label=com\.docker\.compose\.project=\$\{PROJECT_NAME\}/);
+    expect(script).toMatch(/label=com\.docker\.compose\.service=\$\{service\}/);
     expect(script).toMatch(/Traefik may round-robin mismatched/);
   });
 });

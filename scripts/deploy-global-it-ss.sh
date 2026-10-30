@@ -104,15 +104,22 @@ docker compose "${COMPOSE_FILES[@]}" up -d --no-build
 # still up) can serve HTML with different _next/static chunk hashes → broken CSS/JS.
 warn_duplicate_service_containers() {
   local service="$1"
-  local filter_name="${PROJECT_NAME}-${service}"
   local -a ids=()
-  mapfile -t ids < <(docker ps -q --filter "status=running" --filter "name=${filter_name}")
+  local -a ps_filters=(
+    --filter "status=running"
+    --filter "label=com.docker.compose.project=${PROJECT_NAME}"
+    --filter "label=com.docker.compose.service=${service}"
+  )
+  if ! ids=($(docker ps -q "${ps_filters[@]}")); then
+    echo "ERROR: docker ps failed while checking duplicate ${service} containers." >&2
+    exit 1
+  fi
   if ((${#ids[@]} > 1)); then
     echo "" >&2
-    echo "WARNING: ${#ids[@]} running containers match docker ps --filter name=${filter_name}." >&2
+    echo "WARNING: ${#ids[@]} running Compose ${service} containers for project ${PROJECT_NAME}." >&2
     echo "Traefik may round-robin mismatched landing/frontend images (stale HTML vs missing .next/static)." >&2
-    echo "Stop orphans: docker ps --filter name=${filter_name} --format '{{.ID}} {{.Names}} {{.Image}}'" >&2
-    docker ps --filter "status=running" --filter "name=${filter_name}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2
+    echo "Inspect: docker ps ${ps_filters[*]} --format '{{.ID}} {{.Names}} {{.Image}}'" >&2
+    docker ps "${ps_filters[@]}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2
   fi
 }
 
