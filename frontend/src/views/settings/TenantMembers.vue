@@ -1776,6 +1776,8 @@ watch(
 
 .data-table-shell {
   .settings-data-table();
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 
   :deep(thead th) {
     background: var(--td-bg-color-secondarycontainer);

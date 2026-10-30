@@ -1,5 +1,34 @@
 <template>
-    <div class="main" ref="dropzone" :style="{ '--sidebar-width': `${uiStore.sidebarDisplayWidth}px` }">
+    <div
+        class="main"
+        ref="dropzone"
+        :class="{
+            'main--platform-mobile': uiStore.platformMobile,
+            'main--mobile-sidebar-open': uiStore.platformMobile && !uiStore.sidebarCollapsed,
+        }"
+        :style="{ '--sidebar-width': `${uiStore.sidebarDisplayWidth}px` }"
+    >
+        <button
+            v-if="uiStore.platformMobile && uiStore.sidebarCollapsed"
+            ref="mobileNavOpenBtn"
+            type="button"
+            class="platform-mobile-nav-open"
+            :aria-label="t('menu.expandSidebar')"
+            @click="uiStore.openMobileSidebar()"
+        >
+            <svg viewBox="0 0 20 20" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="1.5" y="1.5" width="17" height="17" rx="3" stroke="currentColor" stroke-width="1.5" />
+                <line x1="7.5" y1="1.5" x2="7.5" y2="18.5" stroke="currentColor" stroke-width="1.5" />
+                <line x1="5" y1="10" x2="3" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <line x1="5" y1="10" x2="3" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+        </button>
+        <div
+            v-if="uiStore.platformMobile && !uiStore.sidebarCollapsed"
+            class="platform-mobile-sidebar-backdrop"
+            aria-hidden="true"
+            @click="onMobileSidebarBackdropClick"
+        />
         <Menu></Menu>
         <div v-if="isRouterAlive" class="platform-route-outlet">
             <RouterView />
@@ -41,11 +70,15 @@ import { getKnowledgeBaseById } from '@/api/knowledge-base/index'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { collectDroppedFiles } from './collectDroppedFiles'
+import { usePlatformMobile } from '@/composables/usePlatformMobile'
+
+usePlatformMobile()
 
 const route = useRoute();
 const router = useRouter();
 const commandPaletteStore = useCommandPaletteStore();
 const uiStore = useUIStore();
+const mobileNavOpenBtn = ref<HTMLButtonElement | null>(null)
 let ismask = ref(false)
 const { t } = useI18n();
 
@@ -72,6 +105,44 @@ const handleGlobalKeyDown = (e: KeyboardEvent) => {
         reloadApp()
     }
 }
+
+const focusMobileNavOpen = () => {
+    nextTick(() => mobileNavOpenBtn.value?.focus())
+}
+
+const onMobileSidebarBackdropClick = () => {
+    uiStore.closeMobileSidebar()
+    focusMobileNavOpen()
+}
+
+watch(
+    () => uiStore.sidebarCollapsed,
+    (collapsed, wasCollapsed) => {
+        if (uiStore.platformMobile && collapsed && wasCollapsed === false) {
+            focusMobileNavOpen()
+        }
+    },
+)
+
+const handleMobileSidebarKeyDown = (e: KeyboardEvent) => {
+    if (!uiStore.platformMobile || uiStore.sidebarCollapsed) return
+    if (e.key !== 'Escape') return
+    e.preventDefault()
+    uiStore.closeMobileSidebar()
+    focusMobileNavOpen()
+}
+
+watch(
+    () => uiStore.platformMobile && !uiStore.sidebarCollapsed,
+    (open) => {
+        if (open) {
+            document.addEventListener('keydown', handleMobileSidebarKeyDown)
+        } else {
+            document.removeEventListener('keydown', handleMobileSidebarKeyDown)
+        }
+    },
+    { flush: 'post' },
+)
 
 // 用于跟踪拖拽进入/离开的计数器，解决子元素触发 dragleave 的问题
 let dragCounter = 0;
@@ -235,6 +306,7 @@ function maybeOpenCmdkFromRoute() {
 
 // 组件卸载时移除全局事件监听器
 onUnmounted(() => {
+    document.removeEventListener('keydown', handleMobileSidebarKeyDown);
     document.removeEventListener('dragenter', handleGlobalDragEnter, true);
     document.removeEventListener('dragover', handleGlobalDragOver, true);
     document.removeEventListener('dragleave', handleGlobalDragLeave, true);
@@ -258,8 +330,45 @@ onUnmounted(() => {
     height: 100%;
     min-width: 600px;
     min-height: 0;
+    position: relative;
     /* 统一整页背景，让左侧菜单与右侧内容区视觉连贯 */
     background: var(--td-bg-color-container);
+}
+
+@media (max-width: 768px) {
+    .main {
+        min-width: 0;
+    }
+
+    .main--mobile-sidebar-open .platform-route-outlet {
+        overflow: hidden;
+    }
+}
+
+.platform-mobile-nav-open {
+    position: fixed;
+    z-index: 1005;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--td-component-stroke);
+    border-radius: var(--app-radius-md);
+    background: var(--td-bg-color-container);
+    color: var(--td-text-color-primary);
+    box-shadow: var(--td-shadow-1);
+    cursor: pointer;
+}
+
+.platform-mobile-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1090;
+    background: rgba(0, 0, 0, 0.45);
 }
 
 /* 右侧路由区：占满剩余宽度与整列高度，并把 min-height:0 传给子页面以便内部 flex 滚动 */

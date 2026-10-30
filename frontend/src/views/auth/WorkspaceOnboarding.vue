@@ -125,9 +125,14 @@ async function handleLogout() {
 <style scoped lang="less">
 .workspace-onboarding {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 32px 20px;
+  padding:
+    max(32px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right))
+    max(32px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
   background:
     radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--td-brand-color) 12%, transparent), transparent 38%),
     var(--td-bg-color-page);
@@ -246,6 +251,11 @@ h1 {
 
   .workspace-actions {
     grid-template-columns: 1fr;
+  }
+
+  .logout-link {
+    min-height: 44px;
+    padding: 10px 12px;
   }
 }
 </style>

@@ -1729,7 +1729,7 @@ onMounted(async () => {
     gap: 8px;
 
     .link-text {
-      display: inline;
+      display: none;
     }
 
     .header-link {
