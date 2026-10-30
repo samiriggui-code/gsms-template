@@ -39,29 +39,40 @@ Edit `.env` — minimum:
 - `DEFAULT_LOCALE=fr-FR` (optional if using bootstrap script; enables French auth UI via runtime config)
 - `JWT_SECRET=` and `SYSTEM_AES_KEY=` (unique secrets)
 
-Validate Compose:
+## Deploy (primary)
+
+From the repo root on the VPS:
+
+```bash
+chmod +x ./scripts/deploy-global-it-ss.sh   # once
+./scripts/deploy-global-it-ss.sh
+```
+
+The script validates the three Compose files, **`build`s `landing` and `frontend`** (local `./landing` and `./frontend` — images **`gsms-landing`** and **`gsms-weknora-ui`**), then **`up -d --no-build`**. It does **not** `pull` frontend/landing. Compose reads **`COMPOSE_PROJECT_NAME=globalitss`** from `.env`.
+
+Force a clean frontend/landing rebuild:
+
+```bash
+./scripts/deploy-global-it-ss.sh --no-cache
+```
+
+Do **not** use bare `docker compose … up -d` without building frontend first — that can leave an old container or pull upstream **`wechatopenai/weknora-ui`** (Chinese-first Hub image). Root `docker-compose.yml` sets **`pull_policy: build`** on frontend/landing to block Hub pulls when both `image` and `build` are set.
+
+## Manual equivalent (debug only)
 
 ```bash
 docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml config
-```
-
-## Build: landing **and** frontend (required)
-
-Compose tags the GSMS UI as **`gsms-weknora-ui:${WEKNORA_VERSION:-latest}`** (not `wechatopenai/weknora-ui`), so `docker compose pull` cannot silently replace it with the official Chinese multi-language image. You still **must** build from `./frontend` at least once on the VPS — there is no public registry for `gsms-weknora-ui`.
-
-```bash
 docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build landing frontend
-docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d
+docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d --no-build
 ```
 
-**Still seeing Chinese / zh-CN on `app.global-it-ss.com`?** The running container is almost certainly still `wechatopenai/weknora-ui`. After `git pull` (this PR merged), rebuild and recreate frontend:
+**Still seeing Chinese / zh-CN on `app.global-it-ss.com`?** The running container is almost certainly still **`wechatopenai/weknora-ui`**. Re-run `./scripts/deploy-global-it-ss.sh --no-cache`, then check:
 
 ```bash
-docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build --no-cache frontend && docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d --force-recreate frontend
-docker inspect globalitss-WeKnora-frontend-1 2>/dev/null | grep -E '"Image"|gsms-weknora-ui' || docker ps --filter name=frontend --format '{{.Names}} {{.Image}}'
+docker ps --filter name=globalitss --format '{{.Names}} {{.Image}}' | grep -i frontend
 ```
 
-Add `DEFAULT_LOCALE=fr-FR` to `.env` if missing, then `docker compose … up -d frontend` again so `config.js` picks it up.
+Add `DEFAULT_LOCALE=fr-FR` to `.env` if missing, then `./scripts/deploy-global-it-ss.sh` again so `config.js` picks it up.
 
 ## Do not touch
 
