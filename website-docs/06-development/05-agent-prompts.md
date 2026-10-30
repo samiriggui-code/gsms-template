@@ -1,67 +1,67 @@
-# 对话提示词拼装与可编辑范围
+# Assemblage des prompts de dialogue et champs éditables
 
-本文供维护提示词、智能体编辑器和模型消息链路的开发者使用。智能体配置与执行流程见[Agent 引擎](../03-features/07-agent.md)。
+Ce document s’adresse aux développeurs qui maintiennent les prompts, l’éditeur d’agents et la chaîne de messages vers le modèle. Pour la configuration des agents et le flux d’exécution, voir [Moteur Agent](../03-features/07-agent.md).
 
-## 智能推理的系统段
+## Segments système du raisonnement intelligent
 
-唯一拼装入口是 `internal/agent/prompts.go` 中的 `BuildSystemPromptSections`，引擎和字符串兼容接口 `BuildSystemPromptWithOptions` 均使用它。以下按实际拼装顺序列出；空段在输出时省略。
+Le point d’assemblage unique est `BuildSystemPromptSections` dans `internal/agent/prompts.go` ; le moteur et l’interface chaîne compatible `BuildSystemPromptWithOptions` l’utilisent tous deux. Ordre réel d’assemblage ; les segments vides sont omis à la sortie.
 
-| 段名 | 来源与职责 |
+| Segment | Source et rôle |
 | --- | --- |
-| `base` | 显式正文优先；否则无绑定知识库用 `pure` 默认模板，有知识库用 `rag` 默认模板 |
-| `steering` | 如何处理回答过程中用户追加的消息（补充、修改或取消），保留未完成任务；自定义正文同样带上 |
-| `runtime_contract` | 数据与指令边界、当前文档范围、完成条件；已知用户语言时追加默认回答语言 |
-| `sources` | 根据实际注册的工具集合选择来源规则；技能安装模式使用专门的安装验证说明 |
-| `tools` | 通用执行、文件和沙箱约定；具体参数仍在工具定义中 |
-| `output` | 公共输出格式、配图条件和完成检查 |
-| `skills` | 可用技能元数据；仅在非技能安装模式、具有 `read_file` 且存在元数据时追加 |
-| `memory` | 本轮召回的记忆 |
-| `protocol` | 来源句柄与输出引用协议 |
+| `base` | Texte explicite en priorité ; sinon modèle par défaut `pure` sans base liée, ou `rag` avec base |
+| `steering` | Traitement des messages utilisateur ajoutés pendant la réponse (compléter, modifier, annuler) et conservation des tâches inachevées ; le texte personnalisé est conservé |
+| `runtime_contract` | Frontière données/instructions, périmètre documentaire courant, conditions de fin ; langue utilisateur connue → langue de réponse par défaut |
+| `sources` | Règles de sources selon l’ensemble d’outils enregistré ; mode installation de compétence → consignes de validation dédiées |
+| `tools` | Conventions d’exécution, fichiers et sandbox ; les paramètres restent dans les définitions d’outils |
+| `output` | Format de sortie public, conditions d’illustration et contrôles de complétion |
+| `skills` | Métadonnées des compétences disponibles ; uniquement hors mode installation, avec `read_file` et métadonnées présentes |
+| `memory` | Souvenirs rappelés pour ce tour |
+| `protocol` | Handles de sources et protocole de citation en sortie |
 
-自定义正文只替换 `base`，不移除其他运行时段，也不增加工具权限。分段不是模型 API 的不同权限层级；可调用工具仍由后端注册与执行路径控制。浏览器操作契约保留在 `local_browser` 的工具描述中，接入与操作说明见[本机浏览器](../05-clients/09-local-browser.md)。
+Un texte personnalisé ne remplace que `base` : il ne supprime pas les autres segments runtime ni n’élargit les permissions d’outils. Les segments ne sont pas des niveaux de permission API modèle ; les outils invocables restent contrôlés par l’enregistrement et l’exécution backend. Le contrat navigateur reste dans la description de l’outil `local_browser` ; voir [Navigateur local](../05-clients/09-local-browser.md).
 
-`base` 的占位符由 `renderPromptPlaceholdersWithStatus` 展开：
+Les placeholders de `base` sont développés par `renderPromptPlaceholdersWithStatus` :
 
-| 占位符 | 当前行为 |
+| Placeholder | Comportement actuel |
 | --- | --- |
-| `{{knowledge_bases}}` | 指向用户消息中 `runtime_context` 的知识库目录，不展开全文 |
-| `{{web_search_status}}` | 根据实际 `web_search` 工具是否注册，展开为 `Enabled` / `Disabled` |
-| `{{current_time}}` | `YYYY-MM-DD` 日期 |
-| `{{language}}` | 用户语言名 |
-| `{{skills}}` | 清空；技能元数据由独立段提供 |
+| `{{knowledge_bases}}` | Répertoire des bases dans `runtime_context` du message utilisateur, sans déplier le texte intégral |
+| `{{web_search_status}}` | `Enabled` / `Disabled` selon l’enregistrement effectif de l’outil `web_search` |
+| `{{current_time}}` | Date `YYYY-MM-DD` |
+| `{{language}}` | Nom de la langue utilisateur |
+| `{{skills}}` | Vidé ; les métadonnées compétences passent par un segment dédié |
 
-## 当前轮上下文与消息角色
+## Contexte du tour courant et rôles des messages
 
-`internal/agent/observe.go` 在当前用户消息中加入 `runtime_context`：日期、会话 ID、绑定知识库摘要、固定文档和问题来源等本轮信息；不把它持久化为历史指令。知识库名称与描述限长并转义，FAQ 答案和文档全文需要通过检索工具读取。
+`internal/agent/observe.go` ajoute `runtime_context` au message utilisateur courant : date, ID de session, résumé des bases liées, documents et sources de questions fixes pour ce tour ; non persisté comme instruction historique. Noms et descriptions de bases tronqués et échappés ; réponses FAQ et texte intégral des documents via outils de recherche.
 
-`@MCP` / `@Skill` 产生当前轮的 `must_use` 提示。MCP 提及只为已授权服务设置优先提示，不移除其他已配置服务；尚未暴露的服务通过 `discover_mcp_tools` 发现。技能提及提示先读取对应 `SKILL.md`。这些选择不能授权无关操作，仍受用户明确的来源限制和后端权限约束。
+Les mentions `@MCP` / `@Skill` produisent des indications `must_use` pour le tour. MCP ne fait qu’indiquer la priorité pour les services déjà autorisés ; les services non exposés passent par `discover_mcp_tools`. Les mentions compétence lisent d’abord le `SKILL.md` correspondant. Ces choix n’autorisent pas d’actions hors périmètre ; limites utilisateur et permissions backend inchangées.
 
-回答过程中用户追加并选择立即补充的消息，在下一轮迭代前作为 user 消息接到消息列表末尾：发给模型的内容以 `<steer_message>` 包裹并附 `<continue_task>` 说明（`types.SteerMessageContent`），会话历史和界面保留用户原文；`steering` 段约定模型如何对待这类消息。
+Les messages utilisateur ajoutés pendant la réponse et traités en complément immédiat sont ajoutés en fin de liste avant l’itération suivante : contenu modèle dans `<steer_message>` avec `<continue_task>` (`types.SteerMessageContent`) ; l’historique et l’UI gardent le texte utilisateur original ; le segment `steering` définit le traitement attendu.
 
-正常工具结果保留 `tool` 角色与调用 ID；消息修复时无法配对的结果以转义后的 `untrusted_tool_result` 数据块保留，不能提升为系统指令。Agent、普通问答和模型兜底共用来源数据边界规则，但三者并不使用完全相同的提示词拼装流程。
+Les résultats d’outils normaux restent en rôle `tool` avec ID d’appel ; en réparation de messages, les résultats non appariés restent en bloc `untrusted_tool_result` échappé, sans promotion en instruction système. Agent, Q&R classique et repli modèle partagent les règles de frontière des sources, mais n’utilisent pas exactement le même assemblage de prompts.
 
-达到迭代上限或错误收尾时，`internal/agent/finalize.go` 沿用当前消息列表，保留历史、图片及工具调用配对，再追加收尾请求。最后一次调用不提供工具，设置 `tool_choice=none` 并关闭 thinking。
+En clôture (limite d’itérations ou erreur), `internal/agent/finalize.go` conserve la liste de messages actuelle (historique, images, appels/outils appariés) puis ajoute la demande de clôture. Dernier appel sans outils : `tool_choice=none` et thinking désactivé.
 
-## 编辑与保存
+## Édition et enregistrement
 
-前端编辑器展示有效正文，`frontend/src/utils/agentPromptTemplates.ts` 在保存时区分模板引用与自定义内容：
+L’éditeur frontend affiche le texte effectif ; `frontend/src/utils/agentPromptTemplates.ts` distingue à l’enregistrement référence de modèle et contenu personnalisé :
 
-- 正文与已知模板完全相同：保存 `system_prompt_id` / `context_template_id`，正文留空。
-- 正文被实际修改：保存正文，清除旧模板 ID。
-- 改写、兜底字段与当前默认模板一致：保存空值，继承默认值；意图提示词只保存偏离默认值的覆盖项。
+- Texte identique à un modèle connu : enregistrer `system_prompt_id` / `context_template_id`, corps vide.
+- Texte modifié : enregistrer le corps, effacer les anciens ID de modèle.
+- Réécriture / repli identiques au modèle par défaut : enregistrer une valeur vide pour hériter ; les prompts d’intention ne sauvegardent que les écarts au défaut.
 
-例如未修改的 Wiki 模板保存为：
+Exemple de modèle Wiki non modifié :
 
 ```json
 {"agent_mode":"smart-reasoning","system_prompt_id":"wiki_researcher","system_prompt":""}
 ```
 
-`internal/config/agent_prompts.go` 的 `ResolveCustomAgentPrompts` 在请求时解析引用，显式正文始终优先，引用仅在所属字段与模式的模板集合中查找。解析结果不会写回保存对象；未知引用返回空正文，由调用方使用默认路径。
+`ResolveCustomAgentPrompts` dans `internal/config/agent_prompts.go` résout les références à la requête ; le corps explicite prime ; la recherche de référence se limite au jeu de modèles du champ et du mode. Le résultat n’est pas réécrit dans l’objet sauvegardé ; référence inconnue → corps vide, le caller utilise le chemin par défaut.
 
-默认模板更新不会覆盖已有自定义正文，也不会批量迁移历史默认副本。旧配置需要重新跟随模板时，在编辑器恢复默认后保存。
+Une mise à jour des modèles par défaut ne remplace pas les corps personnalisés existants ni ne migre en masse d’anciennes copies par défaut. Pour realigner une ancienne config, restaurer le défaut dans l’éditeur puis enregistrer.
 
-## 维护时检查什么
+## Points à vérifier en maintenance
 
-新增规则先确定归属：角色与领域方法放 `base`，来源选择放 `sources`，调用约定放工具定义或 `tools`，输出形态放 `output`，引用编码放 `protocol`。避免同一规则在多处重复维护。
+Pour une nouvelle règle, choisir l’appartenance : rôle et méthode dans `base`, choix de sources dans `sources`, conventions d’appel dans les définitions d’outils ou `tools`, forme de sortie dans `output`, encodage des citations dans `protocol`. Éviter la duplication entre segments.
 
-`[Agent][Prompt] section=... bytes=...` 日志帮助定位各段体积；验证行为还需检查最终模型消息、实际工具注册表及执行权限，并用任务验证来源选择、失败恢复和输出格式。
+Les logs `[Agent][Prompt] section=... bytes=...` aident au volume par segment ; valider le comportement exige aussi les messages finaux au modèle, le registre d’outils réel et les permissions d’exécution, plus des tâches couvrant sources, reprise après échec et format de sortie.

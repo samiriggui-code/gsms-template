@@ -1,44 +1,44 @@
-# Chrome 插件（知识管理助手）
+# Extension Chrome (assistant de gestion des connaissances)
 
-「知识管理助手」Chrome 插件支持在网页侧边栏向知识库提问、剪藏当前页面，以及保存 Markdown 笔记。
+L’extension Chrome « Assistant de gestion des connaissances » permet d’interroger une base de connaissances depuis la barre latérale d’une page web, de capturer la page courante et d’enregistrer des notes Markdown.
 
-插件可从 [Chrome 应用商店](https://chromewebstore.google.com/detail/jpemjbopikggjlmikmclgbmkhhopjdgd)安装，需要连接已有的 WeKnora 服务。导入的内容保存在所连接的实例中。
+Installez-la depuis le [Chrome Web Store](https://chromewebstore.google.com/detail/jpemjbopikggjlmikmclgbmkhhopjdgd). Elle nécessite une instance WeKnora existante. Le contenu importé est stocké sur l’instance connectée.
 
 <Screenshot
   src="/screenshots/chrome-extension.png"
-  caption="Chrome 插件：网页侧边栏问答与内容剪藏"
-  hint="展示插件侧边栏在某个网页上展开的样子（问答面板与知识库选择器），以及剪藏时的区域选择。" />
+  caption="Extension Chrome : Q&R dans la barre latérale et capture de contenu"
+  hint="Barre latérale ouverte sur une page web (panneau Q&R et sélecteur de base), plus sélection de zone lors de la capture." />
 
-## 主要功能 {#能做什么}
+## Fonctionnalités principales {#fonctionnalites-principales}
 
-| 能力 | 说明 |
+| Capacité | Description |
 | --- | --- |
-| 知识库问答 | 侧边栏对话面板，可切换多个知识库，支持快速 / 深度 / 精确三种回答模式，边浏览边问不打断当前工作 |
-| 网页剪藏 | 保存页面 URL、由 AI 智能提取正文，或手动框选区域，写入指定知识库 |
-| Markdown 速记 | 使用内置编辑器记录内容并保存到知识库 |
-| 快捷键 | 提问、开侧边栏等操作都可自定义快捷键 |
+| Q&R sur bases de connaissances | Panneau de conversation dans la barre latérale, bascule entre plusieurs bases ; modes rapide / approfondi / précis pour questionner sans quitter la navigation |
+| Capture web | Enregistre l’URL, extrait le corps via l’IA ou sélection manuelle, écrit dans une base choisie |
+| Notes Markdown | Éditeur intégré pour enregistrer du contenu en base |
+| Raccourcis | Raccourcis personnalisables pour poser une question, ouvrir la barre latérale, etc. |
 
-## 安装与连接 {#怎么配}
+## Installation et connexion {#installation-et-connexion}
 
-在「设置 → 发布集成 → Chrome 插件」查看连接指引，并复制当前实例的 API 地址。按以下步骤完成连接：
+Consultez « Paramètres → Intégrations de publication → Extension Chrome » pour le guide et copiez l’URL API de l’instance. Étapes :
 
-1. **获取 API 凭证**：在「设置 → 发布集成 → API 集成」复制 API Key 与 API 地址（引导页的「打开 API 信息」按钮会直接跳转到这里）。建议单独建一个 Key 并按需收窄能力（至少需要检索与入库相关能力，见[租户、用户与认证授权](../03-features/01-tenant-auth.md)的 API Key 章节）；
-2. **桌面版建议先固定端口**：用 WeKnora 桌面版时，在「API 集成」页设一个固定端口（例如 37841）。否则每次启动端口变化，插件会连不上；
-3. **安装插件**：从 Chrome 应用商店安装；
-4. **在插件里连接**：打开插件设置，选「企业/开发者」模式，填入 API 地址与 API Key。
+1. **Obtenir les identifiants API** : dans « Paramètres → Intégrations de publication → Intégration API », copiez la clé API et l’URL API (le bouton « Ouvrir les infos API » du guide y mène). Créez une clé dédiée et restreignez les capacités si besoin (au minimum recherche et ingestion ; voir le chapitre clés API dans [Espace, utilisateurs et authentification](../03-features/01-tenant-auth.md)) ;
+2. **Port fixe (desktop recommandé)** : avec WeKnora Desktop, fixez un port dans la page « Intégration API » (ex. 37841). Sinon le port change à chaque lancement et l’extension ne se connecte plus ;
+3. **Installer l’extension** : depuis le Chrome Web Store ;
+4. **Connexion dans l’extension** : ouvrez les paramètres, mode « Entreprise / développeur », saisissez URL API et clé API.
 
-连接后列出知识库并发起一次问答，确认凭证和网络可用。
+Après connexion, listez les bases et lancez une question pour valider identifiants et réseau.
 
-## 排查
+## Dépannage
 
-| 现象 | 检查点 |
+| Symptôme | Points à vérifier |
 | --- | --- |
-| 插件提示连不上 | API 地址是否可从浏览器所在机器访问（容器内地址、`localhost` 在远程部署下都不行）；桌面版是否固定了端口 |
-| 401 / 403 | API Key 是否被吊销；Key 的能力是否覆盖了检索与入库；如果 Key 限定了知识库范围，目标库是否在名单里 |
-| 剪藏后知识库里没有 | 到知识库文档列表看解析状态，`processing` 说明在解析中；失败原因见文档详情 |
+| Impossible de se connecter | L’URL API est-elle joignable depuis la machine du navigateur (adresse conteneur, `localhost` sur déploiement distant) ; port fixe en desktop |
+| 401 / 403 | Clé révoquée ; capacités couvrant recherche et ingestion ; si la clé est limitée à certaines bases, la cible est-elle autorisée |
+| Rien en base après capture | Liste des documents et statut d’analyse ; `processing` = en cours ; détail de l’échec sur la fiche document |
 
-## 相关文档 {#相关}
+## Documentation associée {#documentation-associee}
 
-- 凭证与能力：[租户、用户与认证授权](../03-features/01-tenant-auth.md)
-- 剪藏内容的入库流程：[文档入库流程](../02-architecture/03-document-pipeline.md)
-- 其它集成方式：[Claw Skill](07-claw-skill.md)、[命令行工具](02-cli.md)、[Go SDK](03-go-sdk.md)
+- Identifiants et capacités : [Espace, utilisateurs et authentification](../03-features/01-tenant-auth.md)
+- Pipeline d’ingestion : [Pipeline documentaire](../02-architecture/03-document-pipeline.md)
+- Autres intégrations : [Claw Skill](07-claw-skill.md), [CLI](02-cli.md), [Go SDK](03-go-sdk.md)

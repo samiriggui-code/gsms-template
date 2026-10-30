@@ -11,7 +11,9 @@ const props = defineProps<{
   hint?: string
 }>()
 
-const { theme } = useData()
+const { theme, lang } = useData()
+const missingShot = computed(() => lang.value.startsWith('en') ? 'Screenshot pending' : 'Capture à venir')
+const failedShot = computed(() => lang.value.startsWith('en') ? 'Image failed to load' : 'Image non chargée')
 const size = computed(() => theme.value.weknoraScreenshotSizes?.[props.src])
 const failed = ref(false)
 const resolved = computed(() => withBase(props.src))
@@ -31,7 +33,7 @@ watch(resolved, () => { failed.value = false })
         @error="failed = true"
       />
       <div v-else class="wk-shot-placeholder" :class="{ 'wk-shot-placeholder-sized': size }">
-        <div class="wk-shot-placeholder-badge">{{ failed ? '图片加载失败' : '截图待补充' }}</div>
+        <div class="wk-shot-placeholder-badge">{{ failed ? failedShot : missingShot }}</div>
         <div class="wk-shot-placeholder-caption">{{ caption }}</div>
         <p v-if="hint" class="wk-shot-placeholder-hint">{{ hint }}</p>
         <code class="wk-shot-placeholder-path">website-docs/public{{ src }}</code>

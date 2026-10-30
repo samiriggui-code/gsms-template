@@ -1,52 +1,52 @@
-# Go 后端设计
+# Conception backend Go
 
-Go 后端以 Handler、Service、Repository 和基础设施分层组织请求处理，通过 uber/dig 装配依赖。`cmd/server` 负责启动与退出，`internal/` 实现路由鉴权、业务服务和存储访问。
+Le backend Go organise le traitement des requêtes en couches Handler, Service, Repository et infrastructure, avec assemblage des dépendances via uber/dig. `cmd/server` gère le démarrage et l’arrêt ; `internal/` implémente routage, authentification, services métier et accès aux données.
 
 
-## 助手与任务运行模块
+## Module assistant et exécution de tâches
 
-`internal/agent/policy` 统一判断读取、探测、写入和破坏性操作；`agent_prompts` 与 `agent_run_suspensions` 保存可恢复的人工交互，`agent_grants` 保存有范围的授权。`agent_collaborations` 记录子智能体状态，自动化服务维护任务计划、运行和通知。后台 Shell 使用独立工作标识及等待、取消接口，不等同于交互终端进程。
+`internal/agent/policy` unifie les décisions lecture, sonde, écriture et opérations destructives ; `agent_prompts` et `agent_run_suspensions` conservent les interactions humaines reprises ; `agent_grants` stocke les autorisations à portée limitée. `agent_collaborations` enregistre l’état des sous-agents ; le service d’automatisations maintient plans, exécutions et notifications. Le shell d’arrière-plan utilise un identifiant de travail distinct avec interfaces d’attente et d’annulation, distinct du terminal interactif.
 
-这些运行能力与普通文档入库队列各有职责，不能把恢复待审批状态理解成可重放任意外部写入。
+Ces capacités d’exécution ont un périmètre différent de la file d’indexation documentaire classique : reprendre un état en attente d’approbation ne signifie pas réexécuter arbitrairement des écritures externes.
 
-## 分层架构 {#_1-分层架构}
+## Architecture en couches {#_1-architecture-en-couches}
 
-后端遵循经典的 **Handler → Service → Repository → 数据库** 四层结构，层间依赖全部通过接口（`internal/types/interfaces/`）解耦，由 DI 容器在启动时装配：
+Le backend suit la structure classique **Handler → Service → Repository → base de données**. Les dépendances inter-couches passent par des interfaces (`internal/types/interfaces/`), assemblées au démarrage par le conteneur DI :
 
-| 层 | 位置 | 职责 |
+| Couche | Emplacement | Rôle |
 | --- | --- | --- |
-| Router / Middleware | `internal/router/`、`internal/middleware/` | 路由注册、认证、RBAC、限流、日志、错误信封 |
-| Handler | `internal/handler/`（会话相关在 `internal/handler/session/`） | 解析请求参数（DTO 在 `internal/handler/dto/`）、调用 Service、写响应；不含业务逻辑 |
-| 访问控制 | `internal/application/access/` | 与 Gin 无关的共享授权规则：知识库三层访问解析、组织共享权限、共享 Agent 的知识库范围、文件与消息产物授权、跨库克隆/移动授权 |
-| Service | `internal/application/service/`（约 160+ 文件） | 业务编排：知识库/知识/分块、会话与 `chat_pipeline/` 流水线、Agent、租户与成员、模型、数据源同步、Wiki、审计等 |
-| Repository | `internal/application/repository/`（约 60 文件） | 数据访问，统一使用 **GORM**（`type knowledgeRepository struct { db *gorm.DB }`，操作走 `r.db.WithContext(ctx)`）；检索引擎的仓储实现按引擎分包于 `repository/retriever/{postgres,elasticsearch,qdrant,milvus,weaviate,doris,opensearch,tencentvectordb,sqlite,neo4j}` |
-| 领域模型 | `internal/types/` | GORM 实体、枚举、context key、接口定义（`types/interfaces`） |
-| 基础设施 | `internal/infrastructure/`（docparser gRPC 客户端、web_search）、`internal/models/`（chat/embedding/rerank 模型适配）、`internal/stream/`、`internal/sandbox/`、`internal/mcp/`、`internal/im/` | 外部系统适配 |
+| Router / Middleware | `internal/router/`、`internal/middleware/` | Enregistrement des routes, auth, RBAC, rate limiting, logs, enveloppe d’erreur |
+| Handler | `internal/handler/` (session dans `internal/handler/session/`) | Parsing des requêtes (DTO dans `internal/handler/dto/`), appel Service, réponse ; sans logique métier |
+| Contrôle d’accès | `internal/application/access/` | Règles d’autorisation partagées hors Gin : résolution d’accès KB à trois niveaux, partage organisation, portée KB des agents partagés, autorisation fichiers et artefacts de messages, clonage/déplacement inter-bases |
+| Service | `internal/application/service/` (~160+ fichiers) | Orchestration : KB/connaissances/chunks, sessions et pipeline `chat_pipeline/`, Agent, tenant et membres, modèles, sync sources de données, Wiki, audit, etc. |
+| Repository | `internal/application/repository/` (~60 fichiers) | Accès données via **GORM** (`type knowledgeRepository struct { db *gorm.DB }`, `r.db.WithContext(ctx)`) ; implémentations moteur de recherche par package sous `repository/retriever/{postgres,elasticsearch,qdrant,milvus,weaviate,doris,opensearch,tencentvectordb,sqlite,neo4j}` |
+| Modèle de domaine | `internal/types/` | Entités GORM, énumérations, clés context, interfaces (`types/interfaces`) |
+| Infrastructure | `internal/infrastructure/` (client gRPC docparser, web_search), `internal/models/`, `internal/stream/`, `internal/sandbox/`, `internal/mcp/`, `internal/im/` | Adaptateurs systèmes externes |
 
 ```mermaid
 graph TD
-    C["客户端请求"] --> MW["Gin 中间件链<br/>CORS → RequestID → Logger → Recovery → ErrorHandler → Auth → APIKeyGate → RBAC"]
-    MW --> H["Handler 层 (internal/handler)<br/>参数校验 / DTO 转换"]
-    H --> S["Service 层 (internal/application/service)<br/>业务编排 / chat_pipeline / 事务"]
-    S --> R["Repository 层 (internal/application/repository)<br/>GORM 数据访问"]
-    S --> AG["Agent 引擎 (internal/agent)<br/>think → act → observe"]
+    C["Requête client"] --> MW["Chaîne middleware Gin<br/>CORS → RequestID → Logger → Recovery → ErrorHandler → Auth → APIKeyGate → RBAC"]
+    MW --> H["Couche Handler (internal/handler)<br/>validation / DTO"]
+    H --> S["Couche Service (internal/application/service)<br/>orchestration / chat_pipeline / transactions"]
+    S --> R["Couche Repository (internal/application/repository)<br/>accès GORM"]
+    S --> AG["Moteur Agent (internal/agent)<br/>think → act → observe"]
     S --> Q["TaskEnqueuer (Asynq / SyncTaskExecutor)"]
     R --> DB[("PostgreSQL / SQLite (GORM)")]
-    R --> VS[("检索引擎仓储 repository/retriever/*<br/>pgvector / ES / Qdrant / Milvus / Doris ...")]
-    S --> INF["基础设施适配<br/>docparser(gRPC) / models(LLM) / stream / mcp / im / sandbox"]
-    Q --> W["Asynq Worker (同进程, 6 个池)"]
+    R --> VS[("repository/retriever/*<br/>pgvector / ES / Qdrant / Milvus / Doris …")]
+    S --> INF["Adaptateurs infra<br/>docparser(gRPC) / models(LLM) / stream / mcp / im / sandbox"]
+    Q --> W["Worker Asynq (même processus, 6 pools)"]
     W --> S
 ```
 
-关键约定：
+Conventions clés :
 
-- Handler 只依赖 Service 接口（如 `interfaces.KnowledgeService`），Service 只依赖 Repository 接口与其他 Service 接口；
-- 所有接口集中声明在 `internal/types/interfaces/`，实现方通过 dig 绑定；
-- Asynq worker 与 HTTP server 运行在**同一个进程**内，任务处理函数复用同一套 Service。
+- Un Handler ne dépend que d’interfaces Service (ex. `interfaces.KnowledgeService`) ; un Service ne dépend que d’interfaces Repository et d’autres Services ;
+- Toutes les interfaces sont déclarées dans `internal/types/interfaces/`, liées via dig ;
+- Les workers Asynq et le serveur HTTP tournent dans **le même processus**, les handlers réutilisent les mêmes Services.
 
-## 依赖注入：internal/container（uber/dig） {#_2-依赖注入-internal-container-uber-dig}
+## Injection de dépendances : internal/container (uber/dig) {#_2-injection-de-dependances-internal-container-uber-dig}
 
-WeKnora 使用 **`go.uber.org/dig` v1.19.0**（构造函数注入容器，非代码生成的 wire）。入口是 `internal/container/container.go` 的 `BuildContainer`：
+WeKnora utilise **`go.uber.org/dig` v1.19.0** (conteneur par constructeurs, sans wire généré). Point d’entrée : `BuildContainer` dans `internal/container/container.go` :
 
 ```go
 // cmd/server/main.go
@@ -57,193 +57,189 @@ func BuildContainer(container *dig.Container) *dig.Container {
     must(container.Provide(NewResourceCleaner, dig.As(new(interfaces.ResourceCleaner))))
     must(container.Provide(config.LoadConfig))
     must(container.Provide(initDatabase))     // *gorm.DB
-    must(container.Provide(initRedisClient))  // *redis.Client（可为 nil：Lite 模式）
+    must(container.Provide(initRedisClient))  // *redis.Client (peut être nil : mode Lite)
     ...
     must(container.Provide(repository.NewTenantRepository))
     must(container.Provide(service.NewTenantService))
     ...
-    must(container.Provide(router.NewRouter)) // 最终产出 *gin.Engine
+    must(container.Provide(router.NewRouter)) // produit final *gin.Engine
     return container
 }
 ```
 
-`runtime.GetContainer()`（`internal/runtime/container.go`）持有全局单例 `dig.Container`；`must(err)` 对注册失败直接 panic——DI 装配错误属于启动期致命错误。
+`runtime.GetContainer()` (`internal/runtime/container.go`) détient le singleton global `dig.Container` ; `must(err)` panic si l’enregistrement échoue — erreur DI fatale au démarrage.
 
-### 用到的 dig 特性 {#_2-1-用到的-dig-特性}
+### Fonctionnalités dig utilisées {#_2-1-fonctionnalites-dig-utilisees}
 
-| 特性 | 用法示例 |
+| Fonctionnalité | Exemple |
 | --- | --- |
-| `dig.As` | 把具体类型绑定为接口：`container.Provide(NewResourceCleaner, dig.As(new(interfaces.ResourceCleaner)))`；`router.NewAsyncqClient` 绑定为 `interfaces.TaskEnqueuer` |
-| `dig.Name` 命名依赖 | 同一接口多实例：4 个抽取服务（`chunkExtractor`/`dataTableSummary`/`imageMultimodal`/`knowledgePostProcess`）、6 个 Asynq server（`coreAsynqServer`/`postProcessAsynqServer`/`enrichmentAsynqServer`/`maintenanceAsynqServer`/`sharedAsynqServer`/`wikiAsynqServer`）、`wikiIngest` |
-| `dig.In` 参数结构体 | `router.RouterParams` 内嵌 `dig.In`，一次性注入约 60 个 Handler/Service 依赖，避免超长构造函数签名 |
-| `container.Invoke` 执行副作用 | 注册即启动的后台组件：`registerPoolCleanup`、`registerWebSearchProviders`、`startDataSourceScheduler`、`startHousekeepingService`、`startAuditLogRetention`、`startTemporaryDocumentCleanup`、15 个 `chatpipeline.NewPluginXxx`（Search/Rerank/WebFetch/Merge/DataAnalysis/QueryUnderstand/LoadHistory/ChatCompletionStream 等插件自注册到 EventManager）、`router.RunAsynqServer`、`recoverPendingWikiTasks` 等 |
-| 适配器 Provide | 用闭包做接口转换：`func(s *service.StorageBackendService) interfaces.StorageBackendService { return s }`；`RetrieveEngineRegistry` 同实例同时暴露为 `StoreRegistry` |
+| `dig.As` | Lier une implémentation à une interface : `container.Provide(NewResourceCleaner, dig.As(new(interfaces.ResourceCleaner)))` ; `router.NewAsyncqClient` lié à `interfaces.TaskEnqueuer` |
+| Dépendances nommées `dig.Name` | Plusieurs instances d’une même interface : 4 services d’extraction, 6 serveurs Asynq, `wikiIngest` |
+| Struct param `dig.In` | `router.RouterParams` avec `dig.In`, ~60 handlers/services injectés |
+| `container.Invoke` pour effets de bord | Composants démarrés à l’enregistrement : cleanup pool, web search providers, schedulers, plugins `chatpipeline`, `router.RunAsynqServer`, etc. |
+| Provide adaptateur | Closures de conversion d’interface ; `RetrieveEngineRegistry` aussi exposé comme `StoreRegistry` |
 
-### 注册顺序与条件装配 {#_2-2-注册顺序与条件装配}
+### Ordre d’enregistrement et assemblage conditionnel {#_2-2-ordre-denregistrement-et-assemblage-conditionnel}
 
-`BuildContainer` 的注册分为九个阶段（源码中有对应日志）：① 核心基础设施（config/langfuse/db/file/redis/ants 池）→ ② 检索引擎注册表 → ③ 外部客户端（docreader gRPC、Ollama、Neo4j、StreamManager、DuckDB）→ ④ Repository 层（30+ 个）→ ⑤ Service 层（50+ 个，含 MCP Manager、事件总线、Agent 审批闸门 `approval.Gate`）→ ⑥ **任务执行器条件装配** → ⑦ chat_pipeline 插件 → ⑧ Handler 层（40+ 个）与 IM 适配器 → ⑨ Router 与 Asynq server 启动。
+`BuildContainer` comporte neuf phases (logs correspondants dans les sources) : ① infra cœur → ② registre moteurs de recherche → ③ clients externes → ④ Repository → ⑤ Service → ⑥ **exécuteur de tâches conditionnel** → ⑦ plugins chat_pipeline → ⑧ Handlers + IM → ⑨ Router et démarrage Asynq.
 
-第 ⑥ 步是全仓库最重要的条件分支——**Redis 有无决定运行形态**：
+L’étape ⑥ est la branche la plus importante — **présence ou absence de Redis** :
 
 ```go
 redisAvailable := os.Getenv("REDIS_ADDR") != ""
 if redisAvailable {
     must(container.Provide(router.NewAsyncqClient, dig.As(new(interfaces.TaskEnqueuer))))
     must(container.Provide(router.NewCoreAsynqServer, dig.Name("coreAsynqServer")))
-    ... // 共 6 个 worker 池 + AsynqInspector
-    must(container.Invoke(registerModelConcurrencyLimiter))   // Redis 分布式 per-model 并发闸门
+    ... // 6 pools worker + AsynqInspector
+    must(container.Invoke(registerModelConcurrencyLimiter))   // Redis : porte de concurrence distribuée par modèle
 } else {
-    syncExec := router.NewSyncTaskExecutor()                  // Lite 模式：进程内同步执行器
+    syncExec := router.NewSyncTaskExecutor()                  // mode Lite : exécuteur synchrone in-process
     must(container.Provide(func() interfaces.TaskEnqueuer { return syncExec }))
     must(container.Provide(router.NewNoopTaskInspector))
-    must(container.Invoke(registerLiteModelConcurrencyLimiter)) // 进程内信号量
+    must(container.Invoke(registerLiteModelConcurrencyLimiter)) // sémaphore in-process
 }
 ```
 
-6 个 Asynq worker 池的并发度可经 system settings / 环境变量调整（默认 Core=8、PostProcess=2、Enrichment=12、Maintenance=4、Shared=6、Wiki=8，`WEKNORA_ASYNQ_*_CONCURRENCY`）；队列拓扑定义在 `internal/types/task.go`（default、chat_attachment、postprocess、summary、multimodal、graph、question、memory、sync、low/maintenance、wiki 等，包含自动标签与记忆抽取）。
+Concurrence des 6 pools Asynq ajustable via system settings / env (Core=8, PostProcess=2, Enrichment=12, Maintenance=4, Shared=6, Wiki=8 par défaut, `WEKNORA_ASYNQ_*_CONCURRENCY`) ; topologie des files dans `internal/types/task.go`.
 
-### 资源清理与工厂 {#_2-3-资源清理与工厂}
+### Nettoyage des ressources et usines {#_2-3-nettoyage-des-ressources-et-usines}
 
-- `ResourceCleaner`（`internal/container/cleanup.go`）：各组件通过 `RegisterWithName(name, cleanupFunc)` 注册析构（ants 池、Langfuse flush、数据源调度器、Housekeeping 等），退出时统一 `Cleanup(ctx)`；
-- `EngineFactory`（`internal/container/engine_factory.go`）：根据 `vector_stores` 表行运行时创建检索引擎实例（`createQdrantEngine` / `createMilvusEngine` / `createDorisEngine` / `createOpenSearchEngine` ...），而非启动期静态绑定单一引擎；
-- `initDatabase` 除建连外还负责：golang-migrate 自动迁移（`AUTO_MIGRATE`，失败仅告警不阻断）、`__pending_env__` 存储 provider 回填、遗留 StorageBackend 迁移、序列同步、Lite 模式 pending 任务复位、`config/builtin_models.yaml` 声明式内置模型 UPSERT；SQLite 时强制 `SetMaxOpenConns(1)` 串行化写入。
+- `ResourceCleaner` : enregistrement de destructeurs, `Cleanup(ctx)` à l’arrêt ;
+- `EngineFactory` : création runtime des moteurs selon `vector_stores` ;
+- `initDatabase` : migrations, backfill, modèles builtin UPSERT ; SQLite `SetMaxOpenConns(1)`.
 
-## cmd/server 启动流程 {#_3-cmd-server-启动流程}
+## Flux de démarrage cmd/server {#_3-flux-de-demarrage-cmd-server}
 
-`cmd/server` 仅三个逻辑文件：`main.go`（入口与 HTTP 生命周期）、`bootstrap.go`（一次性引导钩子）、`listen.go`（端口重试），另有 `signals_unix.go`/`signals_windows.go` 提供平台化 `shutdownSignals`。
+`cmd/server` : `main.go`, `bootstrap.go`, `listen.go`, signaux `signals_unix.go` / `signals_windows.go`.
 
 ```mermaid
 flowchart TD
-    A["main() 启动"] --> B["设置 GIN_MODE (release/debug)"]
-    B --> C["runtime.SilenceGinRouteSpam()<br/>抑制 150+ 条路由注册日志"]
-    C --> D["runtime.LogStartupEnv()<br/>打印环境变量横幅 (先于容器构建, 便于排障)"]
-    D --> E["container.BuildContainer(runtime.GetContainer())<br/>DI 装配: DB 迁移 / Redis / Asynq / Router..."]
-    E --> F["runStartupBootstrap(c) — best-effort, 失败仅告警"]
-    F --> F1["TenantAPIKeyService.BackfillMissingKeyHashes<br/>(迁移 000065 遗留 API Key 哈希回填)"]
-    F --> F2["bootstrapSystemAdmin<br/>WEKNORA_BOOTSTRAP_SYSTEM_ADMIN_EMAIL 指定的用户<br/>在无系统管理员时晋升为超管 (幂等)"]
+    A["main() démarrage"] --> B["Définir GIN_MODE (release/debug)"]
+    B --> C["runtime.SilenceGinRouteSpam()<br/>supprime le spam de 150+ logs d'enregistrement de routes"]
+    C --> D["runtime.LogStartupEnv()<br/>bannière variables d'env (avant conteneur, pour le dépannage)"]
+    D --> E["container.BuildContainer(runtime.GetContainer())<br/>assemblage DI : migrations DB / Redis / Asynq / Router…"]
+    E --> F["runStartupBootstrap(c) — best-effort, échec = avertissement uniquement"]
+    F --> F1["TenantAPIKeyService.BackfillMissingKeyHashes<br/>(migration 000065 : backfill hash des clés API héritées)"]
+    F --> F2["bootstrapSystemAdmin<br/>utilisateur WEKNORA_BOOTSTRAP_SYSTEM_ADMIN_EMAIL<br/>promu super-admin s'il n'y en a pas (idempotent)"]
     F --> G["c.Invoke(cfg, router, resourceCleaner, systemSettingSvc)"]
-    G --> H["listenWithRetry(addr, 10 次, 300ms 指数退避, 上限 3s)"]
-    H --> I["systemSettingSvc.SubscribeRedis(ctx)<br/>订阅 system_settings 变更 (Lite 模式 no-op)"]
+    G --> H["listenWithRetry(addr, 10 tentatives, backoff 300 ms exponentiel, plafond 3 s)"]
+    H --> I["systemSettingSvc.SubscribeRedis(ctx)<br/>abonnement aux changements system_settings (no-op en mode Lite)"]
     I --> J["signal.Notify(shutdownSignals) + server.Serve(listener)"]
-    J --> K{"收到第一个信号?"}
-    K -->|是| L["server.Shutdown 先关 listener 再排空<br/>排空预算 = ShutdownTimeout − 5s"]
-    L --> M{"排空期间收到第二个信号?"}
-    M -->|是| N["server.Close() 强制断开所有连接"]
-    M -->|否| O["resourceCleaner.Cleanup<br/>BrowserSkill 最先执行；到期不跳过后续钩子"]
+    J --> K{"Premier signal reçu ?"}
+    K -->|oui| L["server.Shutdown : fermer listener puis drain<br/>budget drain = ShutdownTimeout − 5 s"]
+    L --> M{"Second signal pendant le drain ?"}
+    M -->|oui| N["server.Close() : couper toutes les connexions"]
+    M -->|non| O["resourceCleaner.Cleanup<br/>BrowserSkill en premier ; échéance ne saute pas les hooks suivants"]
     N --> O
-    O --> P["进程退出"]
+    O --> P["Sortie du processus"]
 ```
 
-要点：
+Points clés :
 
-- **引导失败不阻断启动**：`bootstrap.go` 对失败记录 `logger.Warnf`。系统管理员引导仅在部署尚无系统管理员时生效，重启不会恢复已撤销的权限；
-- **两段式优雅退出**：第一个 SIGTERM/SIGINT 调用 `server.Shutdown`（它会先关闭 listener，端口随即可被新进程绑定），在 `ShutdownTimeout` 里为资源清理预留 5s，其余时间排空存量连接。不要在 `Shutdown` 之前手动 `listener.Close()`：`Serve` 会返回 `use of closed network connection` 而不是 `ErrServerClosed`，`logger.Fatalf` 会在清理前把进程杀掉。第二个信号强制 `Close`；
-- **端口占用重试**：`listenWithRetry` 以 300ms 起步指数退避重试 10 次（滚动重启场景旧进程尚未释放端口时避免直接失败）。
+- **Échec du bootstrap ne bloque pas le démarrage** : `logger.Warnf` ; promotion admin système uniquement s’il n’y en a pas encore ;
+- **Arrêt gracieux en deux temps** : premier SIGTERM/SIGINT → `server.Shutdown` ; second signal → `Close` forcé ;
+- **Retry port occupé** : `listenWithRetry`, 10 tentatives, backoff exponentiel à partir de 300 ms.
 
-## 路由组织与 RBAC 装配（internal/router） {#_4-路由组织与-rbac-装配-internal-router}
+## Organisation des routes et RBAC (internal/router) {#_4-organisation-des-routes-et-rbac-internal-router}
 
-### NewRouter 的装配顺序 {#_4-1-newrouter-的装配顺序}
+### Ordre d’assemblage NewRouter {#_4-1-ordre-dassemblage-newrouter}
 
-`internal/router/router.go` 的 `NewRouter(params RouterParams)`（`RouterParams` 为 `dig.In` 结构体）按以下顺序装配，**顺序即安全语义**：
+`NewRouter(params RouterParams)` dans `internal/router/router.go` — **l’ordre est sémantique pour la sécurité** :
 
-1. `gin.New()` + `MultipartFormCleanup`（请求结束后删除 multipart 解析落盘的临时文件）+ `SetTrustedProxies`（`WEKNORA_TRUSTED_PROXIES`，默认仅信任回环与私网段，防止伪造 `X-Forwarded-For` 绕过按 IP 限流）；
-2. 全局中间件：`cors` → `RequestID` → `Language` → `Logger` → `Recovery` → `ErrorHandler`；
-3. 免认证端点：`GET /health`；非 release 模式挂载 `/swagger/*any`；
-4. Embed 页面 `frame-ancestors` CSP 中间件；Lite 版内嵌前端静态资源（`handler.Edition == "lite"`）；
-5. **认证之前**注册的公开路由：IM 平台回调（`/api/v1/im`，各平台自带签名验证）、Web Embed 公开路由（`/api/v1/embed/:channel_id`，`middleware.EmbedAuth` publish-token 鉴权 + Redis 限流）、内置 MCP Server（`/mcp/:endpoint_id`，`middleware.MCPEndpointAuth` 按端点 Bearer Token 鉴权）、短时效能力 URL（resource grants）、沙箱终端/桌面 WebSocket（浏览器无法在握手时带认证头，改用经认证 POST 换取的短时 ticket）、本机浏览器扩展连接（`/api/v1/local-browser/*`）；
-6. `middleware.Auth(...)` 全局认证；随后是需认证的文件代理路由、免认证但签名校验的 presigned 文件路由、Langfuse trace 中间件、`AuditServiceProvider`；
-7. `v1 := r.Group("/api/v1")`：先 `v1.Use(rbacGuards.apiKeyAuthorizer.Middleware())`（API Key 网关，JWT 会话直接放行），再依次调用 30 余个 `RegisterXxxRoutes(v1, handler, rbacGuards)`；
-8. 收尾自检：`rbacGuards.assertAPIKeyPoliciesMatchRoutes(r)` —— 若声明的 API Key 策略指向不存在的路由模板（路径漂移/拼写错误），**启动即 panic**，避免上线一条永远 403 的死策略。
+1. `gin.New()` + `MultipartFormCleanup` + `SetTrustedProxies` (`WEKNORA_TRUSTED_PROXIES`) ;
+2. Middleware global : cors → RequestID → Language → Logger → Recovery → ErrorHandler ;
+3. Endpoints sans auth : `GET /health` ; `/swagger` hors release ;
+4. CSP Embed ; statiques Lite si `handler.Edition == "lite"` ;
+5. **Avant auth** : callbacks IM, routes Embed publiques, MCP Server, grants URL, WebSocket sandbox/ticket, extension navigateur local ;
+6. `middleware.Auth` ; proxy fichiers authentifié ; presigned ; Langfuse ; `AuditServiceProvider` ;
+7. `v1 := r.Group("/api/v1")` : `apiKeyAuthorizer` puis ~30 `RegisterXxxRoutes` ;
+8. Self-check : `assertAPIKeyPoliciesMatchRoutes` — panic si politique API Key pointe vers une route inexistante.
 
-### 路由分组一览 {#_4-2-路由分组一览}
+### Aperçu des groupes de routes {#_4-2-apercu-des-groupes-de-routes}
 
-| 分组前缀 | Register 函数 | API Key 策略示例 |
+| Préfixe | Register | Exemple politique API Key |
 | --- | --- | --- |
-| `/auth`、`/me` | RegisterAuthRoutes / RegisterMyInvitationRoutes | 多数免 Key |
-| `/tenants`、`/tenants/:id/*`（成员/邀请/审计） | RegisterTenantRoutes | `manage_members` / `manage_spaces`；`/:id` 组挂 `PathTenantMatch()` |
-| `/knowledge-bases`、`/knowledge-bases/:id/knowledge|faq|tags|shares` | RegisterKnowledgeBaseRoutes 等 | `retrieve` / `ingest`（fallback `full_access`） |
+| `/auth`、`/me` | RegisterAuthRoutes / RegisterMyInvitationRoutes | souvent sans clé |
+| `/tenants`、`/tenants/:id/*` | RegisterTenantRoutes | `manage_members` / `manage_spaces` ; `PathTenantMatch()` |
+| `/knowledge-bases`… | RegisterKnowledgeBaseRoutes, etc. | `retrieve` / `ingest` |
 | `/knowledge`、`/chunks` | RegisterKnowledgeRoutes / RegisterChunkRoutes | `ingest` |
-| `/sessions`、`/knowledge-chat`、`/agent-chat`、`/knowledge-search`、`/messages` | RegisterSessionRoutes / RegisterChatRoutes 等 | `chat` / `retrieve` |
+| sessions, chat, search, messages | RegisterSessionRoutes / RegisterChatRoutes, etc. | `chat` / `retrieve` |
 | `/models`、`/evaluation` | RegisterModelRoutes / RegisterEvaluationRoutes | `manage_models` / `run_evaluations` |
-| `/sandbox-configs`、`/me/env-vars`、`/me/browser` | RegisterSandboxConfigRoutes / RegisterMyEnvVarRoutes 等 | `full_access`；`/me/*` 仅 JWT 用户本人 |
-| `/system`、`/system/admin` | RegisterSystemRoutes / RegisterSystemAdminRoutes | admin 组强制 `g.SystemAdmin()` |
-| `/mcp-services`、`/agent`、`/web-search`、`/web-search-providers` | 对应 Register 函数 | `manage_mcp_services` / `manage_web_search` |
-| `/vector-stores`、`/storage-backends` | RegisterVectorStoreRoutes / RegisterStorageBackendRoutes | `manage_vector_stores` / `manage_storage_backends` |
-| `/agents`、`/agents/:id/shares|embed-channels|im-channels` | RegisterCustomAgentRoutes 等 | `full_access` / `manage_channels` |
-| `/organizations`、`/user/favorites`、`/skills` | 对应 Register 函数 | `manage_spaces` 等 |
-| `/im-channels`、`/embed-channels`、`/mcp-endpoints`、`/wechat` | RegisterIMChannelRoutes / RegisterEmbedChannelRoutes / RegisterMCPEndpointRoutes | `manage_channels` |
-| `/datasource`、`/knowledgebase/:kb_id/wiki`、`/chunker/preview` | RegisterDataSourceRoutes / RegisterWikiPageRoutes / RegisterChunkerDebugRoutes | `manage_datasources` / `ingest` |
+| sandbox, `/me/*` | RegisterSandboxConfigRoutes, etc. | `full_access` ; `/me/*` JWT utilisateur |
+| `/system`、`/system/admin` | RegisterSystemRoutes / RegisterSystemAdminRoutes | admin : `g.SystemAdmin()` |
+| MCP, agent, web-search | divers | `manage_mcp_services` / `manage_web_search` |
+| vector-stores, storage-backends | RegisterVectorStoreRoutes, etc. | `manage_vector_stores` / `manage_storage_backends` |
+| agents, organizations, skills | divers | `full_access` / `manage_spaces`, etc. |
+| canaux IM/embed/MCP/wechat | divers | `manage_channels` |
+| datasource, wiki, chunker preview | divers | `manage_datasources` / `ingest` |
 
-### rbacGuards：集中式权限矩阵 {#_4-3-rbacguards-集中式权限矩阵}
+### rbacGuards : matrice centralisée {#_4-3-rbacguards-matrice-centralisee}
 
-`internal/router/rbac.go` 定义 `rbacGuards`，由 `NewRouter` 构造一次后传入每个 Register 函数。守卫分三类，路由行内联使用，一眼可见权限要求：
+`internal/router/rbac.go` — trois familles de gardes :
 
 ```go
 kb.PUT("/:id", g.OwnedKBOrAdmin(), handler.UpdateKnowledgeBase)
 ```
 
-- **角色守卫**（问"调用者在租户内是什么角色"）：`Viewer()` / `Contributor()` / `Admin()` / `Owner()` / `AdminOrSystemAdmin()` / `SystemAdmin()`，底层调 `middleware.RequireRole`；
-- **所有权守卫**（问"是否为该资源创建者或 Admin+"）：`OwnedKBOrAdmin()`、`OwnedAgentOrAdmin()`、`OwnedKnowledgeKBOrAdmin()`、`OwnedChunkKBOrAdmin()`、`OwnedWikiKBOrAdmin()` 等——子资源（chunk/wiki/FAQ/tag）通过 `KBCreatorLookupFromKnowledgeID` 等闭包沿 URL 参数回溯到所属 KB 的 `creator_id`，与父资源共用同一条规则；
-- **知识库访问守卫**（三层解析：自有 KB / 跨组织共享 KB / 共享 Agent 可见 KB）：`KBAccessRead|Write(param)` 及 `...FromKnowledgeIDParam` / `...FromChunkIDParam` 变体，底层为 `middleware.RequireKBAccess`；
-- **租户边界守卫**：`CrossTenant()`（平台级操作需 `EnableCrossTenantAccess` + `CanAccessAllTenants`）、`PathTenantMatch()`（`/tenants/:id` 必须与上下文租户一致）。
+- **Gardes de rôle** : `Viewer()` / `Contributor()` / `Admin()` / `Owner()` / `SystemAdmin()`, etc. ;
+- **Gardes de propriété** : `OwnedKBOrAdmin()`, `OwnedAgentOrAdmin()`, lookups via URL vers `creator_id` ;
+- **Accès KB** : `KBAccessRead|Write` et variantes From*ID ;
+- **Frontière tenant** : `CrossTenant()`, `PathTenantMatch()`.
 
-源码注释给出了选择守卫的决策树（有 creator 的资源用 OwnedXxxOrAdmin；租户级基础设施用 Admin；创建入口用 Contributor），并明确所有守卫尊重 `cfg.Tenant.EnableRBAC` 开关——关闭时仅记录"本应拒绝"日志后放行（灰度迁移期行为）。
+Tous respectent `cfg.Tenant.EnableRBAC` (mode grâce avec log si désactivé).
 
-**API Key 策略**与角色守卫正交：`apiKeyGroup(grp, policy)` 包装 gin RouterGroup，在注册路由的同时把 `(method, fullPath) → APIKeyRoutePolicy` 写入 `APIKeyRouteAuthorizer` 策略表；策略构造器有 `apiKeyFullAccess()`、`apiKeyPlatform(...)` 及 17 种能力包装器（`apiKeyRetrieve` / `apiKeyChat` / `apiKeyIngest` / `apiKeyManageModels` ...）。未注册策略的路由对 API Key 主体默认 **fail-closed 拒绝**。
+**Politiques API Key** orthogonales : `apiKeyGroup`, 17 capacités ; routes non déclarées → **refus par défaut** pour clé API.
 
-## 中间件清单（internal/middleware） {#_5-中间件清单-internal-middleware}
+## Liste des middleware (internal/middleware) {#_5-liste-des-middleware-internal-middleware}
 
-按请求经过的先后顺序：
+Ordre de passage :
 
-| 中间件 | 文件 | 职责与关键逻辑 |
+| Middleware | Fichier | Rôle |
 | --- | --- | --- |
-| `MultipartFormCleanup()` | multipart_cleanup.go | 请求结束（含失败与 panic 恢复）后删除 multipart 表单写入系统临时目录的文件，避免容器 `/tmp` 持续增长 |
-| `cors.New`（gin-contrib） | router.go | 允许 `Authorization`、`X-API-Key`、`X-Tenant-ID`、`X-Embed-Session`、`X-WeKnora-Desktop-Token` 及 MCP Streamable HTTP 所需的 `MCP-Protocol-Version`/`Mcp-Session-Id` 等头；MaxAge 12h |
-| `RequestID()` | logger.go | 复用请求头 `X-Request-ID` 或生成 UUID，写入 gin context 与 `Request.Context()`，贯穿日志/追踪 |
-| `Language()` | language.go | 决定文档处理语言：`WEKNORA_LANGUAGE` 环境变量 > `Accept-Language` 首个标签 > 默认 `zh-CN` |
-| `Logger()` | logger.go | 请求/响应全量日志；正则脱敏密码/令牌字段、截断 base64 图片 data URL、SSE 响应标记跳过、单条上限 10KB |
-| `Recovery()` | recovery.go | panic 捕获 + 堆栈记录 + 500 响应 |
-| `ErrorHandler()` | error_handler.go | 读取 `c.Errors` 末位错误：`*errors.AppError` 按其 `HTTPCode` 返回 `{success:false, error:{code,message,details}}` 统一信封；其余 500 |
-| `EmbedAuth(...)` | embed_auth.go | 仅挂在 `/api/v1/embed/:channel_id` 公开组：校验 publish token，注入 Embed 渠道上下文；Redis 三级限流（每 IP/分钟、渠道全局/分钟、渠道/日） |
-| `MCPEndpointAuth(...)` | mcp_endpoint_auth.go | 仅挂在 `/mcp/:endpoint_id`：校验端点 Bearer Token，注入端点所属空间、机器主体与由工具白名单和知识库范围派生的 API Key 式权限范围 |
-| `AttachAuthenticatedUser(...)` | ws_auth.go | 沙箱终端等 WebSocket 路由：用短时 ticket 解析出的用户建立与 `Auth` 相同的认证会话，成员与角色仍从数据库解析 |
-| `PublicAuthRateLimit()` | auth_public_ratelimit.go | 免认证的邀请查询/受邀注册路由：**进程内存**滑动窗口，60s/30 次/IP，后台每 2 分钟清理过期桶，超限返回 429 |
-| `Auth(...)` | auth.go | 核心认证，三态：① JWT（`Authorization: Bearer`，`userService.ValidateToken`）；② API Key（`X-API-Key`，`AuthenticateAPIKey`）；③ `noAuthAPI` 白名单。支持 `X-Tenant-ID` 切换租户（`IsTenantAccessible` 三层校验：自有租户/跨租户超管/active membership），`resolveTenantRole` 解析租户内角色。写入 context：`TenantIDContextKey`、`TenantInfoContextKey`、`UserContextKey`、`UserIDContextKey`、`TenantRoleContextKey`、`SystemAdminContextKey`、`PrincipalContextKey` 等 |
-| `langfuse.GinMiddleware()` | tracing/langfuse | LLM 可观测 trace；未配置 LANGFUSE_* 时为 no-op |
-| `AuditServiceProvider()` | audit_provider.go | 把 `AuditLogService` 注入 gin context，供 RBAC 拒绝路径记审计；服务为 nil 时优雅降级 |
-| `APIKeyRouteAuthorizer.Middleware()` | api_key_gate.go | API Key 主体的路由级网关：查 `(method, fullPath)` 策略表，校验 `PlatformOnly` / `RequireFullAccess` / `Capabilities`；未声明路由默认拒绝；JWT 用户直接透传 |
-| `RequireRole(min)` 等 | rbac.go | 租户内角色下限校验（owner=40 > admin=30 > contributor=20 > viewer=10）；`RequireOwnershipOrRole(min, creatorLookup)` 允许资源创建者越过角色下限；API Key 主体短路（其授权归 APIKeyGate）；跨租户超管临时获得 Admin；拒绝时调用 `AuditService.LogDenied` |
-| `RequireCrossTenantAccess()` / `RequirePathTenantMatch()` | access.go | 平台级操作网关与 URL 租户一致性校验 |
-| `RequireKBAccess(resolver, perm, ...)` | kb_access.go | 适配 `internal/application/access` 的 KB 三层访问解析（自有 → 组织共享 → 共享 Agent 只读），并**改写** `Request.Context()` 中的 `TenantIDContextKey` 为 KB 源租户，使下游检索自动落到正确租户的数据 |
-| `asynqdl.Middleware()` | asynqdl/ | 非 HTTP：Asynq 任务重试预算耗尽时写入 `task_dead_letters` 表，可挂 `OnDeadLetter` 回调联动业务状态（如标记知识解析失败） |
+| `MultipartFormCleanup()` | multipart_cleanup.go | Supprime fichiers temp multipart après requête |
+| `cors.New` | router.go | En-têtes autorisés incl. MCP Streamable HTTP |
+| `RequestID()` | logger.go | UUID ou réutilisation `X-Request-ID` |
+| `Language()` | language.go | Langue traitement doc : `WEKNORA_LANGUAGE` > `Accept-Language` > défaut `zh-CN` |
+| `Logger()` | logger.go | Logs requête/réponse, masquage secrets, limite 10 KB |
+| `Recovery()` | recovery.go | Panic → 500 |
+| `ErrorHandler()` | error_handler.go | Enveloppe `{success:false, error:{code,message,details}}` pour `*errors.AppError` |
+| `EmbedAuth` / `MCPEndpointAuth` | embed_auth.go, mcp_endpoint_auth.go | Auth canaux publics |
+| `AttachAuthenticatedUser` | ws_auth.go | Ticket court pour WebSocket |
+| `PublicAuthRateLimit()` | auth_public_ratelimit.go | 30 req/60 s/IP en mémoire |
+| `Auth(...)` | auth.go | JWT, API Key, whitelist ; context tenant/rôle |
+| `langfuse.GinMiddleware()` | tracing | Trace LLM ou no-op |
+| `AuditServiceProvider()` | audit_provider.go | Injection audit |
+| `APIKeyRouteAuthorizer` | api_key_gate.go | Gateway par route pour clés API |
+| `RequireRole`, KB access, etc. | rbac.go, kb_access.go | RBAC ; réécriture `TenantIDContextKey` pour KB partagée |
+| `asynqdl.Middleware()` | asynqdl/ | Dead letter Asynq |
 
-## 领域模型总览（internal/types） {#_6-领域模型总览-internal-types}
+## Modèle de domaine (internal/types) {#_6-modele-de-domaine-internal-types}
 
-`internal/types/` 含约 26 个 GORM 持久化实体。核心关系：
+~26 entités GORM persistées. Relations principales :
 
 ```mermaid
 erDiagram
-    TENANT ||--o{ USER : "主租户 (users.tenant_id)"
-    TENANT ||--o{ TENANT_MEMBER : "成员"
-    USER ||--o{ TENANT_MEMBER : "加入多个空间"
-    TENANT ||--o{ TENANT_API_KEY : "API Key (tenant_id 为空则平台级)"
-    TENANT ||--o{ KNOWLEDGE_BASE : "拥有"
-    TENANT ||--o{ MODEL : "模型配置"
-    TENANT ||--o{ CUSTOM_AGENT : "自定义 Agent"
-    TENANT ||--o{ VECTOR_STORE : "向量库实例"
-    TENANT ||--o{ STORAGE_BACKEND : "存储后端"
-    TENANT ||--o{ DATA_SOURCE : "外部数据源"
-    TENANT ||--o{ SESSION : "会话"
-    TENANT ||--o{ AUDIT_LOG : "审计 (tenant_id=0 为系统级)"
-    KNOWLEDGE_BASE ||--o{ KNOWLEDGE : "文档 (knowledge.knowledge_base_id)"
-    KNOWLEDGE_BASE ||--o{ KNOWLEDGE_TAG : "标签"
-    KNOWLEDGE_BASE ||--o| VECTOR_STORE : "创建时绑定 vector_store_id"
-    KNOWLEDGE_BASE ||--o| STORAGE_BACKEND : "创建时绑定 storage_backend_id"
-    KNOWLEDGE_BASE ||--o{ WIKI_PAGE : "Wiki 页面"
-    KNOWLEDGE_BASE ||--o{ WIKI_FOLDER : "Wiki 目录树"
-    KNOWLEDGE ||--o{ CHUNK : "分块 (chunk.knowledge_id)"
-    DATA_SOURCE ||--o{ SYNC_LOG : "同步记录"
-    SESSION ||--o{ MESSAGE : "消息 (message.session_id)"
+    TENANT ||--o{ USER : "tenant principal (users.tenant_id)"
+    TENANT ||--o{ TENANT_MEMBER : "membres"
+    USER ||--o{ TENANT_MEMBER : "rejoint plusieurs espaces"
+    TENANT ||--o{ TENANT_API_KEY : "clé API (tenant_id vide = niveau plateforme)"
+    TENANT ||--o{ KNOWLEDGE_BASE : "possède"
+    TENANT ||--o{ MODEL : "config modèles"
+    TENANT ||--o{ CUSTOM_AGENT : "Agent personnalisé"
+    TENANT ||--o{ VECTOR_STORE : "instance vectorielle"
+    TENANT ||--o{ STORAGE_BACKEND : "backend stockage"
+    TENANT ||--o{ DATA_SOURCE : "source de données externe"
+    TENANT ||--o{ SESSION : "session"
+    TENANT ||--o{ AUDIT_LOG : "audit (tenant_id=0 = niveau système)"
+    KNOWLEDGE_BASE ||--o{ KNOWLEDGE : "document (knowledge.knowledge_base_id)"
+    KNOWLEDGE_BASE ||--o{ KNOWLEDGE_TAG : "étiquettes"
+    KNOWLEDGE_BASE ||--o| VECTOR_STORE : "lié à la création vector_store_id"
+    KNOWLEDGE_BASE ||--o| STORAGE_BACKEND : "lié à la création storage_backend_id"
+    KNOWLEDGE_BASE ||--o{ WIKI_PAGE : "page Wiki"
+    KNOWLEDGE_BASE ||--o{ WIKI_FOLDER : "arborescence Wiki"
+    KNOWLEDGE ||--o{ CHUNK : "segment (chunk.knowledge_id)"
+    DATA_SOURCE ||--o{ SYNC_LOG : "journal de sync"
+    SESSION ||--o{ MESSAGE : "message (message.session_id)"
     MESSAGE }o--|| CUSTOM_AGENT : "agent_id"
     MESSAGE }o--|| MODEL : "model_id"
 
@@ -252,7 +248,7 @@ erDiagram
         string name
         int64 storage_quota
         json retriever_engines
-        json credentials_config "AES-256 加密"
+        json credentials_config "AES-256 chiffré"
     }
     USER {
         string id PK "UUID"
@@ -272,99 +268,95 @@ erDiagram
     KNOWLEDGE_BASE {
         string id PK "UUID"
         uint64 tenant_id FK
-        string creator_id FK "RBAC 所有权判定"
+        string creator_id FK "RBAC propriété"
         string type "document/faq/wiki"
         json chunking_config
-        json indexing_strategy "vector/keyword/wiki/graph 四管道开关"
+        json indexing_strategy "vector/keyword/wiki/graph — 4 pipelines"
         string embedding_model_id FK
     }
     KNOWLEDGE {
         string id PK "UUID"
         string knowledge_base_id FK
-        string parse_status "pending→processing→finalizing→completed 等 7 态"
-        string channel "web/api/wechat/feishu... 14 种"
+        string parse_status "pending→processing→finalizing→completed — 7 états"
+        string channel "web/api/wechat/feishu… — 14 valeurs"
         int pending_subtasks_count
     }
     CHUNK {
         string id PK "UUID"
         string knowledge_id FK
-        string chunk_type "text/parent_text/faq/entity/wiki_page... 12 种"
-        string parent_chunk_id "父子分块"
+        string chunk_type "text/parent_text/faq/entity/wiki_page… — 12 types"
+        string parent_chunk_id "segment parent/enfant"
         string content_hash
     }
     SESSION {
         string id PK "UUID"
         uint64 tenant_id FK
-        string user_id "用户/API 主体/embed 访客"
+        string user_id "utilisateur / sujet API / visiteur embed"
         json last_request_state
     }
     MESSAGE {
         string id PK "UUID"
         string session_id FK
         string role "user/assistant/system"
-        json knowledge_references "检索引用"
-        json agent_steps "Agent 推理轨迹"
-        text rendered_content "RAG 增强后的完整提示"
+        json knowledge_references "citations retrieval"
+        json agent_steps "trace raisonnement Agent"
+        text rendered_content "prompt complet enrichi RAG"
     }
     MODEL {
         string id PK
         uint64 tenant_id FK
         string type "Embedding/Rerank/KnowledgeQA/VLLM/ASR"
-        string source "local / remote / 厂商标识"
-        json parameters "APIKey AES 加密"
+        string source "local / remote / identifiant fournisseur"
+        json parameters "APIKey chiffrée AES"
     }
 ```
 
-设计要点：
+Points de conception :
 
-- **多租户隔离**：几乎所有实体带 `TenantID`；`tenant_id=0` 表示系统级（如系统审计）；
-- **敏感字段静态加密**：`Model.Parameters`、`VectorStore.ConnectionConfig`、`StorageBackend.Config`、`DataSource.Config`、`TenantAPIKey.APIKey` 等在 GORM `Value()` 时以 `SYSTEM_AES_KEY`（32 字节）做 AES-256-GCM 加密、`Scan()` 时宽松解密（解密失败视为未配置而非报错）；
-- **创建时绑定不可变**：KB 的 `VectorStoreID`（gorm tag `<-:create`）与 `StorageBackendID` 一经创建不可修改，保证索引/文件一致性；
-- **异步状态机**：`Knowledge.ParseStatus` 七态 + `PendingSubtasksCount` 追踪 finalizing 阶段并行富化子任务（summary/question/graph）；
-- **审计 append-only**：`AuditLog` 无更新/软删字段，覆盖 50+ 种 `AuditAction`；
-- 非实体的重要类型：`SearchResult` 检索结果、`Pagination`、`Task`/队列拓扑（`task.go`）、各类 JSONB 配置结构（`ChunkingConfig`、`IndexingStrategy`、`CustomAgentConfig` 等）、context key 与取值助手（`context_helpers.go`）。
+- **Isolation multi-tenant** : `TenantID` quasi partout ; `tenant_id=0` = système ;
+- **Chiffrement statique** : AES-256-GCM via `SYSTEM_AES_KEY` sur champs sensibles ;
+- **Bindings immuables à la création** : `VectorStoreID`, `StorageBackendID` ;
+- **Machine à états async** : `ParseStatus` sept états + `PendingSubtasksCount` ;
+- **Audit append-only** : 50+ `AuditAction` ;
+- Types non entité : `SearchResult`, `Task`, configs JSONB, helpers context.
 
-## 错误处理规范（internal/errors） {#_7-错误处理规范-internal-errors}
-
-统一错误载体是 `AppError`：
+## Gestion des erreurs (internal/errors) {#_7-gestion-des-erreurs-internal-errors}
 
 ```go
 // internal/errors/errors.go
 type AppError struct {
-    Code     ErrorCode // 业务错误码
+    Code     ErrorCode // code métier
     Message  string
     Details  any
-    HTTPCode int       // HTTP 状态映射
+    HTTPCode int       // mapping statut HTTP
 }
 ```
 
-- **错误码分段**：1000–1999 通用 HTTP 语义（`ErrBadRequest=1000`、`ErrUnauthorized=1001`、`ErrForbidden=1002`、`ErrNotFound=1003`、`ErrTooManyRequests=1006`、`ErrServiceUnavailable=1008`）；2000–2099 租户；2100–2199 Agent；2200–2299 向量库；
-- **构造函数**：`NewBadRequestError` / `NewUnauthorizedError` / `NewForbiddenError` / `NewNotFoundError` / `NewValidationError` / `NewConflictError` / `NewTooManyRequestsError` / `NewServiceUnavailableError` 等；
-- **配合方式**：Handler/中间件用 `c.Error(appErr)` 挂错，`ErrorHandler` 中间件末端统一渲染 `{success:false, error:{code,message,details}}` 信封，前端据 `error.code` 做 i18n；非 `AppError` 一律 500；
-- `session.go` 提供会话域哨兵错误（`ErrSessionNotFound` 等）；`parse_error_codes.go` 定义文档解析阶段的字符串错误码（`DOCREADER_TIMEOUT`、`EMBEDDING_RATE_LIMIT`、`VECTORSTORE_WRITE_FAILED`、`TASK_TIMEOUT` 等），落在 `Knowledge.ErrorMessage` 供前端翻译展示。
+- **Codes segmentés** : 1000–1999 HTTP sémantique ; 2000+ tenant ; 2100+ Agent ; 2200+ vector store ;
+- Constructeurs `NewBadRequestError`, etc. ;
+- Handler : `c.Error(appErr)` → `ErrorHandler` → i18n frontend via `error.code` ;
+- Codes parsing document dans `parse_error_codes.go` → `Knowledge.ErrorMessage`.
 
-## 日志体系（internal/logger） {#_8-日志体系-internal-logger}
+## Journalisation (internal/logger) {#_8-journalisation-internal-logger}
 
-- 基于 **logrus**，私有 `appLogger` 单例 + 自定义 Formatter（彩色终端输出；`WEKNORA_LOG_FORMAT` 可用 `%d` `%level` `%traceId` `%msg` 等占位符自定义模板；`LOG_PATH` 设置后经 lumberjack 轮转写文件并剥离 ANSI 颜色码）；
-- **request_id 贯穿**：`middleware.RequestID` 写入 context → `logger.GetLogger(ctx)` 自动提取并注入 `request_id` 字段；常用出口为 `logger.Infof/Warnf/Errorf(ctx, format, ...)` 与 `ErrorWithFields`；
-- **LLM 调试日志**（`llm_logger.go`）：`LLM_DEBUG_LOG=true` 时启用，按 request_id 分文件记录每次 LLM 调用（`LLMCallRecord`：CallType Chat/Embedding/Rerank/VLM、模型、耗时、完整消息与工具调用、错误），7 天自动清理，用于排查提示词和上下文问题。
+- **logrus**, formatter personnalisé, rotation `LOG_PATH` ;
+- **request_id** via context ;
+- **LLM debug** (`llm_logger.go`) si `LLM_DEBUG_LOG=true`, rétention 7 jours.
 
-## 关键工具库（internal/common、internal/utils） {#_9-关键工具库-internal-common、internal-utils}
+## Utilitaires (internal/common, internal/utils) {#_9-utilitaires-internal-common-internal-utils}
 
-| 位置 | 工具 | 用途 |
+| Emplacement | Outil | Usage |
 | --- | --- | --- |
-| `common/tools.go` | `Deduplicate` / `DeduplicateWithScore`、`ParseLLMJsonResponse`、`CleanInvalidUTF8`、`PipelineLog` 系列 | 泛型去重（检索合并保最高分）、解析 LLM 返回的 ```json 代码块、清洗非法 UTF-8、RAG 管道阶段日志 |
-| `common/db_retry.go` | `WithDeadlockRetry(ctx, fn)` | 数据库死锁检测重试（最多 3 次，50→100→200ms 退避） |
-| `common/redis_tls.go` | `RedisTLSConfig()` | 按 `REDIS_USE_TLS` 等环境变量生成 Redis TLS 配置 |
-| `utils/crypto.go` | `EncryptAESGCM` / `DecryptAESGCM`（`enc:v1:` 前缀，幂等） | 上文所有敏感字段静态加密的底层实现 |
-| `utils/security.go` | `SanitizeHTML`、`ValidateFilePath`、`SanitizeForLog` | XSS 清洗、目录穿越防护、日志脱敏 |
-| `utils/inject.go` | `ValidateSQL`（基于 `pganalyze/pg_query_go`） | Agent 数据分析生成 SQL 的白名单表校验与注入模式检测 |
-| `utils/presign.go` | `SignFileURL` / `VerifyFileURLSig`、`SystemHMACKey` | HMAC-SHA256 预签名文件 URL（默认 2h，IM 内嵌图片使用）；签名密钥取 `SYSTEM_SIGNING_KEY`，未设置时回退 `SYSTEM_AES_KEY` |
-| `utils/oidc_state.go` | `GenerateState` / `ValidateState` | OIDC 授权 state 的 HMAC 签名与 10 分钟 TTL（防 CSRF） |
-| `utils/log_sanitize.go` | `CompactImageDataURLForLog` | 截断超长图片 data URL，防日志爆炸 |
-| `utils/storage_error.go` | `SanitizeStorageConnectivityError` | 把存储连接错误转为用户友好提示并隐藏内部主机名 |
-| 其余 | `taskid.go` / `fileutil.go` / `filesize.go` / `httputil.go` / `json.go` | 任务 ID、文件与大小格式化、HTTP 下载、JSON Schema 生成等 |
+| `common/tools.go` | Deduplicate, ParseLLMJsonResponse, etc. | RAG, UTF-8 |
+| `common/db_retry.go` | `WithDeadlockRetry` | Deadlock DB |
+| `common/redis_tls.go` | `RedisTLSConfig()` | TLS Redis |
+| `utils/crypto.go` | AES-GCM `enc:v1:` | Secrets |
+| `utils/security.go` | SanitizeHTML, ValidateFilePath | XSS, path traversal |
+| `utils/inject.go` | `ValidateSQL` | Agent SQL |
+| `utils/presign.go` | HMAC URLs fichiers | 2 h défaut |
+| `utils/oidc_state.go` | State OIDC 10 min | CSRF |
+| autres | taskid, fileutil, httputil, json | divers |
 
 ---
 
-至此，后端从进程启动、依赖装配、请求进入到数据落库的全链路已经闭环。后续章节将分别展开 RAG 检索流水线（`chat_pipeline`）、Agent 引擎（`internal/agent`）与文档解析服务（`docreader`）的内部实现。
+La chaîne complète du démarrage à la persistance est bouclée. Les chapitres suivants détaillent le pipeline RAG (`chat_pipeline`), le moteur Agent (`internal/agent`) et docreader.

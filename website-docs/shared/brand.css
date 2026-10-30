@@ -5,8 +5,8 @@
   --wk-ink-deep: #0a1526;
   --wk-ink-soft: #40536f;
   --wk-ink-mute: #6d7d94;
-  --wk-gold: #b8863b;
-  --wk-gold-light: #d9a94f;
+  --wk-gold: #0051ff;
+  --wk-gold-light: #00c3ff;
   --wk-paper: #fdfcfa;
   --wk-paper-2: #f5f3ee;
   --wk-paper-3: #edeae2;
@@ -15,8 +15,8 @@
   --wk-surface: #fff;
   --wk-header: rgba(253, 252, 250, .96);
   --wk-button-hover: #24395a;
-  --wk-accent-text: #886025;
-  --wk-accent-border: #dfd1b9;
+  --wk-accent-text: #0051ff;
+  --wk-accent-border: rgba(0, 81, 255, 0.28);
   --wk-logo-ground: #fff;
   --wk-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "HarmonyOS Sans SC", "Source Han Sans SC", "Noto Sans CJK SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --wk-font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "STSong", serif;
@@ -27,8 +27,8 @@ html.dark {
   --wk-ink: #e6ecf5;
   --wk-ink-soft: #a9b6c9;
   --wk-ink-mute: #9aaac0;
-  --wk-gold: #d9a94f;
-  --wk-gold-light: #e8c176;
+  --wk-gold: #00c3ff;
+  --wk-gold-light: #00ffff;
   --wk-paper: #0b1220;
   --wk-paper-2: #101a2b;
   --wk-paper-3: #16233a;
@@ -37,8 +37,8 @@ html.dark {
   --wk-surface: #101a2b;
   --wk-header: rgba(11, 18, 32, .96);
   --wk-button-hover: #c3d0e2;
-  --wk-accent-text: #e8c176;
-  --wk-accent-border: #685638;
+  --wk-accent-text: #00c3ff;
+  --wk-accent-border: rgba(0, 195, 255, 0.35);
 }
 
 /* Original README artwork, copied byte-for-byte. Only blank outer canvas is
@@ -49,4 +49,37 @@ html.dark {
 html.dark .wk-logo { mix-blend-mode: screen; }
 html.dark .wk-logo img { filter: invert(1) hue-rotate(180deg); }
 .wk-logo img { position: absolute; display: block; left: 0; top: -87.394958%; width: 100%; max-width: none; height: auto; }
-@media (max-width: 480px) { .wk-brand .wk-logo { width: 148px; } }
+.wk-brand-lockup { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; min-width: 0; max-width: min(220px, 46vw); }
+.wk-brand-name {
+  font-family: var(--font-montserrat, var(--wk-font-sans));
+  font-size: clamp(16px, 2.1vw, 20px);
+  font-weight: 700;
+  letter-spacing: -.03em;
+  background: linear-gradient(100deg, #0051ff, #00c3ff 55%, #00ffff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.wk-brand-tagline {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--wk-ink-soft);
+  white-space: nowrap;
+}
+.wk-logo-gis-mark { display: inline-flex; align-items: center; flex-shrink: 0; line-height: 0; overflow: visible; }
+.wk-logo-gis-mark .wk-logo-gis-img, .wk-logo-gis-img {
+  position: static;
+  top: auto;
+  left: auto;
+  width: auto;
+  height: clamp(36px, 4.5vw, 44px);
+  max-width: min(240px, 70vw);
+  object-fit: contain;
+  object-position: left center;
+  filter: none;
+}
+html.dark .wk-logo-gis-mark .wk-logo-gis-img { filter: none; }
+.wk-logo--product { width: 164px; }
+@media (max-width: 480px) { .wk-brand .wk-logo--product { width: 148px; } }

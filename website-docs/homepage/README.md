@@ -1,6 +1,8 @@
-# WeKnora homepage source
+# Homepage unifiée (Global-IT-SS + WeKnora)
 
-The Next.js homepage is one part of the unified site. Run `npm run setup`, `npm run build`, and `npm run preview` from the parent directory to include both the homepage and the complete `/docs/` site. Deployment instructions are in the parent README.
+Page d’accueil Next.js : vitrine **Global-IT-SS** (pôles, confiance, contact, rendez-vous) puis présentation produit **WeKnora** (sections existantes). Logos et couleurs de marque dans `public/docs/_home/brand-gis/`.
+
+Run `npm run setup`, `npm run build`, and `npm run preview` from the parent directory to include both the homepage and the complete `/docs/` site. Deployment instructions are in the parent README.
 
 - `app/page.tsx`: product content and same-origin documentation links.
 - `app/home.module.css`: homepage layout.
@@ -9,4 +11,9 @@ The Next.js homepage is one part of the unified site. Run `npm run setup`, `npm 
 - `../shared/brand.css`: shared light/dark design tokens.
 - `public/docs/_home/`: homepage images. The site serves only `/` and `/docs/`, so build output and public assets both live under `/docs/_home/` (`homeAssets` in `../shared/header.ts`).
 
-`npm run dev` can still preview the homepage alone during development. `/docs/` requires the combined preview from the parent directory.
+Depuis **`website-docs/`** (pas seulement `homepage/`) :
+
+- **`npm run dev`** — home + doc VitePress sur [http://127.0.0.1:3000](http://127.0.0.1:3000) (`/docs/` inclus).
+- **`npm run build`** puis **`npm run preview`** — site statique unifié (`static-site/`).
+
+Lancer uniquement `npm run dev` dans `homepage/` ne sert **pas** la documentation : le lien « Documentation » renverra une 404.

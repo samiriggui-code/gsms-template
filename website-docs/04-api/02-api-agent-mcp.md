@@ -1,16 +1,16 @@
-# API 参考：Agent、MCP 与技能
+# Référence API : agent, MCP et compétences
 
-管理智能体、MCP 服务及其凭据、技能和资源收藏。智能体的工具范围与调用审批配置通过本组接口维护。
+Gestion des agents, services MCP et leurs identifiants, compétences et favoris de ressources. Le périmètre d’outils des agents et la configuration d’approbation des appels sont maintenus via ce groupe d’interfaces.
 
-## Agent（/api/v1/agents）
+## Agent (`/api/v1/agents`)
 
-读：Viewer+（API key `read_agents`/`manage_agents`/`chat`/full）；写：创建者 OR Admin+（API key `manage_agents`/full）；内置 Agent（`is_builtin=true`）始终 Admin+。
+Lecture : Viewer+ (clé API `read_agents`/`manage_agents`/`chat`/full-access) ; écriture : créateur OU Admin+ (clé API `manage_agents`/full-access) ; agents intégrés (`is_builtin=true`) toujours Admin+.
 
 ### GET /api/v1/agents/placeholders
 
-用途：提示词占位符定义（须先于 `/:id` 注册）。权限：Viewer+。
+Rôle : Définitions des placeholders de prompt (enregistré avant `/:id`). Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{"all":{...},"system_prompt":{...},"agent_system_prompt":{...},"context_template":{...},"rewrite_system_prompt":{...},"rewrite_prompt":{...},"fallback_prompt":{...}}}`
+Réponse : 200 `{"success":true,"data":{"all":{...},"system_prompt":{...},"agent_system_prompt":{...},"context_template":{...},"rewrite_system_prompt":{...},"rewrite_prompt":{...},"fallback_prompt":{...}}}`
 
 ```bash
 curl $BASE/api/v1/agents/placeholders -H "Authorization: Bearer $TOKEN"
@@ -18,9 +18,9 @@ curl $BASE/api/v1/agents/placeholders -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/agents/type-presets
 
-用途：智能推理 Agent 类型预设（rag-qa / wiki-qa / hybrid / custom 等）。权限：Viewer+。
+Rôle : Préréglages de type d’agent en raisonnement intelligent (`rag-qa` / `wiki-qa` / `hybrid` / `custom`, etc.). Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":[{type,system_prompt,allowed_tools,kb_compatibility}]}`
+Réponse : 200 `{"success":true,"data":[{type,system_prompt,allowed_tools,kb_compatibility}]}`
 
 ```bash
 curl $BASE/api/v1/agents/type-presets -H "Authorization: Bearer $TOKEN"
@@ -28,35 +28,35 @@ curl $BASE/api/v1/agents/type-presets -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/agents/tools
 
-用途：获取智能体可选的内置工具目录，权限 Viewer+。响应 `{"success":true,"data":{"tools":[...],"default_tools":[...],"switch_managed_tools":[...]}}`；每项工具带 `requirement.any_of` / `all_of` 知识库能力要求，编辑器据此判断是否可选。
+Rôle : Catalogue des outils intégrés optionnels pour les agents. Permissions : Viewer+. Réponse `{"success":true,"data":{"tools":[...],"default_tools":[...],"switch_managed_tools":[...]}}` ; chaque outil inclut les exigences de capacité KB `requirement.any_of` / `all_of`, utilisées par l’éditeur pour déterminer la disponibilité.
 
-创建或更新时新增未知工具名返回 400；已存储的未知项保留，响应顶层 `allowed_tools_warnings.kept_unknown` 列出这些名称。由独立开关管理的工具及无后继的旧技能工具从列表移除，`allowed_tools_warnings.dropped` 返回移除项。旧检索工具名会映射为后继工具，重复项去重。
+L’ajout d’un nom d’outil inconnu à la création ou à la mise à jour renvoie 400 ; les entrées inconnues déjà stockées sont conservées et listées dans `allowed_tools_warnings.kept_unknown` en tête de réponse. Les outils gérés par des commutateurs indépendants et les anciens outils de compétence sans successeur sont retirés de la liste ; `allowed_tools_warnings.dropped` renvoie les éléments supprimés. Les anciens noms d’outils de recherche sont mappés vers leurs successeurs, avec dédoublonnage.
 
 ### POST /api/v1/agents
 
-用途：创建自定义 Agent。权限：Contributor+。
+Rôle : Créer un agent personnalisé. Permissions : Contributor+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `name` | string | 是（`binding:"required"`） | 名称 |
-| `description` | string | 否 | 描述 |
-| `avatar` | string | 否 | 头像/emoji |
-| `config` | object | 否 | Agent 配置（`types.CustomAgentConfig`，见下） |
+| `name` | string | oui (`binding:"required"`) | Nom |
+| `description` | string | non | Description |
+| `avatar` | string | non | Avatar / emoji |
+| `config` | object | non | Configuration agent (`types.CustomAgentConfig`, voir ci-dessous) |
 
-`config` 主要字段：`agent_mode`（`quick-answer`/`smart-reasoning`，省略时默认为 `smart-reasoning`）、`agent_type`（`rag-qa/wiki-qa/hybrid-rag-wiki/data-analysis/custom`）、`system_prompt`、`model_id`、`temperature`（0-2，非法返回 code 2103）、`max_iterations`（1-20，非法返回 code 2102）、`allowed_tools`（未设置/null 使用默认工具，显式 `[]` 不选内置工具；联网、记忆、MCP 与沙箱按独立配置注册）、`mcp_selection_mode`/`mcp_services`、`skills_selection_mode`、`kb_selection_mode`/`knowledge_bases`、`web_search_enabled`、`question_suggestions` 等（完整定义见 `internal/types/custom_agent.go`）。
+Principaux champs de `config` : `agent_mode` (`quick-answer`/`smart-reasoning`, défaut `smart-reasoning` si omis), `agent_type` (`rag-qa/wiki-qa/hybrid-rag-wiki/data-analysis/custom`), `system_prompt`, `model_id`, `temperature` (0–2, valeur invalide → code 2103), `max_iterations` (1–20, invalide → code 2102), `allowed_tools` (non défini/null → outils par défaut, `[]` explicite → aucun outil intégré ; recherche Web, mémoire, MCP et sandbox via configuration séparée), `mcp_selection_mode`/`mcp_services`, `skills_selection_mode`, `kb_selection_mode`/`knowledge_bases`, `web_search_enabled`, `question_suggestions`, etc. (définition complète dans `internal/types/custom_agent.go`).
 
-响应：201 `{"success":true,"data":{id,name,description,avatar,is_builtin,created_by,config,creator_name,...}}`
+Réponse : 201 `{"success":true,"data":{id,name,description,avatar,is_builtin,created_by,config,creator_name,...}}`
 
 ```bash
 curl -X POST $BASE/api/v1/agents -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"name":"售后助手","config":{"agent_mode":"quick-answer","kb_selection_mode":"selected","knowledge_bases":["kb-1"]}}'
+  -d '{"name":"Assistant SAV","config":{"agent_mode":"quick-answer","kb_selection_mode":"selected","knowledge_bases":["kb-1"]}}'
 ```
 
 ### GET /api/v1/agents
 
-用途：Agent 列表（含内置）。权限：Viewer+。查询参数：`creator`（`mine`/`others`，可选）。
+Rôle : Liste des agents (y compris intégrés). Permissions : Viewer+. Paramètre de requête : `creator` (`mine`/`others`, optionnel).
 
-响应：200 `{"success":true,"data":[Agent],"disabled_own_agent_ids":[...]}`
+Réponse : 200 `{"success":true,"data":[Agent],"disabled_own_agent_ids":[...]}`
 
 ```bash
 curl $BASE/api/v1/agents -H "X-API-Key: $API_KEY"
@@ -64,9 +64,9 @@ curl $BASE/api/v1/agents -H "X-API-Key: $API_KEY"
 
 ### GET /api/v1/agents/:id
 
-用途：Agent 详情。权限：Viewer+。
+Rôle : Détail d’un agent. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{Agent}}`
+Réponse : 200 `{"success":true,"data":{Agent}}`
 
 ```bash
 curl $BASE/api/v1/agents/agent-1 -H "Authorization: Bearer $TOKEN"
@@ -74,40 +74,40 @@ curl $BASE/api/v1/agents/agent-1 -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/agents/:id
 
-用途：更新 Agent。权限：创建者 OR Admin+。请求体：`name/description/avatar/config`。`name` 必填；省略 `avatar` 保留原头像；`config` 整体替换，省略的配置项不会保留原值，只改个别设置请用 `PATCH`。Agent 已分享到组织时，新加入知识库范围的知识库须是调用者可分享的（知识库创建者或 Admin+，改为 `all` 需要 Admin+），否则 403。
+Rôle : Mettre à jour un agent. Permissions : créateur OU Admin+. Corps : `name`/`description`/`avatar`/`config`. `name` obligatoire ; omettre `avatar` conserve l’avatar actuel ; `config` remplace l’ensemble — les champs omis ne conservent pas leurs valeurs précédentes, utiliser `PATCH` pour des changements partiels. Si l’agent est partagé vers une organisation, toute base de connaissances nouvellement incluse dans le périmètre doit être partageable par l’appelant (créateur de la KB ou Admin+ ; passer à `all` exige Admin+), sinon 403.
 
-响应：200 `{"success":true,"data":{Agent}}`
+Réponse : 200 `{"success":true,"data":{Agent}}`
 
 ```bash
 curl -X PUT $BASE/api/v1/agents/agent-1 -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"name":"客服助手","description":"更新描述","config":{...}}'
+  -H 'Content-Type: application/json' -d '{"name":"Assistant support","description":"Description mise à jour","config":{...}}'
 ```
 
 ### PATCH /api/v1/agents/:id
 
-用途：部分更新 Agent，只修改请求中出现的字段，其余配置（包括头像）保持不变。权限与 `PUT` 相同：创建者 OR Admin+；API key `manage_agents`/full。复用 `PUT` 校验（包括上面的组织分享知识库范围规则），并额外校验技能名称。
+Rôle : Mise à jour partielle — seuls les champs présents dans la requête changent ; le reste (y compris l’avatar) est inchangé. Mêmes permissions que `PUT` : créateur OU Admin+ ; clé API `manage_agents`/full-access. Réutilise les validations de `PUT` (y compris les règles de périmètre KB lors d’un partage organisation) et valide en plus les noms de compétences.
 
-请求体字段（均可选）：
+Champs du corps (tous optionnels) :
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `name` | string | 名称，不能为空白 |
-| `description` | string | 描述 |
-| `agent_mode` | string | `quick-answer` / `smart-reasoning`。MCP 与技能只在 `smart-reasoning` 下运行；切到该模式会打开多轮对话 |
-| `system_prompt` | string | 完整的系统提示词（整段替换） |
-| `model_id` | string | 对话模型 ID |
+| Champ | Type | Description |
+| --- | --- | --- |
+| `name` | string | Nom, ne peut pas être vide |
+| `description` | string | Description |
+| `agent_mode` | string | `quick-answer` / `smart-reasoning`. MCP et compétences ne s’exécutent qu’en `smart-reasoning` ; passer à ce mode active le dialogue multi-tours |
+| `system_prompt` | string | Prompt système complet (remplacement intégral) |
+| `model_id` | string | ID du modèle de dialogue |
 | `kb_selection_mode` | string | `all` / `selected` / `none` |
-| `knowledge_bases` | string[] | 选中的知识库 ID，整体替换；未同时传 `kb_selection_mode` 时模式切换为 `selected` |
+| `knowledge_bases` | string[] | IDs de KB sélectionnées, remplacement intégral ; si `kb_selection_mode` n’est pas envoyé en même temps, le mode passe à `selected` |
 | `mcp_selection_mode` | string | `all` / `selected` / `none` |
-| `mcp_services` | string[] | 选中的 MCP 服务 ID，整体替换；未同时传 `mcp_selection_mode` 时模式切换为 `selected` |
-| `skills_selection_mode` | string | `all` / `selected` / `none`；`all` 和 `none` 清空选中的技能名称 |
-| `selected_skills` | string[] | 最多 50 个技能名称（不是 ID），整体替换；未同时传 `skills_selection_mode` 时模式切换为 `selected` |
-| `web_search_enabled` | bool | 是否启用联网搜索 |
-| `multi_turn_enabled` | bool | 是否启用多轮对话 |
+| `mcp_services` | string[] | IDs de services MCP sélectionnés, remplacement intégral ; si `mcp_selection_mode` n’est pas envoyé, le mode passe à `selected` |
+| `skills_selection_mode` | string | `all` / `selected` / `none` ; `all` et `none` effacent les noms de compétences sélectionnées |
+| `selected_skills` | string[] | Jusqu’à 50 noms de compétences (pas d’IDs), remplacement intégral ; si `skills_selection_mode` n’est pas envoyé, le mode passe à `selected` |
+| `web_search_enabled` | bool | Activer la recherche Web |
+| `multi_turn_enabled` | bool | Activer le dialogue multi-tours |
 
-技能名称来自 `GET /api/v1/skills?sandbox_config_id=<agent.config.sandbox_config_id>`，只在 `smart-reasoning` 模式生效。PATCH 后模式为 `selected` 时，所有名称必须是该工作空间、该沙箱当前可用的技能；不可用或未知名称返回 400 并列出名称。未绑定沙箱时，通过 PATCH 将技能设为 `all` 或 `selected`（包括只传 `selected_skills`）返回 400，须先在智能体编辑器选择沙箱。
+Les noms de compétences proviennent de `GET /api/v1/skills?sandbox_config_id=<agent.config.sandbox_config_id>` et ne s’appliquent qu’en mode `smart-reasoning`. Après PATCH, si le mode est `selected`, tous les noms doivent être des compétences disponibles pour l’espace et le sandbox concernés ; nom indisponible ou inconnu → 400 avec la liste des noms. Sans sandbox lié, définir les compétences sur `all` ou `selected` via PATCH (y compris en ne passant que `selected_skills`) renvoie 400 : choisir d’abord un sandbox dans l’éditeur d’agent.
 
-响应：200 `{"success":true,"data":{Agent}}`；`agent_mode` 或 selection mode 取值非法、名称为空、技能列表超过 50 项或上述技能校验失败时 400，Agent 不存在时 404。
+Réponse : 200 `{"success":true,"data":{Agent}}` ; 400 si `agent_mode` ou un mode de sélection est invalide, nom vide, plus de 50 compétences ou échec de validation des compétences ; 404 si l’agent n’existe pas.
 
 ```bash
 curl -X PATCH $BASE/api/v1/agents/agent-1 -H "Authorization: Bearer $TOKEN" \
@@ -116,9 +116,9 @@ curl -X PATCH $BASE/api/v1/agents/agent-1 -H "Authorization: Bearer $TOKEN" \
 
 ### DELETE /api/v1/agents/:id
 
-用途：删除 Agent。权限：创建者 OR Admin+。
+Rôle : Supprimer un agent. Permissions : créateur OU Admin+.
 
-响应：200 `{"success":true,"message":"Agent deleted successfully"}`
+Réponse : 200 `{"success":true,"message":"Agent deleted successfully"}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/agents/agent-1 -H "Authorization: Bearer $TOKEN"
@@ -126,9 +126,9 @@ curl -X DELETE $BASE/api/v1/agents/agent-1 -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/agents/:id/copy
 
-用途：复制 Agent（副本归调用者）。权限：Contributor+。无请求体。
+Rôle : Copier un agent (la copie appartient à l’appelant). Permissions : Contributor+. Sans corps.
 
-响应：201 `{"success":true,"data":{新 Agent}}`
+Réponse : 201 `{"success":true,"data":{nouvel Agent}}`
 
 ```bash
 curl -X POST $BASE/api/v1/agents/agent-1/copy -H "Authorization: Bearer $TOKEN"
@@ -136,43 +136,43 @@ curl -X POST $BASE/api/v1/agents/agent-1/copy -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/agents/:id/suggested-questions
 
-用途：Agent 起始建议问题（注册在组外以避免与 `/agents/:id/shares` 冲突）。权限：Viewer+；API key `read_agents`/`manage_agents`/`chat`/full。
+Rôle : Questions suggérées de départ pour l’agent (enregistré hors du groupe pour éviter le conflit avec `/agents/:id/shares`). Permissions : Viewer+ ; clé API `read_agents`/`manage_agents`/`chat`/full-access.
 
-| 查询参数 | 类型 | 必填 | 说明 |
+| Paramètre | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `knowledge_base_ids` | string | 否 | 逗号分隔 KB |
-| `knowledge_ids` | string | 否 | 逗号分隔知识 ID |
-| `tag_scopes` | string | 否 | JSON 数组的标签范围 |
-| `limit` | int | 否 | 上限 30 |
+| `knowledge_base_ids` | string | non | KB séparées par des virgules |
+| `knowledge_ids` | string | non | IDs de connaissance séparés par des virgules |
+| `tag_scopes` | string | non | Périmètres de tags (tableau JSON) |
+| `limit` | int | non | Plafond 30 |
 
-响应：200 `{"success":true,"data":{"questions":[{question,source,knowledge_base_id}]}}`
+Réponse : 200 `{"success":true,"data":{"questions":[{question,source,knowledge_base_id}]}}`
 
 ```bash
 curl "$BASE/api/v1/agents/agent-1/suggested-questions?limit=6" -H "X-API-Key: $API_KEY"
 ```
 
-## MCP 服务（/api/v1/mcp-services）
+## Services MCP (`/api/v1/mcp-services`)
 
-空间级外部工具服务集成。读：Viewer+；写/测试/审批策略：Admin+。API key：`manage_mcp_services`/full。Handler: `internal/handler/mcp_service.go`
+Intégration d’outils externes au niveau de l’espace. Lecture : Viewer+ ; écriture / test / politiques d’approbation : Admin+. Clé API : `manage_mcp_services`/full-access. Handler : `internal/handler/mcp_service.go`
 
 ### POST /api/v1/mcp-services
 
-用途：创建 MCP 服务。权限：Admin+。
+Rôle : Créer un service MCP. Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `name` | string | 是 | 名称 |
-| `description` | string | 否 | 旧版描述，兼容保留；管理界面统一编辑 `usage_instructions` |
-| `usage_instructions` | string | 否 | 服务用途、适用场景和关键约束，模型据此判断何时使用该服务；管理界面在第二步要求填写 |
-| `enabled` | bool | 否 | 启用 |
-| `transport_type` | string | 是 | `sse` / `http-streamable`；`stdio` 出于安全原因被拒绝 |
-| `url` | *string | 否 | 服务 URL（SSE/HTTP） |
-| `headers` | map[string]string | 否 | HTTP 头 |
-| `auth_config` | object | 否 | `auth_type`(`api_key/bearer/oauth`)、`api_key_header`、`custom_headers`、`scopes`、`auth_server_metadata_url`、`client_id`（OAuth 预注册客户端，留空则动态客户端注册；空字符串清除）（密钥与 `client_secret` 走 credentials 子资源，创建时可随请求体提交） |
-| `advanced_config` | object | 否 | `{timeout,retry_count,retry_delay}`，默认 30 秒 / 3 次 / 1 秒；`timeout` 大于 60 秒时也会延长 Agent 单次调用该服务工具的等待窗口 |
-| `stdio_config` / `env_vars` | object | 否 | 仅为兼容旧数据保留；stdio 已禁用，不生效 |
+| `name` | string | oui | Nom |
+| `description` | string | non | Description legacy, conservée pour compatibilité ; l’interface d’administration édite `usage_instructions` |
+| `usage_instructions` | string | non | Usage, cas d’emploi et contraintes clés pour que le modèle sache quand utiliser le service ; requis à l’étape 2 dans l’UI |
+| `enabled` | bool | non | Activé |
+| `transport_type` | string | oui | `sse` / `http-streamable` ; `stdio` refusé pour des raisons de sécurité |
+| `url` | *string | non | URL du service (SSE/HTTP) |
+| `headers` | map[string]string | non | En-têtes HTTP |
+| `auth_config` | object | non | `auth_type` (`api_key`/`bearer`/`oauth`), `api_key_header`, `custom_headers`, `scopes`, `auth_server_metadata_url`, `client_id` (client OAuth pré-enregistré ; vide → enregistrement dynamique ; chaîne vide efface) (secrets et `client_secret` via la sous-ressource credentials, peuvent être envoyés à la création) |
+| `advanced_config` | object | non | `{timeout,retry_count,retry_delay}`, défaut 30 s / 3 / 1 s ; si `timeout` > 60 s, prolonge aussi la fenêtre d’attente d’un appel d’outil agent vers ce service |
+| `stdio_config` / `env_vars` | object | non | Conservés pour compatibilité ; stdio désactivé, sans effet |
 
-响应：200 `{"success":true,"data":{MCPServiceResponse}}`（含 `credentials:{api_key:{configured},token:{configured},client_secret:{configured}}`；已同步工具目录的服务还带 `catalog:{tool_count,stale,synced_at}`）
+Réponse : 200 `{"success":true,"data":{MCPServiceResponse}}` (inclut `credentials:{api_key:{configured},token:{configured},client_secret:{configured}}` ; si le catalogue d’outils est synchronisé, aussi `catalog:{tool_count,stale,synced_at}`)
 
 ```bash
 curl -X POST $BASE/api/v1/mcp-services -H "Authorization: Bearer $TOKEN" \
@@ -181,14 +181,14 @@ curl -X POST $BASE/api/v1/mcp-services -H "Authorization: Bearer $TOKEN" \
 
 ### GET /api/v1/mcp-services
 
-用途：MCP 服务列表。权限：Viewer+。响应：200 `{"success":true,"data":[MCPServiceResponse]}`
+Rôle : Liste des services MCP. Permissions : Viewer+. Réponse : 200 `{"success":true,"data":[MCPServiceResponse]}`
 
-| 查询参数 | 类型 | 必填 | 说明 |
+| Paramètre | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `agent_id` | string | 否 | 与 `agent_source_tenant_id` 同时传入时，列出该共享智能体可 @ 的 MCP 服务 |
-| `agent_source_tenant_id` | int | 否 | 共享智能体的来源空间 ID，与对话请求的同名参数一致 |
+| `agent_id` | string | non | Avec `agent_source_tenant_id`, liste les services MCP @mentionnables pour cet agent partagé |
+| `agent_source_tenant_id` | int | non | ID de l’espace source de l’agent partagé, identique au paramètre homonyme des requêtes de chat |
 
-两个参数都传时走共享智能体路径：只返回该智能体在来源空间以 `selected` 模式指定且已启用的服务（`all`/`none` 模式返回空列表），且每项只含 ID、名称、说明、使用说明、传输类型、启用状态和工具目录摘要，不含 URL、请求头、认证配置等连接细节；调用者无权使用该智能体时返回 403。只传其一或都不传时，列出调用者自己空间的服务。
+Si les deux paramètres sont fournis : chemin agent partagé — ne renvoie que les services spécifiés en mode `selected` dans l’espace source, activés (`all`/`none` → liste vide) ; chaque entrée ne contient que ID, nom, description, instructions d’usage, type de transport, état activé et résumé du catalogue d’outils, sans URL, en-têtes ni détails d’auth ; 403 si l’appelant ne peut pas utiliser cet agent. Si un seul ou aucun paramètre : services de l’espace de l’appelant.
 
 ```bash
 curl $BASE/api/v1/mcp-services -H "Authorization: Bearer $TOKEN"
@@ -196,7 +196,7 @@ curl $BASE/api/v1/mcp-services -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/mcp-services/:id
 
-用途：详情。权限：Viewer+。响应：200 `{"success":true,"data":{MCPServiceResponse}}`
+Rôle : Détail. Permissions : Viewer+. Réponse : 200 `{"success":true,"data":{MCPServiceResponse}}`
 
 ```bash
 curl $BASE/api/v1/mcp-services/mcp-1 -H "Authorization: Bearer $TOKEN"
@@ -204,11 +204,11 @@ curl $BASE/api/v1/mcp-services/mcp-1 -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/mcp-services/:id
 
-用途：部分更新（map 语义；`auth_config` 中不可携带 api_key/token）。权限：Admin+。字段同创建（均可选）。
+Rôle : Mise à jour partielle (sémantique map ; pas d’`api_key`/`token` dans `auth_config`). Permissions : Admin+. Champs identiques à la création (tous optionnels).
 
-提交 `usage_instructions` 时必须为去除首尾空白后非空的字符串，最长 16000 字符。仅修改连接或启用状态时可省略该字段，原值保持不变。
+Si `usage_instructions` est envoyé, doit être une chaîne non vide après trim, max 16 000 caractères. Peut être omis lors d’un changement de connexion ou d’activation uniquement ; la valeur existante est conservée.
 
-响应：200 `{"success":true,"data":{MCPServiceResponse}}`
+Réponse : 200 `{"success":true,"data":{MCPServiceResponse}}`
 
 ```bash
 curl -X PUT $BASE/api/v1/mcp-services/mcp-1 -H "Authorization: Bearer $TOKEN" \
@@ -217,17 +217,17 @@ curl -X PUT $BASE/api/v1/mcp-services/mcp-1 -H "Authorization: Bearer $TOKEN" \
 
 ### POST /api/v1/mcp-services/:id/usage-instructions/generate
 
-用途：根据已同步、未过期的 MCP 工具目录生成精简使用说明。权限：Admin+；API key 需要 `manage_mcp_services` 或 full。
+Rôle : Générer des instructions d’usage concises à partir du catalogue d’outils MCP synchronisé et non expiré. Permissions : Admin+ ; clé API `manage_mcp_services` ou full-access.
 
-请求：`{"language":"zh-CN"}`。支持 `zh-CN`、`en-US`、`ja-JP`、`ko-KR`、`ru-RU`，默认中文。
+Corps : `{"language":"zh-CN"}`. Langues : `zh-CN`, `en-US`, `ja-JP`, `ko-KR`, `ru-RU` ; défaut chinois.
 
-优先使用空间默认的可用对话模型，否则使用首个可用对话模型。输入包括服务名称、服务端说明和已启用工具的名称、描述；OAuth 目录沿用当前用户的授权范围。不会连接 MCP、调用工具或自动保存生成结果。
+Utilise le modèle de dialogue par défaut de l’espace s’il est disponible, sinon le premier modèle de dialogue disponible. Entrées : nom du service, description côté serveur, noms et descriptions des outils activés ; pour OAuth, le catalogue respecte le périmètre d’autorisation de l’utilisateur courant. Ne se connecte pas au MCP, n’appelle pas d’outils et n’enregistre pas automatiquement le résultat.
 
-响应：200 `{"success":true,"data":{"usage_instructions":"按模块和时间范围查询远程日志；已有查询 ID 时读取对应日志。"}}`。生成目标为 2–3 句简短说明，最多 500 字符；用户可编辑后通过 PUT 保存。目录未同步、过期、无启用工具或无可用对话模型时返回 400。
+Réponse : 200 `{"success":true,"data":{"usage_instructions":"Interroger les journaux distants par module et plage horaire ; avec un ID de requête existant, lire le journal correspondant."}}`. Cible : 2–3 phrases courtes, max 500 caractères ; l’utilisateur peut éditer puis enregistrer via PUT. 400 si catalogue non synchronisé, expiré, sans outil activé ou sans modèle de dialogue disponible.
 
 ### DELETE /api/v1/mcp-services/:id
 
-用途：删除。权限：Admin+。响应：200 `{"success":true,"message":"MCP service deleted successfully"}`
+Rôle : Supprimer. Permissions : Admin+. Réponse : 200 `{"success":true,"message":"MCP service deleted successfully"}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/mcp-services/mcp-1 -H "Authorization: Bearer $TOKEN"
@@ -235,7 +235,7 @@ curl -X DELETE $BASE/api/v1/mcp-services/mcp-1 -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/mcp-services/:id/test
 
-用途：连接测试（探测外部服务）。权限：Admin+。响应：200 `{"success":true,"data":{"success","message","oauth_required","tools":[...],"resources":[...]}}`
+Rôle : Test de connexion (sonde du service externe). Permissions : Admin+. Réponse : 200 `{"success":true,"data":{"success","message","oauth_required","tools":[...],"resources":[...]}}`
 
 ```bash
 curl -X POST $BASE/api/v1/mcp-services/mcp-1/test -H "Authorization: Bearer $TOKEN"
@@ -243,9 +243,9 @@ curl -X POST $BASE/api/v1/mcp-services/mcp-1/test -H "Authorization: Bearer $TOK
 
 ### GET /api/v1/mcp-services/:id/metadata
 
-用途：读取持久工具目录，不连接上游。权限：Viewer+；OAuth 目录按当前有效授权主体隔离。
+Rôle : Lire le catalogue d’outils persisté sans connexion amont. Permissions : Viewer+ ; catalogue OAuth isolé par sujet d’autorisation effectif.
 
-响应：200 `{"success":true,"data":null}` 表示未同步；已同步时 `data` 为目录快照，包含服务端信息、instructions、tools 和同步时间。连接配置变更后的快照标记 `stale:true`，不能用于加载运行时工具。
+Réponse : 200 `{"success":true,"data":null}` si non synchronisé ; sinon `data` est un instantané (infos serveur, instructions, tools, horodatage de sync). Après changement de configuration de connexion, l’instantané est marqué `stale:true` et ne peut pas charger les outils runtime.
 
 ```bash
 curl $BASE/api/v1/mcp-services/mcp-1/metadata -H "Authorization: Bearer $TOKEN"
@@ -253,9 +253,9 @@ curl $BASE/api/v1/mcp-services/mcp-1/metadata -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/mcp-services/:id/metadata/refresh
 
-用途：显式连接上游、完整拉取并原子更新工具目录。静态认证目录需 Admin+；OAuth 用户可同步自己的目录（Viewer+）。API Key 需要 MCP 管理能力。
+Rôle : Connexion explicite amont, pull complet et mise à jour atomique du catalogue. Catalogue auth statique : Admin+ ; utilisateur OAuth peut synchroniser son catalogue (Viewer+). Clé API : capacité de gestion MCP.
 
-响应为更新后的目录快照。失败保留原快照；连接在刷新期间变化返回 409，目录无效/过大或上游同步失败返回 400，元数据存储不可用返回 503。不会覆盖人工使用说明和单工具启用/审批策略。
+Réponse : instantané de catalogue mis à jour. En cas d’échec, l’ancien instantané est conservé ; 409 si la connexion change pendant le refresh ; 400 si catalogue invalide/trop volumineux ou échec de sync amont ; 503 si stockage des métadonnées indisponible. N’écrase pas les instructions d’usage manuelles ni les politiques d’activation/approbation par outil.
 
 ```bash
 curl -X POST $BASE/api/v1/mcp-services/mcp-1/metadata/refresh -H "Authorization: Bearer $TOKEN"
@@ -263,7 +263,7 @@ curl -X POST $BASE/api/v1/mcp-services/mcp-1/metadata/refresh -H "Authorization:
 
 ### GET /api/v1/mcp-services/:id/tools
 
-用途：工具列表。权限：Viewer+。响应：200 `{"success":true,"data":[{name,description,inputSchema,require_approval}]}`
+Rôle : Liste des outils. Permissions : Viewer+. Réponse : 200 `{"success":true,"data":[{name,description,inputSchema,require_approval}]}`
 
 ```bash
 curl $BASE/api/v1/mcp-services/mcp-1/tools -H "Authorization: Bearer $TOKEN"
@@ -271,7 +271,7 @@ curl $BASE/api/v1/mcp-services/mcp-1/tools -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/mcp-services/:id/resources
 
-用途：资源列表。权限：Viewer+。响应：200 `{"success":true,"data":[{uri,name,description,mimeType}]}`
+Rôle : Liste des ressources. Permissions : Viewer+. Réponse : 200 `{"success":true,"data":[{uri,name,description,mimeType}]}`
 
 ```bash
 curl $BASE/api/v1/mcp-services/mcp-1/resources -H "Authorization: Bearer $TOKEN"
@@ -279,9 +279,9 @@ curl $BASE/api/v1/mcp-services/mcp-1/resources -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/mcp-services/:id/credentials
 
-用途：设置密钥（`api_key`/`token`/`client_secret`，指针字段，省略保留）。权限：Admin+。Handler: `internal/handler/mcp_credentials.go`
+Rôle : Définir les secrets (`api_key`/`token`/`client_secret`, champs pointeur, omission = conservation). Permissions : Admin+. Handler : `internal/handler/mcp_credentials.go`
 
-响应：200 `{"success":true,"data":{"fields":{"api_key":{"configured"},"token":{"configured"},"client_secret":{"configured"}}}}`
+Réponse : 200 `{"success":true,"data":{"fields":{"api_key":{"configured"},"token":{"configured"},"client_secret":{"configured"}}}}`
 
 ```bash
 curl -X PUT $BASE/api/v1/mcp-services/mcp-1/credentials -H "Authorization: Bearer $TOKEN" \
@@ -290,7 +290,7 @@ curl -X PUT $BASE/api/v1/mcp-services/mcp-1/credentials -H "Authorization: Beare
 
 ### DELETE /api/v1/mcp-services/:id/credentials/:field
 
-用途：删除凭证字段（`api_key`、`token` 或 `client_secret`）。权限：Admin+。响应：204。
+Rôle : Supprimer un champ d’identifiants (`api_key`, `token` ou `client_secret`). Permissions : Admin+. Réponse : 204.
 
 ```bash
 curl -X DELETE $BASE/api/v1/mcp-services/mcp-1/credentials/token -H "Authorization: Bearer $TOKEN"
@@ -298,7 +298,7 @@ curl -X DELETE $BASE/api/v1/mcp-services/mcp-1/credentials/token -H "Authorizati
 
 ### GET /api/v1/mcp-services/:id/tool-approvals
 
-用途：工具启停与人工审批策略列表。权限：Viewer+。响应：200 `{"success":true,"data":[{service_id,tool_name,require_approval,enabled,...}]}`
+Rôle : Liste des politiques d’activation et d’approbation manuelle par outil. Permissions : Viewer+. Réponse : 200 `{"success":true,"data":[{service_id,tool_name,require_approval,enabled,...}]}`
 
 ```bash
 curl $BASE/api/v1/mcp-services/mcp-1/tool-approvals -H "Authorization: Bearer $TOKEN"
@@ -306,9 +306,9 @@ curl $BASE/api/v1/mcp-services/mcp-1/tool-approvals -H "Authorization: Bearer $T
 
 ### PUT /api/v1/mcp-services/:id/tool-approvals/:tool_name
 
-用途：更新某工具的 enabled（启停）和 require_approval（人工审批）。权限：Admin+。两者至少提供一个，省略的字段保持原值；无记录默认启用且不要求审批。
+Rôle : Mettre à jour `enabled` (activation) et `require_approval` (approbation manuelle) pour un outil. Permissions : Admin+. Au moins l’un des deux doit être fourni ; les champs omis conservent leur valeur ; sans enregistrement, défaut activé et sans approbation.
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X PUT $BASE/api/v1/mcp-services/mcp-1/tool-approvals/create_issue \
@@ -317,13 +317,13 @@ curl -X PUT $BASE/api/v1/mcp-services/mcp-1/tool-approvals/create_issue \
 
 ## MCP OAuth
 
-Handler: `internal/handler/mcp_oauth.go`
+Handler : `internal/handler/mcp_oauth.go`
 
 ### GET /api/v1/mcp-oauth/callback
 
-用途：第三方 OAuth 授权回调（免认证，靠单次 `state` 参数认证；注册在 `/mcp-services` 组之外）。查询参数：`code`、`state`、`error`。
+Rôle : Callback OAuth tiers (sans auth, authentification via `state` à usage unique ; enregistré hors du groupe `/mcp-services`). Paramètres de requête : `code`, `state`, `error`.
 
-响应：302 重定向到前端（成功 `#mcp_oauth_result=success`，失败 `#mcp_oauth_error=<code>`）。
+Réponse : 302 redirection vers le frontend (succès `#mcp_oauth_result=success`, échec `#mcp_oauth_error=<code>`).
 
 ```bash
 curl -i "$BASE/api/v1/mcp-oauth/callback?code=xxx&state=yyy"
@@ -331,14 +331,14 @@ curl -i "$BASE/api/v1/mcp-oauth/callback?code=xxx&state=yyy"
 
 ### POST /api/v1/mcp-services/:id/oauth/authorize-url
 
-用途：生成用户级授权 URL。权限：Viewer+。
+Rôle : Générer une URL d’autorisation au niveau utilisateur. Permissions : Viewer+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `redirect_uri` | string | 是 | 后端回调 URL（绝对地址） |
-| `frontend_redirect` | string | 否 | 回调后前端跳转（默认 `/`） |
+| `redirect_uri` | string | oui | URL de callback backend (absolue) |
+| `frontend_redirect` | string | non | Redirection frontend après callback (défaut `/`) |
 
-响应：200 `{"success":true,"data":{"authorization_url","authorization_attempt"}}`
+Réponse : 200 `{"success":true,"data":{"authorization_url","authorization_attempt"}}`
 
 ```bash
 curl -X POST $BASE/api/v1/mcp-services/mcp-1/oauth/authorize-url -H "Authorization: Bearer $TOKEN" \
@@ -347,13 +347,13 @@ curl -X POST $BASE/api/v1/mcp-services/mcp-1/oauth/authorize-url -H "Authorizati
 
 ### POST /api/v1/mcp-services/:id/oauth/assertion
 
-用途：以 JWT Bearer 授权（RFC 7523）为本人获取 OAuth token，无需浏览器跳转。适用于 WeKnora 部署在其他应用之后、由该应用负责登录并代用户调用 WeKnora 的场景：该应用签发代表当前用户的断言（如 MCP Enterprise-Managed Authorization 使用的 ID-JAG），WeKnora 原样提交给授权服务器，由授权服务器校验。使用该服务已注册的 OAuth 客户端（不会进行动态客户端注册；尚无客户端时返回 400）。获得的 token 与授权回调保存的 token 相同，后续刷新、状态查询与吊销不变。权限：Viewer+。
+Rôle : Obtenir un token OAuth pour l’utilisateur courant via JWT Bearer (RFC 7523), sans redirection navigateur. Cas d’usage : WeKnora derrière une autre application qui gère la connexion et appelle WeKnora pour l’utilisateur — l’application émet une assertion représentant l’utilisateur (ex. ID-JAG pour MCP Enterprise-Managed Authorization), WeKnora la transmet telle quelle au serveur d’autorisation pour validation. Utilise le client OAuth déjà enregistré pour ce service (pas d’enregistrement dynamique ; 400 s’il n’y a pas encore de client). Le token obtenu est identique à celui du callback OAuth ; refresh, statut et révocation inchangés. Permissions : Viewer+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `assertion` | string | 是 | 提交给授权服务器的 JWT 断言（请求体上限 16 KiB） |
+| `assertion` | string | oui | Assertion JWT envoyée au serveur d’autorisation (corps max 16 KiB) |
 
-响应：200，`data` 与 `oauth/status` 相同。授权服务器拒绝断言（4xx，或 2xx 响应体含 OAuth `error`）时返回 400 并附 OAuth 错误码；授权服务器 5xx 或网络错误返回 500。
+Réponse : 200, `data` identique à `oauth/status`. 400 avec code d’erreur OAuth si le serveur refuse l’assertion (4xx ou 2xx avec `error` OAuth) ; 500 si 5xx amont ou erreur réseau.
 
 ```bash
 curl -X POST $BASE/api/v1/mcp-services/mcp-1/oauth/assertion -H "X-API-Key: $API_KEY" \
@@ -362,9 +362,9 @@ curl -X POST $BASE/api/v1/mcp-services/mcp-1/oauth/assertion -H "X-API-Key: $API
 
 ### GET /api/v1/mcp-services/:id/oauth/status
 
-用途：查询本人授权状态。权限：Viewer+。查询参数：`authorization_attempt`（可选）。
+Rôle : Statut d’autorisation pour l’utilisateur courant. Permissions : Viewer+. Paramètre : `authorization_attempt` (optionnel).
 
-响应：200 `{"success":true,"data":{"authorized","state":"authorized|pending","refresh_available","expires_at"}}`
+Réponse : 200 `{"success":true,"data":{"authorized","state":"authorized|pending","refresh_available","expires_at"}}`
 
 ```bash
 curl $BASE/api/v1/mcp-services/mcp-1/oauth/status -H "Authorization: Bearer $TOKEN"
@@ -372,61 +372,61 @@ curl $BASE/api/v1/mcp-services/mcp-1/oauth/status -H "Authorization: Bearer $TOK
 
 ### DELETE /api/v1/mcp-services/:id/oauth/token
 
-用途：吊销本人 OAuth token。权限：Viewer+。响应：204。
+Rôle : Révoquer le token OAuth de l’utilisateur courant. Permissions : Viewer+. Réponse : 204.
 
 ```bash
 curl -X DELETE $BASE/api/v1/mcp-services/mcp-1/oauth/token -H "Authorization: Bearer $TOKEN"
 ```
 
-## MCP Server 端点（/api/v1/mcp-endpoints） {#mcp-server-端点}
+## Points de terminaison MCP Server (`/api/v1/mcp-endpoints`) {#points-de-termination-mcp-server}
 
-管理当前空间对外发布的 MCP 端点，外部 MCP 客户端连接 `/mcp/:endpoint_id`。读：Viewer+；写：Admin+。API key：`manage_channels`/full。Handler: `internal/handler/mcp_endpoint.go`。用途与工具说明见[MCP 集成](../03-features/08-mcp.md#供外部客户端调用)。
+Gestion des points de terminaison MCP publiés par l’espace courant ; les clients MCP externes se connectent à `/mcp/:endpoint_id`. Lecture : Viewer+ ; écriture : Admin+. Clé API : `manage_channels`/full-access. Handler : `internal/handler/mcp_endpoint.go`. Usage et outils : [Intégration MCP](../03-features/08-mcp.md#clients-externes).
 
-| 方法 | 路径 | 说明 |
+| Méthode | Chemin | Description |
 | --- | --- | --- |
-| GET | `/mcp-endpoints` | 端点列表（不含令牌） |
-| GET | `/mcp-endpoints/tools` | 工具目录：`{groups,tools:[{name,group,destructive}],default_tools}` |
-| POST | `/mcp-endpoints` | 创建；201，响应含一次性 `token` |
-| GET | `/mcp-endpoints/:endpoint_id` | 详情 |
-| PUT | `/mcp-endpoints/:endpoint_id` | 部分更新，省略的字段保持原值 |
-| DELETE | `/mcp-endpoints/:endpoint_id` | 删除，使用该端点的客户端立即失效 |
-| POST | `/mcp-endpoints/:endpoint_id/rotate-token` | 轮换令牌，响应含新 `token`，旧令牌立即失效 |
+| GET | `/mcp-endpoints` | Liste des points (sans jeton) |
+| GET | `/mcp-endpoints/tools` | Catalogue : `{groups,tools:[{name,group,destructive}],default_tools}` |
+| POST | `/mcp-endpoints` | Créer ; 201, réponse avec `token` à usage unique |
+| GET | `/mcp-endpoints/:endpoint_id` | Détail |
+| PUT | `/mcp-endpoints/:endpoint_id` | Mise à jour partielle, champs omis conservés |
+| DELETE | `/mcp-endpoints/:endpoint_id` | Supprimer ; les clients utilisant ce point perdent l’accès immédiatement |
+| POST | `/mcp-endpoints/:endpoint_id/rotate-token` | Rotation du jeton ; réponse avec nouveau `token`, ancien jeton invalidé |
 
-请求字段（创建和更新相同，均可选）：
+Champs de requête (création et mise à jour, tous optionnels sauf indication) :
 
-| 字段 | 类型 | 说明 |
+| Champ | Type | Description |
 | --- | --- | --- |
-| `name` | string | 名称，创建时必填 |
-| `description` | string | 说明 |
-| `enabled` | bool | 默认 true；停用后连接返回 403 |
-| `knowledge_base_ids` | string[] | 可访问的知识库，空数组表示空间内全部 |
-| `tools` | string[] | 暴露的工具，至少一个；创建时省略则使用 `default_tools`（全部只读工具） |
-| `default_agent_id` | string | `ask` 使用的 Agent，空为内置快速问答；内部内置 Agent 不可选 |
-| `rate_limit_per_minute` | int | 每分钟工具调用上限，0 或省略为 60，最大 6000 |
+| `name` | string | Nom, obligatoire à la création |
+| `description` | string | Description |
+| `enabled` | bool | Défaut true ; désactivé → connexion 403 |
+| `knowledge_base_ids` | string[] | KB accessibles ; tableau vide = toutes dans l’espace |
+| `tools` | string[] | Outils exposés, au moins un ; à la création, omission → `default_tools` (tous les outils en lecture seule) |
+| `default_agent_id` | string | Agent pour `ask` ; vide = Q&R rapide intégrée ; agent intégré interne non sélectionnable |
+| `rate_limit_per_minute` | int | Plafond d’appels d’outils par minute ; 0 ou omis = 60, max 6000 |
 
-响应 `data` 为 `{id,tenant_id,name,description,enabled,token_hint,knowledge_base_ids,tools,default_agent_id,rate_limit_per_minute,path,last_used_at,created_at,updated_at}`，创建和轮换时额外带 `token`。使用受限 API Key 调用时，端点的知识库和工具所需能力不能超出该 Key 的范围，否则 403。
+Réponse `data` : `{id,tenant_id,name,description,enabled,token_hint,knowledge_base_ids,tools,default_agent_id,rate_limit_per_minute,path,last_used_at,created_at,updated_at}` ; à la création et à la rotation, `token` en plus. Avec une clé API restreinte, les KB et capacités d’outils du point ne peuvent pas dépasser le périmètre de la clé, sinon 403.
 
 ```bash
 curl -X POST $BASE/api/v1/mcp-endpoints -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"name":"产品文档助手","knowledge_base_ids":["kb-1"],"tools":["search_knowledge","read_document","ask"]}'
+  -d '{"name":"Assistant doc produit","knowledge_base_ids":["kb-1"],"tools":["search_knowledge","read_document","ask"]}'
 ```
 
-## Agent 运行时交互（/api/v1/agent）
+## Interactions runtime agent (`/api/v1/agent`)
 
-对话中的人工审批与 OAuth 恢复；权限均 Viewer+（发起会话的人才有上下文），API key 默认拒绝。
+Approbation manuelle en conversation et reprise OAuth ; permissions Viewer+ (seul l’initiateur de la session a le contexte) ; clé API refusée par défaut.
 
 ### POST /api/v1/agent/tool-approvals/:pending_id
 
-用途：裁决待审批的工具调用。Handler: `internal/handler/mcp_service.go` 的 `ResolveToolApproval`。
+Rôle : Trancher un appel d’outil en attente d’approbation. Handler : `ResolveToolApproval` dans `internal/handler/mcp_service.go`.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `decision` | string | 是（`binding:"required"`） | `approve` / `reject` |
-| `modified_args` | JSON | 否 | 修改后的工具参数 |
-| `reason` | string | 否 | 理由 |
+| `decision` | string | oui (`binding:"required"`) | `approve` / `reject` |
+| `modified_args` | JSON | non | Arguments d’outil modifiés |
+| `reason` | string | non | Motif |
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X POST $BASE/api/v1/agent/tool-approvals/p-1 -H "Authorization: Bearer $TOKEN" \
@@ -435,14 +435,14 @@ curl -X POST $BASE/api/v1/agent/tool-approvals/p-1 -H "Authorization: Bearer $TO
 
 ### POST /api/v1/agent/mcp-oauth-resolutions/:pending_id
 
-用途：恢复因 MCP OAuth 暂停的 Agent 运行。Handler: `internal/handler/mcp_oauth.go`
+Rôle : Reprendre l’exécution d’un agent suspendu pour OAuth MCP. Handler : `internal/handler/mcp_oauth.go`
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `service_id` | string | 是（`binding:"required"`） | MCP 服务 ID |
-| `decision` | string | 否 | `authorize`（默认）/ `cancel` |
+| `service_id` | string | oui (`binding:"required"`) | ID du service MCP |
+| `decision` | string | non | `authorize` (défaut) / `cancel` |
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X POST $BASE/api/v1/agent/mcp-oauth-resolutions/p-1 -H "Authorization: Bearer $TOKEN" \
@@ -451,33 +451,33 @@ curl -X POST $BASE/api/v1/agent/mcp-oauth-resolutions/p-1 -H "Authorization: Bea
 
 ### POST /api/v1/agent/mcp-oauth-resolutions/:pending_id/cancel
 
-用途：取消暂停中的 OAuth 流程。无请求体。
+Rôle : Annuler le flux OAuth en pause. Sans corps.
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X POST $BASE/api/v1/agent/mcp-oauth-resolutions/p-1/cancel -H "Authorization: Bearer $TOKEN"
 ```
 
-## 技能、沙箱与个人变量
+## Compétences, sandbox et variables personnelles
 
-`GET /api/v1/skills?sandbox_config_id=...` 返回指定配置下可用技能的名称/说明及 skills_available；传 `agent_id` + `agent_source_tenant_id` 时按共享智能体的来源空间和其沙箱配置返回，详见[沙箱与技能 API](02-api-sandbox-skills.md#沙箱内技能)。目录收录、安装、模板、进度、文件与个人变量的完整接口见[沙箱与技能 API](02-api-sandbox-skills.md)。
+`GET /api/v1/skills?sandbox_config_id=...` renvoie noms/descriptions des compétences disponibles pour la configuration et `skills_available` ; avec `agent_id` + `agent_source_tenant_id`, résultat basé sur l’espace source de l’agent partagé et sa config sandbox — voir [API sandbox et compétences](02-api-sandbox-skills.md#skills-dans-la-sandbox). Catalogue, installation, modèles, progression, fichiers et variables personnelles : [API sandbox et compétences](02-api-sandbox-skills.md).
 
-智能体 config 增加 `sandbox_config_id`；与 skills_selection_mode、selected_skills 一起决定可用技能。shell/文件工具按后端能力注册，旧 read_skill / execute_skill_script 不再注册。
+La config agent inclut `sandbox_config_id` ; avec `skills_selection_mode` et `selected_skills`, cela détermine les compétences disponibles. Les outils shell/fichier s’enregistrent selon les capacités backend ; les anciens `read_skill` / `execute_skill_script` ne sont plus enregistrés.
 
-## 长期记忆
+## Mémoire à long terme
 
-智能体 config 的 `memory_enabled` 为 nil 时继承空间，false 禁用本智能体的记忆读写。个人管理、主题/文档偏好、导出与立即整理见[长期记忆 API](02-api-memory.md)，使用步骤见[跨会话长期记忆](../03-features/23-memory.md)。
+Si `memory_enabled` dans la config agent est `nil`, hérite de l’espace ; `false` désactive lecture/écriture mémoire pour cet agent. Gestion personnelle, préférences thème/document, export et consolidation immédiate : [API mémoire à long terme](02-api-memory.md) ; usage : [Mémoire à long terme inter-sessions](../03-features/23-memory.md).
 
-## 用户收藏（/api/v1/user/favorites）
+## Favoris utilisateur (`/api/v1/user/favorites`)
 
-按用户维度存储（非资源创建者维度）；权限均 Viewer+，仅 JWT（API key 默认拒绝）。Handler: `internal/handler/user_resource_favorite.go`
+Stockage par utilisateur (pas par créateur de ressource) ; permissions Viewer+ ; JWT uniquement (clé API refusée par défaut). Handler : `internal/handler/user_resource_favorite.go`
 
 ### GET /api/v1/user/favorites
 
-用途：收藏列表。查询参数：`type`（必填，`kb` 或 `agent`）。
+Rôle : Liste des favoris. Paramètre : `type` (obligatoire, `kb` ou `agent`).
 
-响应：200 `{"success":true,"data":[{type,id,created_at}]}`
+Réponse : 200 `{"success":true,"data":[{type,id,created_at}]}`
 
 ```bash
 curl "$BASE/api/v1/user/favorites?type=kb" -H "Authorization: Bearer $TOKEN"
@@ -485,9 +485,9 @@ curl "$BASE/api/v1/user/favorites?type=kb" -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/user/favorites
 
-用途：添加收藏。请求体：`{"type":"kb|agent","id":"<资源ID>"}`（均必填）。
+Rôle : Ajouter un favori. Corps : `{"type":"kb|agent","id":"<ID ressource>"}` (tous deux obligatoires).
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X POST $BASE/api/v1/user/favorites -H "Authorization: Bearer $TOKEN" \
@@ -496,14 +496,14 @@ curl -X POST $BASE/api/v1/user/favorites -H "Authorization: Bearer $TOKEN" \
 
 ### DELETE /api/v1/user/favorites/:type/:id
 
-用途：取消收藏。路径参数：`type`、`id`。
+Rôle : Retirer un favori. Paramètres de chemin : `type`, `id`.
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/user/favorites/kb/kb-1 -H "Authorization: Bearer $TOKEN"
 ```
 
-## 实现参考
+## Référence d’implémentation
 
-路由注册：由 `internal/router/router.go` 调用，`RegisterCustomAgentRoutes`、`RegisterSkillRoutes`、`RegisterUserFavoriteRoutes` 定义在 `routes_agent.go`，`RegisterMCPServiceRoutes`（含 MCP OAuth 与 `/agent` 运行时交互）在 `routes_infra.go`，`RegisterMCPEndpointRoutes` 与公开的 `/mcp/:endpoint_id` 在 `routes_mcp_endpoint.go`。Handler：`internal/handler/custom_agent.go`、`internal/handler/mcp_service.go`、`internal/handler/mcp_credentials.go`、`internal/handler/mcp_oauth.go`、`internal/handler/mcp_endpoint.go`、`internal/handler/skill_handler.go`、`internal/handler/user_resource_favorite.go`。
+Enregistrement des routes : appel depuis `internal/router/router.go` ; `RegisterCustomAgentRoutes`, `RegisterSkillRoutes`, `RegisterUserFavoriteRoutes` dans `routes_agent.go` ; `RegisterMCPServiceRoutes` (OAuth MCP et interactions runtime `/agent`) dans `routes_infra.go` ; `RegisterMCPEndpointRoutes` et `/mcp/:endpoint_id` public dans `routes_mcp_endpoint.go`. Handlers : `internal/handler/custom_agent.go`, `internal/handler/mcp_service.go`, `internal/handler/mcp_credentials.go`, `internal/handler/mcp_oauth.go`, `internal/handler/mcp_endpoint.go`, `internal/handler/skill_handler.go`, `internal/handler/user_resource_favorite.go`.

@@ -14,7 +14,7 @@
 }
 .site svg { flex-shrink: 0; }
 .site section[id], .videoFigure { scroll-margin-top: 105px; }
-.shell { width: calc(100% - 112px); max-width: 1600px; margin-inline: auto; }
+.shell { width: 100%; max-width: 1680px; margin-inline: auto; padding-inline: clamp(20px, 4vw, 48px); box-sizing: border-box; }
 .skipLink { position: fixed; left: 20px; top: -100px; z-index: 30; padding: 12px 20px; background: var(--ink); color: var(--paper); }
 .skipLink:focus { top: 12px; }
 .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--ink); flex-shrink: 0; }
@@ -188,7 +188,6 @@
 .footer nav a { display: flex; align-items: center; gap: 4px; min-height: 44px; color: var(--soft); font-size: 13px; }
 @media (min-width: 1800px) { .heroGrid { margin-bottom: 62px; } .hero { padding-top: 28px; } }
 @media (max-width: 1100px) {
-  .shell { width: calc(100% - 64px); }
   .heroGrid { gap: 32px; grid-template-columns: 1.1fr 1fr; }
   .hero h1 { font-size: clamp(36px, 4.2vw, 48px); }
   .heroDescription { font-size: 16px; }
@@ -241,7 +240,6 @@
   .site .wiki { padding-block: 28px; }
   .wiki .sectionHeading { gap: 12px; margin-bottom: 18px; }
   .wiki .sectionHeading h2 { font-size: 28px; }
-  .shell { width: calc(100% - 40px); }
   .hero h1 { font-size: clamp(28px, 7.9vw, 38px); }
   .releaseLink { font-size: 12px; gap: 8px; }
   .heroDescription br { display: none; }
@@ -309,3 +307,85 @@
 
 .inlineRepoLink { display: inline-flex; align-items: center; gap: 4px; vertical-align: baseline; }
 .inlineRepoLink svg { width: 14px; height: 14px; align-self: center; }
+
+/* Global-IT-SS vitrine */
+.gisHero { padding-block: 32px 56px; position: relative; overflow: visible; }
+.gisHero::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 420px;
+  background: radial-gradient(ellipse 70% 60% at 20% 40%, rgba(0, 81, 255, 0.12), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 20%, rgba(0, 255, 255, 0.08), transparent 65%);
+  pointer-events: none;
+}
+.gisHeroGrid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; position: relative; }
+.gisBrandName {
+  margin: 0 0 10px;
+  font-family: var(--font-montserrat, var(--wk-font-sans));
+  font-size: clamp(28px, 3.2vw, 42px);
+  font-weight: 700;
+  letter-spacing: -.04em;
+  line-height: 1.05;
+  background: linear-gradient(100deg, #0051ff, #00c3ff 55%, #00ffff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.gisEyebrow { font-family: ui-monospace, monospace; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--wk-gold-light); margin: 0 0 16px; }
+.gisTitle { font-family: var(--serif); font-size: clamp(36px, 4vw, 64px); line-height: 1.08; letter-spacing: -.04em; margin: 0; font-weight: 600; }
+.gisGradient { background: linear-gradient(100deg, #0051ff, #00c3ff, #00ffff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gisLead { margin: 20px 0 0; max-width: 36rem; color: var(--soft); font-size: clamp(16px, 1.25vw, 19px); line-height: 1.75; }
+.gisStats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 36px 0 0; padding-top: 28px; border-top: 1px solid var(--rule); }
+.gisStats dt { font-size: clamp(22px, 2vw, 30px); font-weight: 650; margin: 0; }
+.gisStats dd { margin: 6px 0 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.gisSymbolWrap { display: flex; justify-content: center; }
+.gisSymbol { width: min(100%, 380px); height: auto; filter: drop-shadow(0 0 48px rgba(0, 140, 255, 0.35)); }
+.poleGrid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.poleCard { height: 100%; border: 1px solid var(--rule); border-radius: 8px; padding: 24px; background: var(--wk-surface); display: flex; flex-direction: column; gap: 10px; transition: border-color .2s, transform .2s; }
+.poleCard:hover { border-color: var(--wk-accent-border); transform: translateY(-2px); }
+.poleIndex { font-family: ui-monospace, monospace; font-size: 12px; color: var(--mute); }
+.poleCard h3 { margin: 0; font-size: 18px; }
+.poleCard p { margin: 0; flex: 1; color: var(--soft); font-size: 15px; line-height: 1.65; }
+.engineGrid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.engineCard { border: 1px solid var(--rule); padding: 22px; border-radius: 8px; background: var(--wk-surface); height: 100%; }
+.engineCard h3 { margin: 0 0 10px; font-size: 17px; color: var(--wk-accent-text); }
+.engineCard p { margin: 0; color: var(--soft); font-size: 15px; line-height: 1.65; }
+.engineCta { margin: 28px 0 0; }
+.trustGrid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.trustCard { border-top: 1px solid var(--rule); padding-top: 20px; }
+.trustCard h3 { margin: 0 0 8px; font-size: 17px; }
+.trustCard p { margin: 0; color: var(--soft); line-height: 1.65; }
+.bookingLayout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: start; }
+.bookingForm { display: flex; flex-direction: column; gap: 14px; }
+.bookingForm label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--soft); }
+.bookingForm input, .bookingForm select, .bookingForm textarea {
+  font: inherit; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 4px; background: var(--wk-surface); color: var(--ink);
+}
+.bookingTabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.bookingTab, .bookingTabActive { font: inherit; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--soft); }
+.bookingTabActive { border-color: var(--wk-accent-border); color: var(--ink); background: var(--paper2); }
+.bookingSuccess { color: #047857; margin: 8px 0 0; }
+.bookingError { color: #b91c1c; margin: 8px 0 0; }
+.bookingAside { border: 1px solid var(--rule); border-radius: 8px; padding: 24px; background: var(--paper2); }
+.bookingAside h3 { margin: 0 0 16px; font-size: 17px; }
+.bookingAside ol { margin: 0; padding-left: 20px; color: var(--soft); line-height: 1.7; }
+.contactGrid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.contactLabel { margin: 0; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+.contactValue { margin: 8px 0 0; font-size: 17px; color: var(--ink); word-break: break-word; }
+a.contactValue:hover { color: var(--wk-gold); }
+.footerTagline { margin: 12px 0 0; color: var(--mute); font-size: 13px; line-height: 1.6; max-width: 52rem; }
+.productBand { margin-bottom: 8px; }
+.productBand .eyebrow { margin-bottom: 10px; }
+@media (max-width: 1100px) {
+  .gisHeroGrid { grid-template-columns: 1fr; }
+  .gisSymbolWrap { order: -1; }
+  .poleGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contactGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bookingLayout { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .poleGrid, .engineGrid, .trustGrid { grid-template-columns: 1fr; }
+  .gisStats { grid-template-columns: 1fr; }
+  .contactGrid { grid-template-columns: 1fr; }
+}

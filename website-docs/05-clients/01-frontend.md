@@ -1,67 +1,64 @@
-# Web 前端（frontend/）
+# Frontend Web (frontend/)
+Le frontend Web de WeKnora est une application monopage (SPA) basée sur **Vue 3 + TypeScript + Vite**, comprenant toutes les interfaces interactives pour la gestion de la base de connaissances, les dialogues avec les agents, la collaboration organisationnelle et les paramètres du système. Le même code sert simultanément trois formes :
 
-WeKnora 的 Web 前端是一个基于 **Vue 3 + TypeScript + Vite** 的单页应用（SPA），承载知识库管理、Agent 对话、组织协作、系统设置等全部交互界面。同一份代码同时服务三种形态：
+1. **Déploiement Web standard** : Les produits construits par Vite sont hébergés par un conteneur nginx, avec `/api` proxy inverse vers le backend ;
+2. **Intégration Web (Embed)** : Entrée légère indépendante `frontend/embed.html` + `frontend/src/embed-main.ts`, pour permettre aux sites tiers d'intégrer la conversation de l'agent via iframe / fenêtre flottante ;
+3. **Bureau (Wails)** : Communication côté Go avec le processus de bureau via la liaison générée automatiquement sous `frontend/src/wailsjs/`, supportant les fonctionnalités de bureau telles que la zone de glisser-déposer `--wails-draggable` et la synchronisation du thème clair/sombre de la fenêtre.
 
-1. **标准 Web 部署**：Vite 构建产物由 nginx 容器托管，`/api` 反向代理到后端；
-2. **网页嵌入（Embed）**：独立的轻量入口 `frontend/embed.html` + `frontend/src/embed-main.ts`，供第三方网站以 iframe / 浮窗方式嵌入智能体对话；
-3. **桌面端（Wails）**：通过 `frontend/src/wailsjs/` 下的自动生成绑定与桌面进程的 Go 侧通信，支持 `--wails-draggable` 拖拽区域和窗口深浅色同步等桌面功能。
+## Aperçu de la pile technologique
+Selon `frontend/package.json` (version 0.8.3) :
 
-## 技术栈总览
-
-依据 `frontend/package.json`（版本 0.8.3）：
-
-| 类别 | 选型 | 版本 | 说明 |
+| Catégorie | Sélection | Version | Description |
 | --- | --- | --- | --- |
-| 框架 | Vue | ^3.5.34 | Composition API，`<script setup>` 风格 |
-| 语言 | TypeScript | ~6.0.3 | `vue-tsc` 做类型检查（`npm run type-check`） |
-| 构建工具 | Vite | ^7.3.5 | 插件：`@vitejs/plugin-vue`、`@vitejs/plugin-vue-jsx` |
-| UI 组件库 | TDesign (tdesign-vue-next) | ^1.19.2 | 配合 `tdesign-icons-vue-next` 0.4.4（版本被 overrides 锁定） |
-| 状态管理 | Pinia | ^3.0.4 | 全部 store 位于 `frontend/src/stores/` |
-| 路由 | Vue Router | ^4.5.0 | `createWebHistory`，见 `frontend/src/router/index.ts` |
-| 多语言 | vue-i18n | ^11.4.2 | zh-CN / en-US / ru-RU / ko-KR / ja-JP |
-| HTTP | axios | ^1.16.0 | 统一实例封装于 `frontend/src/utils/request.ts` |
-| SSE 流式 | @microsoft/fetch-event-source | ^2.0.1 | 聊天流式回复，见 `frontend/src/api/chat/streame.ts` |
-| Markdown 渲染 | marked / marked-katex-extension / katex / highlight.js / mermaid | — | 聊天答案富文本渲染（公式、代码高亮、图表） |
-| 安全 | dompurify | ^3.4.11 | v-html 内容统一消毒（`frontend/src/utils/markdownDomPurify.ts`） |
-| 文档预览 | docx-preview / @vue-office/pptx / xlsx / papaparse | — | 站内预览 Word / PPT / Excel / CSV |
-| 长列表 | vue-virtual-scroller | 2.0.0-beta.8 | 消息列表虚拟滚动 |
-| 样式 | Less + CSS Variables | less ^4.6.4 | 主题变量见 `frontend/src/assets/theme/theme.css` |
+| Framework | Vue | ^3.5.34 | API de composition, style `<script setup>` |
+| Langage | TypeScript | ~6.0.3 | `vue-tsc` pour la vérification des types (`npm run type-check`) |
+| Outil de build | Vite | ^7.3.5 | Plugins : `@vitejs/plugin-vue`, `@vitejs/plugin-vue-jsx` |
+| Bibliothèque de composants UI | TDesign (tdesign-vue-next) | ^1.19.2 | Compatible avec `tdesign-icons-vue-next` 0.4.4 (version verrouillée par overrides) |
+| Gestion d'état | Pinia | ^3.0.4 | Tous les stores sont situés dans `frontend/src/stores/` |
+| Routeur | Vue Router | ^4.5.0 | `createWebHistory`, voir `frontend/src/router/index.ts` |
+| Multilingue | vue-i18n | ^11.4.2 | zh-CN / en-US / ru-RU / ko-KR / ja-JP |
+| HTTP | axios | ^1.16.0 | Instance unifiée dans `frontend/src/utils/request.ts` |
+| SSE flux | @microsoft/fetch-event-source | ^2.0.1 | Chat stream, voir `frontend/src/api/chat/streame.ts` |
+| Rendu Markdown | marked / marked-katex-extension / katex / highlight.js / mermaid | — | Réponses enrichies (formules, code, diagrammes) |
+| Sécurité | dompurify | ^3.4.11 | Désinfection v-html (`frontend/src/utils/markdownDomPurify.ts`) |
+| Aperçu documents | docx-preview / @vue-office/pptx / xlsx / papaparse | — | Aperçu Word / PPT / Excel / CSV |
+| Longues listes | vue-virtual-scroller | 2.0.0-beta.8 | Défilement virtuel des messages |
+| Style | Less + variables CSS | less ^4.6.4 | Thème dans `frontend/src/assets/theme/theme.css` |
 
-值得注意的依赖细节：
+Détails de dépendance à noter :
 
-- `xlsx` 从 SheetJS 官方固定地址安装 `0.20.2`，`package-lock.json` 保留完整性校验值；源码仓库不附带组件包，离线构建需提前准备 npm 缓存；
-- `frontend/pnpm-workspace.yaml` 并非声明子包 workspace，只包含 `allowBuilds` 白名单（允许 `@vue-office/pptx`、`esbuild`、`vue-demi` 执行构建脚本），用于 pnpm 的构建脚本安全策略；
-- `overrides` / `resolutions` 中禁用了 `lightningcss` 并统一 `esbuild`、`serialize-javascript` 版本。
+- `xlsx` : version SheetJS figée `0.20.2` dans `package-lock.json` (intégrité complète) ; build hors ligne = cache npm préparé ;
+- `frontend/pnpm-workspace.yaml` : pas de sous-paquet workspace, seulement la liste blanche `allowBuilds` (`@vue-office/pptx`, `esbuild`, `vue-demi`) ;
+- `overrides` / `resolutions` : `lightningcss` désactivé, versions unifiées pour `esbuild` et `serialize-javascript`.
 
-## 模块结构
-
+## Structure du module
 ```mermaid
 flowchart TB
-    subgraph entries["构建入口 (vite.config.ts 双入口)"]
-        MAIN["index.html + src/main.ts<br/>(主 SPA)"]
-        EMBED["embed.html + src/embed-main.ts<br/>(嵌入渠道 /embed/:channelId)"]
+    subgraph entries["Entrées build (vite.config.ts, double entrée)"]
+        MAIN["index.html + src/main.ts<br/>(SPA principal)"]
+        EMBED["embed.html + src/embed-main.ts<br/>(canal embed /embed/:channelId)"]
     end
 
-    subgraph app["应用层"]
-        ROUTER["路由 (src/router/index.ts)<br/>导航守卫: 登录 / 租户 / SystemAdmin"]
-        VIEWS["视图层 (src/views)<br/>knowledge / chat / agent / settings / organization / embed ..."]
-        COMP["通用组件 (src/components)"]
+    subgraph app["Couche application"]
+        ROUTER["Router (src/router/index.ts)<br/>gardes : auth / espace / SystemAdmin"]
+        VIEWS["Vues (src/views)<br/>knowledge / chat / agent / settings / organization / embed ..."]
+        COMP["Composants (src/components)"]
     end
 
-    subgraph state["状态与逻辑层"]
+    subgraph state["État et logique"]
         STORES["Pinia stores (src/stores)<br/>auth / settings / organization ..."]
         COMPOSABLES["composables (src/composables)<br/>useTheme / useFont / useChatStreamHandler ..."]
         HOOKS["hooks (src/hooks)"]
-        UTILS["utils (src/utils)<br/>request.ts / markdown 渲染 / 安全消毒"]
+        UTILS["utils (src/utils)<br/>request.ts / markdown / DOMPurify"]
     end
 
-    subgraph io["数据访问层"]
-        API["API 封装 (src/api)<br/>axios 实例 + SSE 流式"]
-        I18N["多语言 (src/i18n)<br/>zh-CN / en-US / ru-RU / ko-KR / ja-JP"]
-        WAILS["桌面绑定 (src/wailsjs)<br/>Wails 自动生成"]
+    subgraph io["Accès données"]
+        API["API (src/api)<br/>axios + SSE"]
+        I18N["i18n (src/i18n)<br/>zh-CN / en-US / ru-RU / ko-KR / ja-JP"]
+        WAILS["Bindings bureau (src/wailsjs)<br/>généré Wails"]
     end
 
-    BACKEND["WeKnora 后端 API<br/>(/api, /files)"]
+    BACKEND["API WeKnora<br/>(/api, /files)"]
 
     MAIN --> ROUTER --> VIEWS
     EMBED --> VIEWS
@@ -76,307 +73,285 @@ flowchart TB
     COMPOSABLES --> WAILS
 ```
 
-### 目录速览
-
-| 目录 | 职责 |
+### Aperçu du contenu
+| Contenu | Responsabilité |
 | --- | --- |
-| `frontend/src/main.ts` | 主 SPA 入口：安装 TDesign / Pinia / Router / i18n，初始化主题与字体，注册 TDesign 图标离线保护（`installTDesignIconOfflineGuard`，避免运行时请求 `tdesign.gtimg.com`），等待 `router.isReady()` 后再挂载以避免首屏闪烁 |
-| `frontend/src/embed-main.ts` | 嵌入入口：独立的 Vue 应用与独立路由（仅 `/embed/:channelId`），挂载 `#embed-app`，使用独立 i18n（`src/i18n/embed.ts`） |
-| `frontend/src/views/` | 页面级组件，按业务域分目录（见下方路由表） |
-| `frontend/src/components/` | 跨页面通用组件（消息气泡、上传遮罩、命令面板等） |
-| `frontend/src/stores/` | Pinia 状态（见下方 store 表） |
-| `frontend/src/api/` | 后端 API 封装（见下方 API 模块表） |
-| `frontend/src/composables/` | 组合式函数：主题、字体、聊天流处理、引用弹层、Embed 桥接等 |
-| `frontend/src/hooks/` | 业务 hook（如 `useKnowledgeBase`） |
-| `frontend/src/utils/` | 工具集：axios 实例、markdown 渲染管线、DOMPurify 消毒、Agent 工具展示等 |
-| `frontend/src/i18n/` | vue-i18n 配置与语言包 |
-| `frontend/src/assets/theme/` | 主题 CSS 变量（light / dark） |
-| `frontend/src/wailsjs/` | Wails 桌面端自动生成绑定（勿手改） |
-| `frontend/src/directives/`、`frontend/src/types/`、`frontend/src/config/` | 自定义指令、类型定义、配置 |
-| `frontend/public/` | 静态资源：`weknora-widget.js`（第三方站点嵌入加载器）、`config.js`（运行时配置占位，容器启动时覆盖）、离线 TDesign 图标 |
+| `frontend/src/main.ts` | Entrée principale SPA : installer TDesign / Pinia / Router / i18n, initialiser le thème et les polices, enregistrer la protection hors ligne des icônes TDesign (`installTDesignIconOfflineGuard`, éviter les requêtes à l'exécution `tdesign.gtimg.com`), attendre `router.isReady()` avant de monter pour éviter le clignotement de l'écran initial |
+| `frontend/src/embed-main.ts` | Entrée intégrée : application Vue indépendante avec routage indépendant (uniquement `/embed/:channelId`), montage `#embed-app`, utilisation de i18n indépendante (`src/i18n/embed.ts`) |
+| `frontend/src/views/` | Composants au niveau des pages, classés par domaine métier (voir tableau de routage ci-dessous) |
+| `frontend/src/components/` | Composants communs inter-pages (bulle de message, masque de téléchargement, panneau de commandes, etc.) |
+| `frontend/src/stores/` | État Pinia (voir tableau store ci-dessous) |
+| `frontend/src/api/` | Encapsulation API backend (voir tableau des modules API ci-dessous) |
+| `frontend/src/composables/` | Fonctions compositionnelles : thème, polices, gestion du flux de chat, couche de citation, pont Embed, etc. |
+| `frontend/src/hooks/` | Hooks métier (ex. `useKnowledgeBase`) |
+| `frontend/src/utils/` | Axios, pipeline markdown, DOMPurify, affichage outils Agent, etc. |
+| `frontend/src/i18n/` | Configuration vue-i18n et packs de langues |
+| `frontend/src/assets/theme/` | Variables CSS thème clair / sombre |
+| `frontend/src/wailsjs/` | Bindings Wails générés (ne pas modifier) |
+| `frontend/src/directives/`, `types/`, `config/` | Directives, types, configuration |
+| `frontend/public/` | Statiques : `weknora-widget.js`, `config.js` (runtime), icônes TDesign hors ligne |
 
-## 页面路由清单
+## Liste des routes de page
+Les routes sont définies à `frontend/src/router/index.ts`, utilisées à `createWebHistory`, tous les composants de page sont importés dynamiquement (chargement paresseux par paquetage selon la route).
 
-路由定义在 `frontend/src/router/index.ts`，使用 `createWebHistory`，所有页面组件均为动态 import（按路由分包懒加载）。
-
-### 顶层路由
-
-| 路径 | 名称 | 组件 | 功能 |
+### Routes principales
+| Chemin | Nom | Composant | Fonction |
 | --- | --- | --- | --- |
-| `/` | — | 重定向 | 重定向到 `/platform/knowledge-bases` |
-| `/login` | `login` | `src/views/auth/Login.vue` | 登录页（含 OIDC、语言切换、动画背景） |
-| `/register` | `registerByInvite` | `src/views/auth/Login.vue` | 邀请注册落地页——复用 Login 组件，挂载时检测 `?token=xxx` 切换到邀请注册模式 |
-| `/onboarding/workspace` | `workspaceOnboarding` | `src/views/auth/WorkspaceOnboarding.vue` | 无租户用户的工作空间引导页（创建或等待被邀请），需要登录但不要求已有租户 |
-| `/join` | `joinOrganization` | 重定向 | 加入组织邀请链接，把 `?code=` 转成 `invite_code` 参数并跳到 `/platform/organizations` |
-| `/knowledgeBase` | `home` | `src/views/knowledge/KnowledgeBase.vue` | 知识库详情（历史遗留顶层路径） |
-| `/platform` | `Platform` | `src/views/platform/index.vue` | 平台主布局（左侧菜单 + 路由出口 + 全局设置模态 + 拖拽上传遮罩），默认重定向到知识库列表 |
-| `/platform/dev/markdown` | `markdownTest` | `src/views/dev/MarkdownTestPage.vue` | 仅开发模式（`import.meta.env.DEV`）注册的 Markdown 渲染视觉回归测试页 |
+| `/` | — | Redirection | Rediriger vers `/platform/knowledge-bases` |
+| `/login` | `login` | `src/views/auth/Login.vue` | Page de connexion (incluant OIDC, changement de langue, arrière-plan animé) |
+| `/register` | `registerByInvite` | `src/views/auth/Login.vue` | Page de destination pour l'inscription par invitation — réutilise le composant Login, détecter `?token=xxx` à l'affichage pour passer en mode inscription par invitation |
+| `/onboarding/workspace` | `workspaceOnboarding` | `src/views/auth/WorkspaceOnboarding.vue` | Page d'orientation de l'espace de travail pour les utilisateurs sans locataire (créer ou attendre une invitation), nécessite une connexion mais ne requiert pas de locataire existant |
+| `/join` | `joinOrganization` | Redirection | Lien d'invitation pour rejoindre l'organisation, transformer `?code=` en paramètre `invite_code` et passer à `/platform/organizations` |
+| `/knowledgeBase` | `home` | `src/views/knowledge/KnowledgeBase.vue` | Détails de la base de connaissances (chemin principal hérité) |
+| `/platform` | `Platform` | `src/views/platform/index.vue` | Layout principal (menu, router-outlet, modale paramètres, drag-and-drop upload), défaut → liste des bases |
+| `/platform/dev/markdown` | `markdownTest` | `src/views/dev/MarkdownTestPage.vue` | Régression visuelle Markdown, dev uniquement (`import.meta.env.DEV`) |
 
-### `/platform` 子路由
-
-| 路径 | 名称 | 组件 | 功能 |
+### `/platform` Sous-routeur
+| Chemin | Nom | Composant | Fonctionnalité |
 | --- | --- | --- | --- |
-| `/platform/knowledge-bases` | `knowledgeBaseList` | `src/views/knowledge/KnowledgeBaseList.vue` | 知识库列表：空间侧栏（全部/我的/按组织/收藏/最近）、卡片列表、创建入口；支持按更新时间 / 创建时间 / 名称排序（`components/ResourceSortControl.vue`，智能体列表同样适用） |
-| `/platform/knowledge-bases/:kbId` | `knowledgeBaseDetail` | `src/views/knowledge/KnowledgeBase.vue` | 知识库详情：文档列表（可按更新时间 / 创建时间 / 文件名排序，排序在服务端完成，默认创建时间倒序）、上传、解析状态、会话入口、Wiki 等 |
-| `/platform/agents` | `agentList` | `src/views/agent/AgentList.vue` | 智能体（Agent）列表与管理，编辑走 `AgentEditorModal.vue`；需部署能力 `agents` |
-| `/platform/toolbox/:section?` | `toolbox` | `src/views/toolbox/Toolbox.vue` | 工具箱：`skills`（技能）、`mcp`（MCP 服务）、`browserconnection`（浏览器连接）三个标签页，见下方「工具箱」 |
-| `/platform/artifacts` | `artifactLibrary` | `src/views/artifacts/ArtifactLibrary.vue` | 产物库：汇总智能体在各会话中生成的文件；需部署能力 `settings.sandbox` |
-| `/platform/creatChat` | `globalCreatChat` | `src/views/creatChat/creatChat.vue` | 新建对话页：推荐问题、选择知识库/Agent/模型后发起会话 |
-| `/platform/knowledge-bases/:kbId/creatChat` | `kbCreatChat` | `src/views/creatChat/creatChat.vue` | 从某个知识库上下文发起新对话（同一组件） |
-| `/platform/chat/:chatid` | `chat` | `src/views/chat/index.vue` | 会话页：消息流（SSE 流式渲染、骨架屏、虚拟滚动）、引用面板、附件预览 |
-| `/platform/organizations` | `organizationList` | `src/views/organization/OrganizationList.vue` | 组织列表：创建/加入组织、成员与共享资源管理（配合 `OrganizationSettingsModal.vue`）；需部署能力 `organizations`，Lite 版始终隐藏。添加成员时按完整空间 ID 精确查找，不再按空间名模糊搜索 |
-| `/platform/settings` | `settings` | `src/views/settings/Settings.vue` | 设置中心（全屏模态形态），分区见下方「设置中心的分区与可见性」 |
-| `/platform/tenant` | — | 重定向 | 兼容旧路径 → `/platform/settings` |
-| `/platform/knowledge-search` | — | 重定向 | 旧全局搜索路径 → 知识库列表并通过 `?cmdk=` 打开全局命令面板（⌘K） |
-| `/platform/integrations` | — | 重定向 | → `/platform/settings?section=integration-im`（旧 `?tab=` 会归一成 `integration-<tab>`；视图在 `src/views/integrations/`） |
-| `/platform/system`、`/platform/system/settings`、`/platform/system/admins` | `systemSettings` / `systemAdmins` | 重定向 | 系统管理旧路径 → `/platform/settings?section=system-global`，要求 `requiresSystemAdmin`（视图在 `src/views/system/`：`SystemSettings.vue`、`SystemAuditLog.vue`、`PlatformAPIKeys.vue` 等） |
-| `/platform/system/queues` | `systemQueues` | 重定向 | → `/platform/settings?section=runtime-queues`（运行时任务队列 `src/views/system/RuntimeQueues.vue`） |
+| `/platform/knowledge-bases` | `knowledgeBaseList` | `src/views/knowledge/KnowledgeBaseList.vue` | Liste des bases de connaissances : barre latérale de l'espace (Tout / Le Mien / Par Organisation / Favoris / Récents), liste de cartes, entrée de création ; prend en charge le tri par date de mise à jour / date de création / nom (`components/ResourceSortControl.vue`, applicable également à la liste des agents intelligents) |
+| `/platform/knowledge-bases/:kbId` | `knowledgeBaseDetail` | `src/views/knowledge/KnowledgeBase.vue` | Détails de la base de connaissances : liste des documents (peut être triée par date de mise à jour / date de création / nom de fichier, le tri est effectué côté serveur, tri par défaut : date de création décroissante), téléchargement, état de l'analyse, entrée de session, Wiki, etc. |
+| `/platform/agents` | `agentList` | `src/views/agent/AgentList.vue` | Liste et gestion des agents intelligents (Agent), l'édition se fait via `AgentEditorModal.vue` ; nécessite la capacité de déploiement `agents` |
+| `/platform/toolbox/:section?` | `toolbox` | `src/views/toolbox/Toolbox.vue` | Boîte à outils : `skills`, `mcp`, `browserconnection` — voir § Boîte à outils |
+| `/platform/artifacts` | `artifactLibrary` | `src/views/artifacts/ArtifactLibrary.vue` | Fichiers produits par les agents ; capacité `settings.sandbox` |
+| `/platform/creatChat` | `globalCreatChat` | `src/views/creatChat/creatChat.vue` | Nouvelle page de conversation : poser des questions recommandées, choisir la base de connaissances/Agent/modèle avant de lancer la session |
+| `/platform/knowledge-bases/:kbId/creatChat` | `kbCreatChat` | `src/views/creatChat/creatChat.vue` | Lancer une nouvelle conversation à partir du contexte d’une certaine base de connaissances (même composant) |
+| `/platform/chat/:chatid` | `chat` | `src/views/chat/index.vue` | Page de session : flux de messages (rendu en flux SSE, écran squelette, défilement virtuel), panneau de références, aperçu des pièces jointes |
+| `/platform/organizations` | `organizationList` | `src/views/organization/OrganizationList.vue` | Liste des organisations : créer/rejoindre une organisation, gestion des membres et des ressources partagées (en lien avec `OrganizationSettingsModal.vue`) ; nécessite la capacité de déploiement `organizations`, la version Lite est toujours masquée. Lors de l’ajout de membres, rechercher précisément par ID complet de l’espace, plus de recherche approximative par nom d’espace |
+| `/platform/settings` | `settings` | `src/views/settings/Settings.vue` | Centre des paramètres (mode plein écran modale), partitions voir ci-dessous « Partitions et visibilité du centre des paramètres » |
+| `/platform/tenant` | — | Redirection | Ancien chemin → `/platform/settings` |
+| `/platform/knowledge-search` | — | Redirection | Recherche globale legacy → liste KB + panneau ⌘K (`?cmdk=`) |
+| `/platform/integrations` | — | Redirection | → `/platform/settings?section=integration-im` (l'ancien `?tab=` sera unifié en `integration-<tab>` ; vue dans `src/views/integrations/`) |
+| `/platform/system`, `/platform/system/settings`, `/platform/system/admins` | `systemSettings` / `systemAdmins` | Redirection | Ancien chemin de gestion système → `/platform/settings?section=system-global`, nécessite `requiresSystemAdmin` (vue dans `src/views/system/` : `SystemSettings.vue`, `SystemAuditLog.vue`, `PlatformAPIKeys.vue`, etc.) |
+| `/platform/system/queues` | `systemQueues` | Redirection | → `/platform/settings?section=runtime-queues` (file d'attente des tâches à l'exécution `src/views/system/RuntimeQueues.vue`) |
 
-### 独立入口：嵌入页
+### Entrée indépendante : page intégrée
+`/embed/:channelId` n'appartient pas à la route principale du SPA, mais constitue une entrée indépendante composée de `frontend/embed.html` + `frontend/src/embed-main.ts` (nginx et le serveur de développement Vite redirigeront tous les `/embed/*` vers `embed.html`), le composant est `src/views/embed/EmbedPage.vue` (avec le support de `EmbedChatView.vue` / `EmbedChatCore.vue` / `EmbedBotMessage.vue`, etc.), utilisant le token Embed pour l'authentification, destiné à être intégré dans un iframe de sites tiers.
 
-`/embed/:channelId` 不属于主 SPA 路由，而是由 `frontend/embed.html` + `frontend/src/embed-main.ts` 构成的独立入口（nginx 与 Vite dev server 都将 `/embed/*` fallback 到 `embed.html`），组件为 `src/views/embed/EmbedPage.vue`（配套 `EmbedChatView.vue` / `EmbedChatCore.vue` / `EmbedBotMessage.vue` 等），使用 Embed token 鉴权，供第三方网站 iframe 嵌入。
+### Sections et visibilité du centre de réglages
+`Settings.vue` Présenter toutes les sections en sept groupes, localiser avec `?section=` :
 
-### 设置中心的分区与可见性
-
-`Settings.vue` 把所有分区按七组呈现，用 `?section=` 定位：
-
-| 分组 | 分区（`section` 值） |
+| Groupe | Partition (valeur `section`) |
 | --- | --- |
-| 账户 | `general`（个人偏好）、`userprofile`、`mymemory`（个人记忆）、`envvars`（个人变量） |
-| 空间 | `tenant`（空间信息）、`members`（成员）、`chathistory`、`memory`（空间记忆） |
-| 模型与运行 | `models`、`ollama`、`weknoracloud` |
-| 发布集成 | `integration-im`、`integration-embed`、`integration-api`、`integration-mcpserver`、`integration-cli`、`integration-chrome`、`integration-claw` |
-| 数据与扩展 | `vectorstore`、`parser`、`storage`、`sandbox`、`websearch` |
-| 系统管理 | `system-global`、`runtime-queues`、`platform-api-keys`、`system-audit-log` |
-| 平台 | `system`（版本信息） |
+| Compte | `general` (préférences personnelles), `userprofile`, `mymemory` (mémoire personnelle), `envvars` (variables personnelles) |
+| Espace | `tenant` (informations spatiales), `members` (membres), `chathistory`, `memory` (mémoire spatiale) |
+| Modèle et exécution | `models`, `ollama`, `weknoracloud` |
+| Intégration de publication | `integration-im`, `integration-embed`, `integration-api`, `integration-mcpserver`, `integration-cli`, `integration-chrome`, `integration-claw` |
+| Données et extensions | `vectorstore`, `parser`, `storage`, `sandbox`, `websearch` |
+| Gestion du système | `system-global`, `runtime-queues`, `platform-api-keys`, `system-audit-log` |
+| Plateforme | `system` (informations sur la version) |
 
-发布集成的标签页由 `frontend/src/config/integrations.ts` 的 `INTEGRATION_TABS` / `INTEGRATION_PREVIEW_ITEMS` 注册，分区值统一为 `integration-<tab>`；旧的 `/platform/integrations?tab=<tab>` 会被归一成对应分区。
+L'onglet intégré publié est enregistré par `frontend/src/config/integrations.ts` de `INTEGRATION_TABS` / `INTEGRATION_PREVIEW_ITEMS`, la valeur de la partition est uniformisée à `integration-<tab>` ; l'ancien `/platform/integrations?tab=<tab>` sera normalisé dans la partition correspondante.
 
-自 v0.8.2 起，技能、MCP 服务与浏览器连接不再是设置分区，而是移到[工具箱](#工具箱)。旧书签 `/platform/settings?section=skills|mcp|browserconnection` 会被路由守卫重定向到 `/platform/toolbox/<section>`（`skills` 会保留 `sandboxId` 参数）。
+Depuis la version v0.8.2, les compétences, les services MCP et la connexion au navigateur ne sont plus configurés par section, mais déplacés dans [Boîte à outils](#boite-a-outils). Les anciens signets `/platform/settings?section=skills|mcp|browserconnection` seront redirigés par le gardien de route vers `/platform/toolbox/<section>` (`skills` conservera le paramètre `sandboxId`).
 
-可见性由三套规则决定，且**前端只做收敛展示，后端路由守卫才是权威**：
+La visibilité est déterminée par trois ensembles de règles, et **le front-end ne fait qu'afficher de manière convergente, c'est le gardien de route back-end qui est l'autorité** :
 
-- **空间角色门槛**：`frontend/src/config/settingsAccess.ts` 的 `SETTINGS_SECTION_MIN_ROLE` 给每个分区规定最低角色。`general` / `models` / `system` / `userprofile` / `tenant` / `members` / `mymemory` / `envvars` 是 `viewer` 起（只读可见），`ollama`、`weknoracloud`、`websearch`、`chathistory`、`memory`、`vectorstore`、`parser`、`storage`、`sandbox` 要求 `admin`；发布集成中的 `integration-api` 要求 `owner`（`INTEGRATION_TAB_MIN_ROLE`）。另有 `SETTINGS_MANAGEMENT_SHORTCUT_MIN_ROLE`：头像菜单里那些标着「管理」的快捷入口门槛更高（成员管理要 `owner`，模型管理要 `admin`），避免把只读页面伪装成管理入口。
-- **部署能力**：`frontend/src/config/deploymentCapabilities.ts` 的 `SETTINGS_SECTION_CAPABILITY` / `INTEGRATION_TAB_CAPABILITY` 把分区映射到 `GET /api/v1/system/capabilities` 返回的能力键（如 `settings.sandbox`、`integrations.mcpserver`），能力明确为 `supported: false` 时隐藏入口，见下方「设置导航与部署能力」。
-- **系统管理员白名单**：`SYSTEM_ADMIN_SETTINGS_SECTIONS`（`system-global`、`runtime-queues`、`platform-api-keys`、`system-audit-log`）只对系统管理员显示，与空间角色无关，详见[租户、用户与认证授权](../03-features/01-tenant-auth.md)的「系统管理员与平台控制台」。
+- **Seuil des rôles dans l'espace** : `frontend/src/config/settingsAccess.ts` de `SETTINGS_SECTION_MIN_ROLE` fixe le rôle minimum pour chaque zone. `general` / `models` / `system` / `userprofile` / `tenant` / `members` / `mymemory` / `envvars` sont `viewer` et plus (lecture seule visible), `ollama`, `weknoracloud`, `websearch`, `chathistory`, `memory`, `vectorstore`, `parser`, `storage`, `sandbox` nécessitent `admin` ; pour la publication intégrée, `integration-api` nécessite `owner` (`INTEGRATION_TAB_MIN_ROLE`). Il existe aussi `SETTINGS_MANAGEMENT_SHORTCUT_MIN_ROLE` : dans le menu de l'avatar, les raccourcis étiquetés « Gestion » ont un seuil plus élevé (gestion des membres nécessite `owner`, gestion des modèles nécessite `admin`), afin d’éviter de faire passer des pages en lecture seule pour des entrées de gestion.
+- **Capacité de déploiement** : `SETTINGS_SECTION_CAPABILITY` / `INTEGRATION_TAB_CAPABILITY` dans `deploymentCapabilities.ts` mappent les sections sur `GET /api/v1/system/capabilities` ; si `supported: false`, l’entrée est masquée (voir § navigation et capacités).
+- **Administrateurs système** : sections `system-global`, `runtime-queues`, `platform-api-keys`, `system-audit-log` visibles seulement pour SystemAdmin — voir [Auth et locataires](../03-features/01-tenant-auth.md).
 
-### 工具箱
+### Boîte à outils {#boite-a-outils}
+Le « Boîte à outils » du menu de gauche (`/platform/toolbox/:section?`, `src/views/toolbox/Toolbox.vue`) gère de manière centralisée les outils disponibles pour l'agent, les onglets sont définis dans `frontend/src/config/toolbox.ts` de `TOOLBOX_ITEMS` :
 
-左侧菜单的「工具箱」（`/platform/toolbox/:section?`，`src/views/toolbox/Toolbox.vue`）集中管理智能体可用的工具，标签页定义在 `frontend/src/config/toolbox.ts` 的 `TOOLBOX_ITEMS`：
-
-| 标签页（`section`） | 内容 | 可见条件 |
+| Onglet (`section`) | Contenu | Condition de visibilité |
 | --- | --- | --- |
-| `skills` | 技能管理（复用 `SkillSettings.vue`），可带 `?sandboxId=` 定位沙箱配置 | `admin` 起，且部署支持 `settings.sandbox` |
-| `mcp` | MCP 服务（复用 `McpSettings.vue`） | `admin` 起，且部署支持 `settings.mcp` |
-| `browserconnection` | 浏览器连接（复用 `BrowserConnectionSettings.vue`），标签上显示连接状态 | `viewer` 起 |
+| `skills` | Gestion des compétences (réutilise `SkillSettings.vue`), peut inclure la configuration du sandbox pour `?sandboxId=` | À partir de `admin`, et le déploiement prend en charge `settings.sandbox` |
+| `mcp` | Service MCP (réutilise `McpSettings.vue`) | À partir de `admin`, et le déploiement prend en charge `settings.mcp` |
+| `browserconnection` | Connexion au navigateur (réutilise `BrowserConnectionSettings.vue`), affiche l'état de la connexion sur l'onglet | À partir de `viewer` |
 
-标签页沿用原设置分区的角色与部署能力门槛（`canAccessToolboxSection`）；当前空间没有任何可见标签页时显示空状态。侧栏菜单项悬停时会预览可用工具，浏览器连接状态也会显示在侧栏。浏览器连接的用法见[本地浏览器](09-local-browser.md)。
+Les onglets conservent le rôle et le seuil de capacité de déploiement de la partition des paramètres d'origine (`canAccessToolboxSection`) ; lorsque l'espace actuel ne contient aucun onglet visible, un état vide est affiché. Lorsqu'un élément du menu de la barre latérale est survolé, les outils disponibles sont prévisualisés, et l'état de la connexion du navigateur est également affiché dans la barre latérale. L'utilisation de la connexion du navigateur est expliquée dans [Navigateur local](09-local-browser.md).
 
 <Screenshot
   src="/screenshots/toolbox.png"
-  caption="工具箱：在一个页面管理技能、MCP 服务和浏览器连接"
-  hint="展示左侧菜单「工具箱」入口（含悬停预览的工具图标），以及工具箱页面顶部三个标签页（技能 / MCP 服务 / 浏览器连接，含数量与连接状态），当前停留在技能标签页。" />
+  caption="Boîte à outils : skills, services MCP et connexion navigateur sur une seule page"
+  hint="Entrée Boîte à outils dans le menu gauche (aperçu au survol), trois onglets en tête (skills / MCP / navigateur avec compteurs et état de connexion), onglet skills actif." />
 
-### 知识库编辑弹窗的分区
+### Sections de la fenêtre contextuelle d'édition de la base de connaissances
+De nombreuses configurations **ne se trouvent pas dans le centre de paramètres, mais dans la fenêtre contextuelle d'édition de la base de connaissances** (`KnowledgeBaseEditorModal.vue`), car elles s'appliquent par base. Les sections de la barre latérale sont organisées en cinq groupes, dont trois n'apparaissent que lors de l'« édition d'une base de connaissances existante » :
 
-不少配置**不在设置中心，而在知识库编辑弹窗里**（`KnowledgeBaseEditorModal.vue`），因为它们是按库生效的。侧栏分区按五组组织，其中三个只在「编辑已有知识库」时出现：
-
-| 分组 | 分区（`key`） | 备注 |
+| Groupe | Partition (`key`) | Remarques |
 | --- | --- | --- |
-| 基础 | `basic`、`models` | 名称、类型、对话/向量/摘要模型 |
-| 处理 | `parser`、`multimodal`、`asr`、`chunking` | 解析引擎与首行表头、图片理解、语音转写、分块参数 |
-| 数据 | `vectorStore`、`storage`、`faq` | `faq` 仅 FAQ 类型库；`vectorStore` 绑定后不可改 |
-| 集成 | `datasource` | **仅编辑模式**，飞书 / Lark（知识库与云盘）、Notion、Confluence、语雀、钉钉文档、腾讯 IMA、RSS / Atom、GitLab 等同步配在这里，不在全局设置里（连接器定义见 `views/knowledge/settings/DataSourceEditorDialog.vue`） |
-| 管理 | `graph`、`advanced`、`share`、`activity` | 知识图谱、高级项、共享到组织、活动流；后两个仅编辑模式 |
+| Base | `basic`, `models` | Nom, type, modèle de dialogue / vecteur / résumé |
+| Traitement | `parser`, `multimodal`, `asr`, `chunking` | Moteur d'analyse et en-tête de première ligne, compréhension des images, transcription vocale, paramètres de segmentation |
+| Données | `vectorStore`, `storage`, `faq` | `faq` uniquement bibliothèque de type FAQ ; `vectorStore` ne peut pas être modifié après liaison |
+| Intégration | `datasource` | **Mode édition uniquement**, Feishu / Lark (base de connaissances et cloud), Notion, Confluence, Yuque, documents DingTalk, Tencent IMA, RSS / Atom, GitLab, etc. La synchronisation se configure ici, pas dans les paramètres globaux (définition du connecteur voir `views/knowledge/settings/DataSourceEditorDialog.vue`) |
+| Gestion | `graph`, `advanced`, `share`, `activity` | Graphique de connaissances, options avancées, partage à l'organisation, flux d'activité ; les deux derniers sont uniquement en mode édition |
 
-### 全局命令面板（⌘K / Ctrl+K）
+### Panneau de commande global (⌘K / Ctrl+K)
+`components/GlobalCommandPalette.vue` est la deuxième principale voie de navigation en dehors de la barre latérale :
 
-`components/GlobalCommandPalette.vue` 是除侧栏之外的第二条主要导航通路：
+- Rechercher dans la base de connaissances, les documents et les conversations, avec la possibilité de restreindre la portée à une certaine base de connaissances (scope chip) avant de rechercher ;
+- Afficher les recherches récentes et les actions rapides (créer une base, télécharger, créer une nouvelle conversation, etc.) lorsqu’il n’y a pas de contenu ;
+- L’entrée en haut à droite ouvre le **tiroir des paramètres de recherche** (`views/settings/RetrievalSettings.vue`). C’est l’endroit pour ajuster TopK, le seuil vectoriel/de mots-clés et les paramètres de réordonnancement — il **n’est pas dans le centre de paramètres**, et si vous ne le trouvez pas, c’est ici.
 
-- 搜索知识库、文档与会话，支持把范围收窄到某个知识库（scope chip）后再搜；
-- 空状态下展示最近搜索与快捷动作（建库、上传、新建会话等）；
-- 右上角的入口打开**检索设置抽屉**（`views/settings/RetrievalSettings.vue`）。这是调 TopK、向量/关键词阈值、重排参数的地方——它**不在设置中心里**，找不到的话就是在这。
+### Garde de navigation
+Chaîne dans `frontend/src/router/index.ts` :
 
-### 导航守卫
+1. **Callback OIDC** : hash `oidc_result=` / `oidc_error=` → laisser `App.vue` traiter ;
+2. **Signets boîte à outils** : `/platform/settings?section=skills|mcp|browserconnection` → `/platform/toolbox/<section>` ;
+3. **Deep link Lite / bureau** : après reload, restaurer le sous-chemin `/platform` depuis `sessionStorage` ;
+4. **Session** : si déconnecté, tenter `getCurrentUser()` avec `weknora_token` (memberships à jour) ;
+5. **Auto-login bureau** : sinon une fois `autoSetup()` via Wails `GetAutoSetupToken()` + en-tête `X-WeKnora-Desktop-Token` (v0.8.2+, natif uniquement) ;
+6. **Locataire** : connecté sans espace → `/onboarding/workspace` ;
+7. **Capacités** : `meta.requiredCapability` non supportée → message puis liste KB (échec de détection = laisser passer) ;
+8. **SystemAdmin** : `requiresSystemAdmin` → redirection si non admin (UI seulement ; le serveur impose aussi).
 
-`router.beforeEach` 中实现了一条完整的鉴权链（`frontend/src/router/index.ts`）：
+## Gestion d'état (Pinia)
+Stores sous `frontend/src/stores/` :
 
-1. **OIDC 回调放行**：URL hash 含 `oidc_result=` / `oidc_error=` 时直接放行，交由 `App.vue` 消费；
-2. **工具箱旧书签**：`/platform/settings?section=skills|mcp|browserconnection` 重定向到 `/platform/toolbox/<section>`；
-3. **Lite / 桌面端深链恢复**：Lite 模式硬刷新落在默认首页时，从 `sessionStorage` 恢复上次访问的 `/platform` 子路径（不恢复到组织页）；
-4. **会话恢复**：未登录时先用 `localStorage` 中的 `weknora_token` 调 `getCurrentUser()` 恢复会话（同时刷新 memberships，避免角色变更滞后）；
-5. **桌面端自动登录**：恢复失败则尝试一次 `autoSetup()`。自 v0.8.2 起它只在原生桌面端生效：先经 Wails 绑定 `GetAutoSetupToken()` 取得本进程的随机凭据，再以 `X-WeKnora-Desktop-Token` 请求头调用 `POST /api/v1/auth/auto-setup`；浏览器中打开的 Lite 版没有该绑定，直接走普通注册 / 登录。失败会在 `localStorage` 打标避免重复尝试；
-6. **租户门槛**：已登录但无有效租户 → 跳 `/onboarding/workspace`；
-7. **部署能力门槛**：路由 `meta.requiredCapability`（如 `agents`、`organizations`、`settings.sandbox`）不被当前部署支持时，提示后跳回知识库列表；能力探测失败时放行，由后端接口兜底；
-8. **SystemAdmin 门槛**：`requiresSystemAdmin` 路由对非系统管理员跳回知识库列表（仅 UI 层拦截，服务端另有强校验）。
-
-## 状态管理（Pinia）
-
-`frontend/src/stores/` 下的 store 与辅助模块：
-
-| 文件 | Store ID / 类型 | 职责 |
+| Fichier | ID / Type de Store | Responsabilités |
 | --- | --- | --- |
-| `stores/auth.ts` | `useAuthStore` | 认证核心：user / token / refreshToken / tenant / memberships / 角色判断（`hasRole`、`isSystemAdmin`）、Lite 模式标记；登出时级联清理其他 store 的空间级缓存并按用户重载偏好（主题/字体） |
-| `stores/chatResources.ts` | `useChatResourcesStore` | 空间级资源缓存（TTL 60s）：知识库、Agent、模型、Web 搜索 provider 列表，供聊天/新建对话选择器复用 |
-| `stores/editorResources.ts` | `useEditorResourcesStore` | 编辑器/设置相关资源缓存（TTL 60s）：存储引擎配置与状态、Prompt 模板、解析引擎、系统信息、MCP 服务、Skill、Agent 类型预设、检索配置 |
-| `stores/commandPalette.ts` | `useCommandPaletteStore` | 全局命令面板（⌘K / Ctrl+K）开关与查询；最近搜索按 (user, tenant) 作用域存储避免跨账号泄漏 |
-| `stores/organization.ts` | `useOrganizationStore` | 组织协作：组织列表、成员、共享知识库/Agent、加入申请与审核、角色升级等全套动作 |
-| `stores/organizationState.ts` | 纯函数模块 | 组织列表 upsert / merge、加入审核对成员数影响等纯逻辑（配套单测 `organizationState.test.ts`） |
-| `stores/settings.ts` | 设置 store | 会话与 Agent 配置：选中的知识库/文件/标签/MCP/Skill/工具、模型配置、Ollama 配置、Web 搜索开关等 |
-| `stores/settingsStorage.ts` | 纯函数模块 | 设置持久化（`WeKnora_settings` key）的读取、克隆与内建 Agent 模式修复（配套 `settingsStorage.test.mjs`） |
-| `stores/menu.ts` | `useMenuStore` | 左侧导航菜单结构（新建对话、知识库、Agent 等条目）与 i18n 标题 |
-| `stores/knowledge.ts` | `knowledgeStore` | 知识卡片列表与总数（轻量） |
-| `stores/ui.ts` | `useUIStore` | 全局 UI 状态：设置模态、知识库编辑模态、手工文档编辑器、侧栏折叠等开关与参数 |
-| `stores/uploadConfirm.ts` | 上传确认 store | 上传/URL 导入/手工录入/重新解析前的处理参数确认对话框状态 |
-| `stores/versionedRequest.ts` | 纯函数模块 | `createVersionedRequestCoordinator`：带版本号的缓存请求协调器，防止旧响应覆盖新写入（配套 `versionedRequest.test.ts`） |
-| `stores/deploymentCapabilities.ts` | `useDeploymentCapabilitiesStore` | 部署能力快照（`GET /api/v1/system/capabilities`），供路由守卫、侧栏、设置和工具箱判断入口是否显示 |
-| `stores/modelProviders.ts` | `useModelProvidersStore` | 模型厂商目录缓存（`GET /api/v1/models/providers`，按模型类型加载），模型编辑器与模型卡片统一从这里读厂商信息 |
-| `stores/uploadTasks.ts`（+ `uploadQueue.ts` / `uploadTasksCore.ts` / `uploadTasksState.ts`） | `useUploadTasksStore` | 知识文件上传队列：限并发传输、取消 / 重试、轮询解析进度，驱动浮动的上传进度面板；离开知识库页面后上传继续 |
-| `stores/browserConnection.ts` | `useBrowserConnectionStore` | 本地浏览器连接状态，供工具箱标签与侧栏状态显示 |
-| `stores/sessionActivity.ts` | `useSessionActivityStore` | 侧栏会话的进行中状态 |
+| `stores/auth.ts` | `useAuthStore` | Cœur de l'authentification : user / token / refreshToken / tenant / memberships / vérification des rôles (`hasRole`, `isSystemAdmin`), marqueur du mode Lite ; lors de la déconnexion, nettoyer en cascade le cache au niveau de l'espace des autres stores et recharger les préférences utilisateur (thème / police) |
+| `stores/chatResources.ts` | `useChatResourcesStore` | Cache des ressources au niveau de l'espace (TTL 60s) : base de connaissances, Agent, modèles, liste des fournisseurs de recherche Web, pour réutilisation par le chat / le sélecteur de nouvelles conversations |
+| `stores/editorResources.ts` | `useEditorResourcesStore` | Cache éditeur / paramètres (TTL 60s) : stockage, prompts, parseur, MCP, skills, presets Agent, retrieval |
+| `stores/commandPalette.ts` | `useCommandPaletteStore` | Panneau ⌘K : recherche et recherches récentes scoping (user, tenant) |
+| `stores/organization.ts` | `useOrganizationStore` | Collaboration organisationnelle : liste d'organisations, membres, partage de bases de connaissances/Agent, demandes d'adhésion et approbation, promotion de rôle, etc. |
+| `stores/organizationState.ts` | Module de fonctions pures | Upsert / fusion de la liste d'organisations, impact de l'approbation d'adhésion sur le nombre de membres et autres logiques pures (tests unitaires associés `organizationState.test.ts`) |
+| `stores/settings.ts` | Store de paramètres | Configuration de la session et de l'Agent : base de connaissances/fichiers/étiquettes/MCP/Compétences/Outils sélectionnés, configuration du modèle, configuration Ollama, activation de la recherche Web, etc. |
+| `stores/settingsStorage.ts` | Module de fonctions pures | Lecture de la persistance des paramètres (clé `WeKnora_settings`), clonage et correction du mode Agent intégré (test associé `settingsStorage.test.mjs`) |
+| `stores/menu.ts` | `useMenuStore` | Menu gauche et titres i18n |
+| `stores/knowledge.ts` | `knowledgeStore` | Liste légère des cartes KB |
+| `stores/ui.ts` | `useUIStore` | État global de l'interface utilisateur : fenêtres modales de paramètres, fenêtre modale d'édition de la base de connaissances, éditeur de documents manuel, basculement et paramètres de la barre latérale repliable |
+| `stores/uploadConfirm.ts` | Store de confirmation de téléchargement | État de la boîte de dialogue de confirmation des paramètres avant le téléchargement / importation via URL / saisie manuelle / re-analyse |
+| `stores/versionedRequest.ts` | Module de fonction pure | `createVersionedRequestCoordinator` : Coordinateur de requêtes mises en cache avec numéro de version, empêchant les anciennes réponses d’écraser les nouvelles écritures (avec `versionedRequest.test.ts`) |
+| `stores/deploymentCapabilities.ts` | `useDeploymentCapabilitiesStore` | Instantané des capacités de déploiement (`GET /api/v1/system/capabilities`), utilisé par les gardes de route, la barre latérale, les paramètres et la boîte à outils pour déterminer si l’entrée doit s’afficher |
+| `stores/modelProviders.ts` | `useModelProvidersStore` | Cache de l'annuaire des fournisseurs de modèles (`GET /api/v1/models/providers`, chargé selon le type de modèle), l'éditeur de modèles et les cartes de modèles lisent unifiées les informations des fournisseurs à partir d’ici |
+| `stores/uploadTasks.ts` (+ queue/core/state) | `useUploadTasksStore` | Upload KB : concurrence, annulation, progression analyse, panneau flottant |
+| `stores/browserConnection.ts` | `useBrowserConnectionStore` | Connexion navigateur local (boîte à outils / barre latérale) |
+| `stores/sessionActivity.ts` | `useSessionActivityStore` | Sessions en cours dans la barre latérale |
 
-## API 封装（frontend/src/api/）
+## Encapsulation API (`frontend/src/api/`)
+### Requêtes
+- **Axios** : `frontend/src/utils/request.ts`, `baseURL` via `getApiBaseUrl()` et `BASE_URL` Vite ; timeout 30 s ; `postUpload` avec timeout adapté à la taille (`uploadTimeoutMs`, min 5 min).
+- **Requête** : `Authorization`, `Accept-Language`, `X-Request-ID`, `X-Tenant-ID` (token Embed préservé).
+- **Réponse** : 2xx → `data` ; 401 → refresh single-flight (`utils/authRefresh.ts`) ; endpoints publics (`PUBLIC_AUTH_PATHS`) sans redirect login ; embed jamais vers `/login`.
+- **`$httpStatus`** : sur JSON `WithStatus<T>` (ex. création user 201 vs 200 idempotent), non énumérable.
+- **SSE** : `api/chat/streame.ts` + `useChatStreamHandler.ts` ; 401 stream partage le refresh axios.
 
-### 请求基座
-
-- **axios 实例**：`frontend/src/utils/request.ts` 创建统一实例（`baseURL` 来自 `frontend/src/utils/api-base.ts` 的 `getApiBaseUrl()`，尊重 Vite `BASE_URL` 以支持子路径反代部署；普通请求超时 30s）。文件上传（`postUpload`）按载荷大小计算超时（`utils/requestTimeouts.ts` 的 `uploadTimeoutMs`，下限 5 分钟，按约 10MB/分钟放大），调大 `MAX_FILE_SIZE_MB` 后大文件不会被 30s 默认值中断；调用方显式传入的 `timeout` 优先。
-- **请求拦截器**：自动附加 `Authorization: Bearer <weknora_token>`（Embed 渠道的 `Embed ` token 不被覆盖）、`Accept-Language`（当前 i18n 语言）、`X-Request-ID`（随机串）、`X-Tenant-ID`（跨空间访问，始终携带激活空间 id 以避免切空间后 header 丢失）。
-- **响应拦截器**：2xx 解包返回 `data`；401 触发单飞（single-flight）refresh token 刷新，失败队列重放；公开端点（`/auth/login`、`/auth/register`、`/auth/oidc/`、`/auth/auto-setup`、`/auth/invitations/lookup`、`/api/v1/embed/`，即 `PUBLIC_AUTH_PATHS`）的 401 直接抛给页面而不跳登录；Embed 页面永不重定向到 `/login`。
-- **HTTP 状态码（`$httpStatus`）**：`get` / `post` / `put` / `patch` / `del` / `postUpload` 的返回类型为 `WithStatus<T>`，JSON 对象或数组响应上挂有不可枚举的 `$httpStatus` 属性，可用来区分成功形状相同的结果（例如系统管理员创建用户：201 表示新建，200 表示幂等重试）。它不出现在对象展开、`JSON.stringify` 与 `Object.keys` 中；Blob、字符串与 SSE 响应不带该属性。
-- **SSE 流式**：`frontend/src/api/chat/streame.ts` 基于 `@microsoft/fetch-event-source` 封装 `useStream()`，支持流式输出、加载态、错误态与请求调试元数据；上层由 `frontend/src/composables/useChatStreamHandler.ts` 组织为聊天消息流。聊天流握手返回 401 时，会与 axios 共用 `utils/authRefresh.ts` 的单飞刷新，拿到新 token 后原样重放一次请求，因此 access token 过期不会打断正在发起的对话。
-
-### 模块清单
-
-| 模块 | 职责 |
+### Liste des modules
+| Module | Responsabilités |
 | --- | --- |
-| `api/auth/` | 登录、注册、OIDC、`autoSetup`（仅原生桌面端，携带 Wails 提供的 `X-WeKnora-Desktop-Token`）、`getCurrentUser` 会话恢复 |
-| `api/tenant/`（`index` / `members` / `invitations` / `audit-log`） | 租户（工作空间）信息、成员管理、邀请、审计日志 |
-| `api/organization/` | 组织 CRUD、成员、共享知识库/Agent、加入申请 |
-| `api/knowledge-base/` | 知识库 CRUD 与文件/知识条目管理 |
-| `api/chat/`（`index` / `streame` / `steer` / `temporary-attachments`) | 会话 CRUD、标题生成、SSE 流式问答、向运行中的智能体轮次追加消息（`steer`）、临时附件 |
-| `api/artifacts.ts` | 产物库列表与删除（`/api/v1/artifacts`） |
-| `api/memory.ts` / `api/env-vars.ts` | 空间 / 个人记忆，个人变量 |
-| `api/mcp-endpoint.ts` | 内置 MCP Server 端点管理（发布集成 → MCP Server） |
-| `api/chat-history.ts` | 聊天历史记录 |
-| `api/agent/` | 自定义 Agent CRUD、类型预设、占位符（含内建 Quick Answer / Smart Reasoning id） |
-| `api/model/` | 模型配置管理 |
-| `api/retrieval.ts` | 租户检索配置 |
-| `api/vector-store.ts` / `api/storage-backend.ts` / `api/chunker/` | 向量库、存储后端、分块器配置 |
-| `api/datasource/` | 数据源接入 |
-| `api/embed/` | 网页嵌入渠道管理（创建渠道、限流等） |
-| `api/initialization/` | 系统初始化流程 |
-| `api/system/` | 系统信息、存储引擎状态、Prompt 模板、解析引擎等系统级接口 |
-| `api/mcp-service.ts` / `api/skill/` | MCP 服务与 Skill 管理 |
-| `api/web-search.ts` / `api/web-search-provider.ts` | Web 搜索及 provider 配置 |
-| `api/wiki/` | 知识库 Wiki 生成相关接口 |
-| `api/message-suggestion.ts` | 推荐问题 |
-| `api/user-favorites.ts` | 用户收藏（知识库/Agent 收藏列表） |
+| `api/auth/` | Connexion, inscription, OIDC, `autoSetup` (uniquement pour le bureau natif, avec `X-WeKnora-Desktop-Token` fourni par Wails), reprise de session `getCurrentUser` |
+| `api/tenant/` (`index` / `members` / `invitations` / `audit-log`) | Informations sur le locataire (espace de travail), gestion des membres, invitations, journal d'audit |
+| `api/organization/` | CRUD sur l'organisation, membres, bases de connaissances/Agents partagés, demandes d'adhésion |
+| `api/knowledge-base/` | CRUD sur les bases de connaissances et gestion des fichiers/entrées de connaissances |
+| `api/chat/` (`index` / `streame` / `steer` / `temporary-attachments`) | CRUD sur les sessions, génération de titres, questions-réponses en flux SSE, ajout de messages aux tours des agents en cours d'exécution (`steer`), pièces jointes temporaires |
+| `api/artifacts.ts` | Liste et suppression des produits (`/api/v1/artifacts`) |
+| `api/memory.ts` / `api/env-vars.ts` | Mémoire d'espace / personnelle, variables personnelles |
+| `api/mcp-endpoint.ts` | Points de terminaison MCP intégrés |
+| `api/chat-history.ts` | Historique de chat |
+| `api/agent/` | CRUD Agent, presets, placeholders (Quick Answer / Smart Reasoning) |
+| `api/model/` | Modèles |
+| `api/retrieval.ts` | Retrieval tenant |
+| `api/vector-store.ts` / `storage-backend.ts` / `chunker/` | Vector store, stockage, chunker |
+| `api/datasource/` | Sources de données |
+| `api/embed/` | Canaux embed |
+| `api/initialization/` | Initialisation système |
+| `api/system/` | Infos système, stockage, prompts, parseur |
+| `api/mcp-service.ts` / `api/skill/` | MCP et skills |
+| `api/web-search.ts` / `web-search-provider.ts` | Recherche web |
+| `api/wiki/` | Wiki |
+| `api/message-suggestion.ts` | Questions suggérées |
+| `api/user-favorites.ts` | Favoris KB / Agent |
 
-## 对话时间线的等待态
+## L'état d'attente de la timeline de dialogue
+La progression visualisée du pipeline RAG (`views/chat/components/RagPipelineProgress.vue`) connaît un silence entre « toutes les étapes visibles terminées » et « le modèle génère le premier caractère ». Cette pause est décrite par `utils/rag-pipeline-state.ts` :
 
-RAG 流水线的可视化进度（`views/chat/components/RagPipelineProgress.vue`）在「所有可见步骤都完成」到「模型吐出第一个字」之间会有一段静默期。这段空白由 `utils/rag-pipeline-state.ts` 描述：
+- `getRagPipelineWaitKind()` Détermination du type d'attente : seules les étapes de recherche réellement terminées sont appelées `model` (génération de réponse en cours) ; pour les questions-réponses purement en pièces jointes, les tours sans étapes de recherche reçoivent une `preparing` neutre, et non l'absence totale de retour ;
+- `createRagWaitController()` Responsable de l'affichage des détails : délai `RAG_WAIT_REVEAL_DELAY_MS` (250 ms) avant affichage, pour éviter un clignotement lorsque le modèle répond très rapidement ; dépassement de `RAG_WAIT_STALL_DELAY_MS` (60 s) pour passer à l'état « stagnation » — lorsque la connexion SSE est interrompue, l'arrière-plan n'enverra plus `is_completed`, sans cette limite la barre de progression afficherait toujours « presque prêt » ;
+- Les changements d'état sont annoncés via une zone permanente `aria-live`, les utilisateurs de lecteurs d'écran ne manqueront pas la lecture lorsque le nœud est entièrement remplacé.
 
-- `getRagPipelineWaitKind()` 判定等待类型：检索步骤确实完成过才叫 `model`（正在生成回答）；纯附件问答这类没有检索步骤的轮次给中性的 `preparing`，而不是完全没有反馈；
-- `createRagWaitController()` 负责呈现细节：延迟 `RAG_WAIT_REVEAL_DELAY_MS`（250ms）才显示，避免模型很快回答时闪一下；超过 `RAG_WAIT_STALL_DELAY_MS`（60s）转为「停滞」态——SSE 断连时后端不会再发 `is_completed`，没有这个上限进度条会永远宣称「马上就好」；
-- 状态变化通过一个常驻的 `aria-live` 区域播报，读屏用户不会因为节点整体替换而漏读。
+## Multilingue (i18n)
+Implémenté en `frontend/src/i18n/index.ts`, basé sur `vue-i18n` (le modèle de composition de `legacy: false`, `globalInjection: true`) :
 
-## 多语言（i18n）
+- **Langues prises en charge** (`frontend/src/i18n/locales/`) :
+  - `zh-CN` (chinois simplifié, par défaut et fallback)
+  - `en-US` (anglais)
+  - `ru-RU` (russe)
+  - `ko-KR` (coréen)
+  - `ja-JP` (japonais)
+- La sélection de la langue est persistée dans la clé `locale` de `localStorage` ; l'intercepteur axios écrit la langue actuelle dans l'en-tête de requête `Accept-Language`, permettant au backend de retourner le contenu localisé.
+- Certaines traductions contiennent des balises `<strong>` intégrées (rendu v-html après désinfection par DOMPurify), avec `warnHtmlMessage: false` configuré pour désactiver l'alerte HTML de vue-i18n.
+- **i18n indépendant pour l'embed** : la page embarquée côté visiteur utilise un `frontend/src/i18n/embed.ts` séparé (chargé par `embed-main.ts`), le texte « Web Embed » côté gestion reste dans le paquet de langue principal ; `frontend/src/i18n/locales/embed/index.ts` réexporte uniformément l'assistant de normalisation de langue (supporte la synchronisation de la langue embed à partir des paramètres URL).
+- **Outils d'audit et de découpage** : les paquets de langue sont volumineux et peuvent accumuler des clés mortes non référencées ou des nouvelles clés non traduites, donc trois scripts accompagnent (`frontend/package.json`) :
 
-实现于 `frontend/src/i18n/index.ts`，基于 `vue-i18n`（`legacy: false` 的 Composition 模式，`globalInjection: true`）：
-
-- **支持语言**（`frontend/src/i18n/locales/`）：
-  - `zh-CN`（简体中文，默认与 fallback）
-  - `en-US`（英语）
-  - `ru-RU`（俄语）
-  - `ko-KR`（韩语）
-  - `ja-JP`（日语）
-- 语言选择持久化在 `localStorage` 的 `locale` key；axios 拦截器会把当前语言写入 `Accept-Language` 请求头，使后端返回本地化内容。
-- 部分翻译内嵌 `<strong>` 标记（经 DOMPurify 消毒后 v-html 渲染），配置了 `warnHtmlMessage: false` 关闭 vue-i18n 的 HTML 告警。
-- **Embed 独立 i18n**：访客侧嵌入页使用单独的 `frontend/src/i18n/embed.ts`（由 `embed-main.ts` 加载），管理端「网页嵌入」文案仍在主语言包中；`frontend/src/i18n/locales/embed/index.ts` 统一 re-export 语言归一化助手（支持从 URL 参数同步 embed 语言）。
-- **审计与裁剪工具**：语言包体量大、容易积累无人引用的死键或漏翻的新键，因此配套了三个脚本（`frontend/package.json`）：
-
-  | 命令 | 作用 |
+| Commande | Fonction |
   | --- | --- |
-  | `npm run check-i18n` | 跑 `src/i18n/localeKeyAudit.test.ts`，校验各语言包键集一致、无缺失引用 |
-  | `npm run scan-i18n-gaps` | 扫描源码中实际用到的 key 与语言包对比，报告未定义与未使用的键 |
-  | `npm run regenerate-i18n-locales` | 按扫描结果重新生成裁剪后的语言包 |
+  | `npm run check-i18n` | Exécuter `src/i18n/localeKeyAudit.test.ts`, vérifier que les ensembles de clés de chaque paquet de langue sont cohérents et qu'aucune référence n'est manquante |
+  | `npm run scan-i18n-gaps` | Scanner les clés réellement utilisées dans le code source et les comparer avec le paquet de langue, signaler les clés non définies et non utilisées |
+  | `npm run regenerate-i18n-locales` | Régénérer le paquet de langue réduit selon les résultats du scan |
 
-  审计日志的动作名走单独的注册表（`i18n/auditActionRegistry.ts` + `auditActionLocaleDefaults.ts`），新增审计动作时在注册表补一条即可，避免裁剪工具把它们当成未引用的死键删掉。
+Le nom de l'action du journal d'audit utilise un registre séparé (`i18n/auditActionRegistry.ts` + `auditActionLocaleDefaults.ts`). Lors de l'ajout d'une action d'audit, il suffit d'ajouter une entrée dans le registre pour éviter que l'outil de découpage ne les supprime en les considérant comme des clés mortes non référencées.
 
-## 主题与外观
+## Thème et apparence
+- **Mode thème** : `frontend/src/composables/useTheme.ts` fournit `light | dark | system` trois états. Le mode actif se définit en configurant l'attribut `theme-mode` sur `document.documentElement` ; le mode `system` écoute les requêtes médias `prefers-color-scheme` et suit automatiquement.
+- **Variables CSS** : `frontend/src/assets/theme/theme.css` définit deux ensembles de variables, `:root[theme-mode="light"]` et `:root[theme-mode="dark"]`, selon le système de tokens TDesign (`--td-brand-color-*`, `--td-bg-color-*`, `--td-text-color-*`, police/arrondi/ombre, etc.), avec la couleur de la marque en vert ; les styles des composants utilisent systématiquement les variables pour un changement de thème en un clic.
+- **Persistation des préférences** : les préférences de thème et de police sont stockées via `frontend/src/composables/preferenceStorage.ts` dans `localStorage` sous l'espace de noms de l'id utilisateur ; elles sont rechargées par `reloadThemeFromStorage()` / `reloadFontFromStorage()` lors de la connexion/déconnexion/changement de compte (déclenché dans `stores/auth.ts`).
+- **Police** : `frontend/src/composables/useFont.ts` gère la sélection de la police dans l'interface, `main.ts` au démarrage + `initTheme()` + `initFont()`.
+- **Synchronisation sur desktop** : `syncWailsNativeChrome()` dans `useTheme.ts` appelle le runtime Wails via `WindowSetDarkTheme / WindowSetLightTheme / WindowSetBackgroundColour`, pour que la couleur de fond de la fenêtre native corresponde au thème web, réduisant le flash blanc lors du rafraîchissement.
 
-- **主题模式**：`frontend/src/composables/useTheme.ts` 提供 `light | dark | system` 三态。生效方式是在 `document.documentElement` 上设置 `theme-mode` 属性；`system` 模式监听 `prefers-color-scheme` 媒体查询自动跟随。
-- **CSS 变量**：`frontend/src/assets/theme/theme.css` 以 TDesign token 体系（`--td-brand-color-*`、`--td-bg-color-*`、`--td-text-color-*`、字体/圆角/阴影等）分别定义 `:root[theme-mode="light"]` 与 `:root[theme-mode="dark"]` 两套变量，品牌色为绿色系；组件样式一律引用变量实现一键换肤。
-- **偏好持久化**：主题与字体偏好通过 `frontend/src/composables/preferenceStorage.ts` 按用户 id 命名空间存入 `localStorage`，登录/登出/切换账号时由 `reloadThemeFromStorage()` / `reloadFontFromStorage()` 重载（在 `stores/auth.ts` 中触发）。
-- **字体**：`frontend/src/composables/useFont.ts` 管理界面字体选择，`main.ts` 启动时 `initTheme()` + `initFont()`。
-- **桌面端同步**：`useTheme.ts` 中的 `syncWailsNativeChrome()` 调用 Wails runtime 的 `WindowSetDarkTheme / WindowSetLightTheme / WindowSetBackgroundColour`，让原生窗口底色与网页主题一致，减轻刷新白闪。
+## Construction et déploiement
+### Développement et construction (vite.config.ts)
+`frontend/vite.config.ts` :
 
-## 构建与部署
+- **Double entrée** : `rollupOptions.input` pour `index.html` et `embed.html` ; dev : plugin `embedHtmlDevFallback()` réécrit `/embed/:channelId` vers `/embed.html`.
+- **Code splitting** : `manualChunks` → `vendor-mermaid`, `vendor-markdown`, `vendor-highlight` ; embed filtre les chunks chat lourds au preload.
+- **Versions** : `__FRONTEND_VERSION__` et `__FRONTEND_COMMIT__` injectés au build.
+- **Serveur de dev** : ports 5173 / 4173 ; proxy `/api`, `/files`, `/mcp/` vers `VITE_DEV_PROXY_TARGET` (défaut `http://localhost:8080`) ; WS 180 s, MCP 1 h.
+- **Alias** : `@` → `frontend/src` ; correction entrée `@vue-office/pptx`.
+- Scripts : `npm run dev` / `build` / `preview` / `type-check` / `test`.
 
-### 开发与构建（vite.config.ts）
-
-`frontend/vite.config.ts` 要点：
-
-- **双入口构建**：`rollupOptions.input` 同时构建 `index.html`（主 SPA）与 `embed.html`（嵌入页）；开发环境用自定义插件 `embedHtmlDevFallback()` 把 `/embed/:channelId` 请求改写到 `/embed.html`，与 nginx 行为对齐。
-- **代码分包**：`manualChunks` 将 mermaid/dagre/cytoscape、marked/katex、highlight.js 分别拆为 `vendor-mermaid`、`vendor-markdown`、`vendor-highlight`；embed 入口通过 `modulePreload.resolveDependencies` 过滤重型聊天 chunk，保证嵌入页首屏只加载 token 交换所需代码。
-- **版本注入**：`__FRONTEND_VERSION__`（package.json version）与 `__FRONTEND_COMMIT__`（`VITE_FRONTEND_COMMIT` / `GITHUB_SHA` / `git rev-parse`）编译期注入。
-- **开发代理**：dev server（端口 5173）与 preview（端口 4173）都把 `/api`、`/files`、`/mcp/` 代理到 `VITE_DEV_PROXY_TARGET`（或 `FRONTEND_BACKEND_URL`，默认 `http://localhost:8080`）。`/api` 开启 WebSocket 转发（沙箱终端等），超时放宽到 180s；`/mcp/` 为内置 MCP Server 的 Streamable HTTP 长连接，超时 1 小时。
-- **别名**：`@` → `frontend/src`；并对 `@vue-office/pptx` 做入口文件探测修正。
-- 常用脚本：`npm run dev` / `npm run build` / `npm run preview`（用生产构建产物本地起服务，最接近发布镜像的验证环境）/ `npm run type-check` / `npm run test`（tsx --test）。
-
-### 生产镜像（Dockerfile + nginx）
-
+### Production de l'image (Dockerfile + nginx)
 `frontend/Dockerfile`：
 
-- 自 v0.8.2 起为两阶段构建：digest 锁定的 `node:24-bookworm-slim` 以 `$BUILDPLATFORM` 执行 `npm ci` + `npm run build`，再把 `dist/` 拷贝到运行层。构建时不再需要宿主机安装 Node / npm，也无需预先生成 `dist/`（`scripts/build_frontend_dist.sh` 仍供 Lite / 桌面打包使用）；
-- 运行层基础镜像固定为 digest 锁定的 `nginx:1.30.3-alpine`（注释明确禁止改回浮动 tag——更新的 Alpine 3.24+ 在 CentOS 7 旧内核上无法启动，曾导致 v0.7.0 故障）；
-- `nginx.conf` 作为模板放入 `/etc/nginx/templates/default.conf.template`；`/api/`、`/mcp/` 与技能上传共用的代理参数在 `nginx-api-proxy.conf`（原样拷贝为 `/etc/nginx/api-proxy.conf`），http 级片段在 `nginx-http.conf`（去掉查询串的 `api_no_query` 日志格式）。暴露 80 端口，入口为 `docker-entrypoint.sh`。
+- Depuis v0.8.2, construction en deux étapes : le digest verrouillé `node:24-bookworm-slim` est exécuté avec `$BUILDPLATFORM` + `npm run build`, puis `dist/` est copié dans la couche d'exécution. Pendant la construction, il n'est plus nécessaire d'installer Node / npm sur l'hôte, ni de générer préalablement `dist/` (`scripts/build_frontend_dist.sh` reste utilisé pour Lite / packaging de bureau) ;
+- L'image de base de la couche d'exécution est fixée au digest verrouillé `nginx:1.30.3-alpine` (le commentaire interdit expressément de revenir à un tag flottant — les versions Alpine 3.24+ mises à jour ne peuvent pas démarrer sur un ancien noyau CentOS 7, ce qui avait causé des dysfonctionnements en v0.7.0) ;
+- `nginx.conf` est placé comme modèle dans `/etc/nginx/templates/default.conf.template` ; `/api/`, `/mcp/` et les paramètres proxy partagés avec le téléchargement de compétences se trouvent dans `nginx-api-proxy.conf` (copiés tels quels dans `/etc/nginx/api-proxy.conf`), les fragments http se trouvent dans `nginx-http.conf` (en supprimant le format de journalisation `api_no_query` de la chaîne de requête). Le port 80 est exposé, l'entrée est `docker-entrypoint.sh`.
 
-镜像构建参数：
+Paramètres de construction de l'image :
 
-| 名称 | 类型 | 默认值 | 说明 |
+| Nom | Type | Valeur par défaut | Description |
 | --- | --- | --- | --- |
-| `NPM_REGISTRY` | build-arg | 空 | `npm ci` 使用的镜像源，空则用 npm 默认源 |
-| `NODE_MAX_OLD_SPACE_SIZE` | build-arg | `4096` | 构建阶段 Node 堆上限（MB），避免 Vite 构建 OOM |
-| `VITE_FRONTEND_COMMIT` | build-arg | `unknown` | 注入页面的前端 commit；在 `npm ci` 之后声明，改动它不会使依赖层缓存失效 |
+| `NPM_REGISTRY` | build-arg | vide | `npm ci` Source de l'image à utiliser, vide utilisera la source par défaut de npm |
+| `NODE_MAX_OLD_SPACE_SIZE` | build-arg | `4096` | Limite maximale du tas Node à l'étape de construction (MB), pour éviter un OOM lors de la construction avec Vite |
+| `VITE_FRONTEND_COMMIT` | build-arg | `unknown` | Commit front-end injecté dans la page ; déclaré après `npm ci`, le modifier n'invalidera pas le cache des dépendances |
 
-`frontend/docker-entrypoint.sh`（运行时配置注入）：
+`frontend/docker-entrypoint.sh` (Injection de configuration d'exécution) :
 
-1. 生成 `/usr/share/nginx/html/config.js`，把 `MAX_FILE_SIZE_MB`、`MAX_SKILL_BUNDLE_SIZE_MB` 与 `DEFAULT_LOCALE` 写入 `window.__RUNTIME_CONFIG__` 供前端运行时读取；
-2. 用 `envsubst` 渲染 nginx 模板；
-3. 前台启动 nginx。
+1. Générer `/usr/share/nginx/html/config.js`, écrire `MAX_FILE_SIZE_MB`, `MAX_SKILL_BUNDLE_SIZE_MB` et `DEFAULT_LOCALE` dans `window.__RUNTIME_CONFIG__` pour lecture à l'exécution côté front-end ;
+2. Utiliser `envsubst` pour rendre le modèle nginx ;
+3. Lancer nginx sur le front-end.
 
-| 名称 | 类型 | 默认值 | 说明 |
+| Nom | Type | Valeur par défaut | Description |
 | --- | --- | --- | --- |
-| `MAX_FILE_SIZE_MB` | 整数（MB） | `50` | 全站请求体上限与前端上传大小上限 |
-| `MAX_SKILL_BUNDLE_SIZE_MB` | 整数（MB） | `256` | 只作用于技能 ZIP 上传路由；小于 `MAX_FILE_SIZE_MB` 时抬到该值，最大 512 |
-| `DEFAULT_LOCALE` | 字符串 | 空 | 默认界面语言，仅允许 `zh-CN` / `en-US` / `ru-RU` / `ko-KR` / `ja-JP`，其他值被丢弃 |
-| `APP_HOST` | 字符串 | `app` | 后端主机名 |
-| `APP_PORT` | 整数 | `8080` | 后端端口 |
-| `APP_SCHEME` | 字符串 | `http` | 后端协议，远程 HTTPS 后端可设 `https` |
+| `MAX_FILE_SIZE_MB` | Entier (MB) | `50` | Limite du corps de toutes les requêtes et limite de téléchargement côté front |
+| `MAX_SKILL_BUNDLE_SIZE_MB` | Entier (MB) | `256` | Ne s'applique qu'à la route de téléchargement ZIP des compétences ; si inférieur à `MAX_FILE_SIZE_MB`, il est élevé à cette valeur, maximum 512 |
+| `DEFAULT_LOCALE` | Chaîne | Vide | Langue de l'interface par défaut, seules les valeurs `zh-CN` / `en-US` / `ru-RU` / `ko-KR` / `ja-JP` sont autorisées, les autres valeurs sont rejetées |
+| `APP_HOST` | Chaîne | `app` | Nom d'hôte backend |
+| `APP_PORT` | Entier | `8080` | Port du backend |
+| `APP_SCHEME` | Chaîne | `http` | Protocole backend, pour un backend HTTPS distant, peut être défini sur `https` |
 
-`frontend/nginx.conf` 关键行为：
+`frontend/nginx.conf` — comportements clés :
 
-- **SPA fallback**：`/` 下 `try_files ... /index.html`，且 `index.html` 设置 `no-cache`（避免升级后用户拿到旧版本）；带 hash 的 `/assets/*` 设置一年 immutable 缓存；
-- **API 代理**：`/api/` 与 `/files` 反代到 `${APP_SCHEME}://${APP_HOST}:${APP_PORT}`，`/api/` 针对 SSE 关闭 `proxy_buffering` / 缓存 / 分块编码，读写超时放宽到 3600s，并配置 3 次 upstream 重试；
-- **内置 MCP Server `/mcp/`**：原路径反代到后端，代理参数与 `/api/` 相同，外部 MCP 客户端可直接用网站域名连接 `/mcp/<endpoint_id>`；
-- **WebSocket 通道**：`/api/v1/sessions/<id>/sandbox/(terminal|desktop)`（沙箱终端与图形桌面）和 `/api/v1/local-browser/extension`（BrowserSkill 浏览器扩展接入）单独开启 Upgrade，访问日志去掉查询串以免记录握手票据；集群内部路径 `/api/v1/local-browser/internal` 直接返回 404；
-- **技能包上传**：`/api/v1/skills/catalog` 与 `/api/v1/sandbox-configs/<id>/skills` 两条集合路由单独使用 `MAX_SKILL_BUNDLE_SIZE`，其他上传端点仍受 `MAX_FILE_SIZE` 限制；
-- **资源短链 `/r/`**：`location ^~ /r/` 同样反代到后端。IM 渠道把 `resource://` 图片改写成 `<APP_EXTERNAL_URL>/r/<token>`，缺这段配置时请求会落进 SPA fallback，IM 侧图片显示为空白（详见 [IM 集成](../03-features/12-im-integration.md)）；
-- **嵌入页**：`/embed/*` 返回 `embed.html`（独立 location，不继承主站的 `X-Frame-Options: SAMEORIGIN`）。nginx 先经内部子请求 `/_embed-frame-policy` 向后端 `GET /api/v1/embed-frame-policy` 查询该渠道允许的宿主来源，并把返回的 `Content-Security-Policy` 加到响应上；渠道不存在、已停用、没有允许的宿主来源或后端不可达时拒绝加载。自定义反向代理需要保留这一步，否则宿主来源白名单不生效。`/weknora-widget.js` 是给第三方站点的静态加载器；文件头部另附可选的独立 embed 子域 server 块示例；
-- 启用 gzip（注释记录了实测收益：低带宽下首屏从 25s 降到 3-5s）及一组安全响应头（`X-Frame-Options`、`X-Content-Type-Options`、`Referrer-Policy` 等，在各 location 内重复声明以规避 nginx `add_header` 不继承的问题）。
+- **Fallback SPA** : `try_files` → `index.html`, `index.html` en `no-cache` ; `/assets/*` hashés cache 1 an immutable ;
+- **Proxy API** : `/api/` et `/files` vers le backend ; SSE sans buffering, timeouts 3600 s, 3 retries upstream ;
+- **MCP `/mcp/`** : même proxy que `/api/` ; clients externes via le domaine du site ;
+- **WebSocket** : sandbox terminal/desktop et extension BrowserSkill ; logs sans query string ; `/api/v1/local-browser/internal` → 404 ;
+- **Upload skills** : `/api/v1/skills/catalog` et `/api/v1/sandbox-configs/<id>/skills` avec `MAX_SKILL_BUNDLE_SIZE` ;
+- **Lien `/r/`** : proxy backend pour images IM (voir [Intégration IM](../03-features/12-im-integration.md)) ;
+- **Embed `/embed/*`** : `embed.html` + politique `/_embed-frame-policy` ; `/weknora-widget.js` pour sites tiers ;
+- gzip et en-têtes de sécurité par location (`add_header` non hérité).
 
-## 桌面端（Wails）关联
+## Association avec le bureau (Wails)
+`frontend/src/wailsjs/` est le code de liaison généré automatiquement par le framework Wails (en-tête du fichier indiqué "automatically generated. DO NOT EDIT") :
 
-`frontend/src/wailsjs/` 是 Wails 框架自动生成的绑定代码（文件头标注 "automatically generated. DO NOT EDIT"）：
+- `wailsjs/go/main/App.d.ts` / `App.js` : mises à jour, URLs API, HTTP desktop, `GetAutoSetupToken` pour `auto-setup` ;
+- `wailsjs/runtime/` : contrôle fenêtre ; en navigateur, appels no-op via try/catch (`useTheme.ts`).
 
-- `wailsjs/go/main/App.d.ts` / `App.js`：Go 侧 `App` 结构体方法的 JS 绑定，包括 `CheckForUpdates` / `AutoCheckForUpdates`（桌面更新检查）、`GetAPIBaseURL` / `GetAPILanBaseURL`、桌面内置 HTTP 服务的端口与对外监听设置（`GetDesktopHTTPPortSetting`、`SetDesktopHTTPBindPublicSetting` 等），以及 `GetAutoSetupToken`（返回桌面进程启动时生成的随机凭据，前端据此调用 `auto-setup` 免登录，见上文导航守卫）；
-- `wailsjs/runtime/`：Wails runtime API（窗口控制等），前端在浏览器环境下调用会被 try/catch 安静降级（如 `useTheme.ts`）。
+Le contenu de la fenêtre de l'application de bureau est ce code frontend ; la connexion automatique sur le bureau, la restauration des liens profonds et la zone de titre déplaçable marquée `--wails-draggable` sont tous des adaptations préparées pour le format de bureau.
 
-桌面应用的窗口内容就是这份前端代码，桌面端自动登录、深链恢复与 `--wails-draggable` 标记的可拖拽标题区都是为桌面形态准备的适配。
+## Configurer la navigation et les capacités de déploiement
+Configurer les entrées par groupe de tâches, la publication intégrée comprend des pages d’accès IM, intégration web, API, serveur MCP, CLI, extension Chrome, Claw Skill, etc. ; la configuration du bac à sable, les variables personnelles et l’espace / mémoire personnelle ont chacun une interface de gestion dans le centre de paramètres ; les compétences, les services MCP et la connexion au navigateur se trouvent dans la boîte à outils. Réutiliser `integrations.ts`, `toolbox.ts`, `settingsAccess.ts` et le regroupement barre latérale.
 
-## 设置导航与部署能力
-
-设置入口按任务分组，发布集成中包含 IM、网页嵌入、API、MCP Server、CLI、Chrome 插件、Claw Skill 等接入页；沙箱配置、个人变量与空间 / 个人记忆在设置中心各有管理界面；技能、MCP 服务与浏览器连接在工具箱。新增入口应复用 `frontend/src/config/integrations.ts`、`frontend/src/config/toolbox.ts`、`frontend/src/config/settingsAccess.ts` 等现有注册信息，并同时检查侧栏分组。
-
-`GET /api/v1/system/capabilities` 返回 edition 及能力 supported/reason。前端据实际部署能力隐藏或禁用入口（路由守卫、左侧菜单、设置分区、工具箱标签页都读同一份快照）：能力探测失败或旧版后端缺少某个键时默认保持可见；`organizations` 在 Lite 版始终隐藏；`settings.sandbox.docker` / `settings.sandbox.host` 只有后端明确返回 `supported: true` 才显示。前端可见性只改善操作体验，后端路由继续执行角色与能力检查。接口见[系统 API](../04-api/02-api-system.md)。
+`GET /api/v1/system/capabilities` renvoie `edition` et `supported` / `reason`. Le front masque les entrées selon le même instantané (route, menu, paramètres, boîte à outils) ; échec de détection ou backend ancien → visible par défaut ; `organizations` masqué en Lite ; sandbox docker/host seulement si `supported: true`. Le backend reste autoritaire. Voir [API système](../04-api/02-api-system.md).

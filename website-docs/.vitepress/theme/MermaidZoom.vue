@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useData } from 'vitepress'
 
 const MIN = 0.3
 const MAX = 8
 
+const { lang } = useData()
+const en = computed(() => lang.value.startsWith('en'))
 const open = ref(false)
 const scale = ref(1)
 const tx = ref(0)
@@ -119,15 +122,15 @@ onUnmounted(() => {
         />
 
         <div class="zoom-bar" @mousedown.stop>
-          <button title="缩小" @click="zoomBy(1 / 1.35)">−</button>
+          <button :title="en ? 'Zoom out' : 'Réduire'" @click="zoomBy(1 / 1.35)">−</button>
           <span class="zoom-level">{{ Math.round(scale * 100) }}%</span>
-          <button title="放大" @click="zoomBy(1.35)">+</button>
+          <button :title="en ? 'Zoom in' : 'Agrandir'" @click="zoomBy(1.35)">+</button>
           <span class="zoom-sep" />
-          <button class="zoom-word" @click="reset">重置</button>
-          <button class="zoom-word" @click="close">关闭</button>
+          <button class="zoom-word" @click="reset">{{ en ? 'Reset' : 'Réinitialiser' }}</button>
+          <button class="zoom-word" @click="close">{{ en ? 'Close' : 'Fermer' }}</button>
         </div>
 
-        <p class="zoom-hint">滚轮缩放 · 拖拽平移 · Esc 关闭</p>
+        <p class="zoom-hint">{{ en ? 'Scroll to zoom · Drag to pan · Esc to close' : 'Molette pour zoomer · Glisser pour déplacer · Échap pour fermer' }}</p>
       </div>
     </Transition>
   </Teleport>
