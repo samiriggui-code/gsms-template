@@ -17,3 +17,11 @@ test('phone login puts the form before the showcase and reserves room for the he
 test('narrow login headers use icon-only links to avoid overlapping the logo', () => {
   assert.match(phoneStyles, /\.header-links\s*\{[\s\S]*?\.link-text\s*\{\s*display:\s*none;/)
 })
+
+test('login page uses GSMS brand assets and landing site links', () => {
+  assert.doesNotMatch(source, /weknora\.png/)
+  assert.doesNotMatch(source, /github\.com\/Tencent\/WeKnora/)
+  assert.doesNotMatch(source, /weknora\.weixin\.qq\.com/)
+  assert.match(source, /@\/assets\/brand\/logo-transparent\.svg/)
+  assert.match(source, /resolveLandingSiteUrl/)
+})
