@@ -2456,6 +2456,25 @@ watch(() => chatResources.allModels, (list) => {
     margin-left: 2px;
     font-weight: 500;
   }
+
+  @media (max-width: 768px) {
+    .setting-row:not(.setting-row-vertical) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    .setting-info {
+      max-width: 100%;
+      padding-right: 0;
+    }
+
+    .setting-control {
+      min-width: 0;
+      max-width: 100%;
+      justify-content: flex-start;
+    }
+  }
 }
 
 .kb-profile-card {
@@ -2559,25 +2578,6 @@ watch(() => chatResources.allModels, (list) => {
       font-size: var(--app-text-md);
       line-height: 1.5;
       color: var(--td-text-color-secondary);
-    }
-  }
-
-  @media (max-width: 768px) {
-    .setting-row:not(.setting-row-vertical) {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 12px;
-    }
-
-    .setting-info {
-      max-width: 100%;
-      padding-right: 0;
-    }
-
-    .setting-control {
-      min-width: 0;
-      max-width: 100%;
-      justify-content: flex-start;
     }
   }
 }

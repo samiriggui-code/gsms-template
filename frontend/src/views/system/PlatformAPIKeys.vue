@@ -439,11 +439,6 @@ onMounted(reload)
     margin-left: 0;
     margin-right: 0;
   }
-
-  .api-key-table th,
-  .api-key-table td {
-    padding: 10px 14px;
-  }
 }
 
 .api-key-table {
@@ -473,6 +468,13 @@ onMounted(reload)
   color: var(--td-text-color-secondary);
   font-size: var(--app-text-md);
   line-height: 1.45;
+}
+
+@media (max-width: 768px) {
+  .api-key-table th,
+  .api-key-table td {
+    padding: 10px 14px;
+  }
 }
 
 .api-key-table th:nth-child(1),

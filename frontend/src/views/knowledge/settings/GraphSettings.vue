@@ -786,11 +786,6 @@ onMounted(async () => {
     flex-direction: column;
     align-items: stretch;
 
-    .relation-select {
-      min-width: 0;
-      width: 100%;
-    }
-
     .relation-arrow {
       align-self: center;
       transform: rotate(90deg);
@@ -889,6 +884,13 @@ onMounted(async () => {
   .relation-arrow {
     color: var(--td-text-color-secondary);
     font-size: var(--app-text-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .relation-item .relation-select {
+    min-width: 0;
+    width: 100%;
   }
 }
 

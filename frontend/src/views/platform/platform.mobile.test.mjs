@@ -18,6 +18,8 @@ test('sidebar menu uses overlay drawer classes on narrow viewports', () => {
   assert.match(menu, /aside_box--platform-mobile/)
   assert.match(menu, /aside_box--mobile-open/)
   assert.match(menu, /closeMobileSidebar/)
+  assert.match(menu, /'dialog'/)
+  assert.match(menu, /handleMobileDrawerKeyDown/)
 })
 
 test('platform nav uses GSMS brand logo assets, not WeKnora defaults', () => {

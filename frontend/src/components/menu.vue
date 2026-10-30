@@ -1,5 +1,6 @@
 <template>
     <div
+        ref="mobileDrawerRoot"
         class="aside_box"
         :class="{
             'aside_box--collapsed': uiStore.sidebarCollapsed,
@@ -7,6 +8,9 @@
             'aside_box--platform-mobile': uiStore.platformMobile,
             'aside_box--mobile-open': uiStore.platformMobile && !uiStore.sidebarCollapsed,
         }"
+        :role="mobileDrawerOpen ? 'dialog' : undefined"
+        :aria-modal="mobileDrawerOpen ? true : undefined"
+        :aria-label="mobileDrawerOpen ? t('menu.expandSidebar') : undefined"
     >
         <!-- 展开时：Logo + 搜索/折叠按钮同行 -->
         <div class="logo_row" v-if="!uiStore.sidebarCollapsed">
@@ -32,6 +36,7 @@
                     </div>
                 </t-tooltip>
                 <button
+                    ref="mobileDrawerCloseBtn"
                     type="button"
                     class="sidebar-toggle"
                     :title="uiStore.platformMobile ? t('common.close') : t('menu.collapseSidebar')"
@@ -355,6 +360,47 @@ const toolboxPreview = computed(() => TOOLBOX_ITEMS.filter((item) => canAccessTo
 })));
 const orgStore = useOrganizationStore();
 const uiStore = useUIStore();
+const mobileDrawerRoot = ref<HTMLElement | null>(null)
+const mobileDrawerCloseBtn = ref<HTMLButtonElement | null>(null)
+const mobileDrawerOpen = computed(() => uiStore.platformMobile && !uiStore.sidebarCollapsed)
+
+const focusableDrawerSelector =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+const getFocusableInMobileDrawer = (): HTMLElement[] => {
+  const root = mobileDrawerRoot.value
+  if (!root) return []
+  return Array.from(root.querySelectorAll<HTMLElement>(focusableDrawerSelector)).filter(
+    (el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true',
+  )
+}
+
+const handleMobileDrawerKeyDown = (event: KeyboardEvent) => {
+  if (!mobileDrawerOpen.value) return
+  if (event.key !== 'Tab') return
+  const focusables = getFocusableInMobileDrawer()
+  if (focusables.length === 0) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = document.activeElement
+  if (event.shiftKey && active === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+watch(mobileDrawerOpen, (open) => {
+  if (open) {
+    nextTick(() => mobileDrawerCloseBtn.value?.focus())
+    document.addEventListener('keydown', handleMobileDrawerKeyDown)
+    return
+  }
+  document.removeEventListener('keydown', handleMobileDrawerKeyDown)
+})
+
 const browserConnection = useBrowserConnectionStore();
 const browserStackStatus = computed(() => {
     if (!uiStore.sidebarBrowserStatus) return '';
@@ -1125,6 +1171,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    document.removeEventListener('keydown', handleMobileDrawerKeyDown)
     clearInterval(sessionActivityTimer);
     clearTimeout(forkRevealTimer);
     sessionActivity.clear();
