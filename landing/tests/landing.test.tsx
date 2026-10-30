@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Landing, type LandingData } from "@/components/site/landing";
 import { FALLBACK_POLES } from "@/lib/i18n";
@@ -13,7 +13,21 @@ const data = (over: Partial<LandingData> = {}): LandingData => ({
   ...over,
 });
 
+function mockMatchMedia(match: (query: string) => boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: match(query),
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
 describe("Landing", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.instantMotion;
+    delete document.documentElement.dataset.motionReady;
+  });
   it("rend toutes les sections en français", () => {
     render(<Landing lang="fr" data={data()} />);
 
@@ -62,6 +76,22 @@ describe("Landing", () => {
   it("le sélecteur de langue pointe vers l'autre langue", () => {
     render(<Landing lang="fr" data={data()} />);
     expect(screen.getByRole("link", { name: /Langue: EN/i })).toHaveAttribute("href", "/en");
+  });
+
+  it("sur viewport mobile, le contenu est visible sans reveal au scroll", async () => {
+    mockMatchMedia((q) => q.includes("max-width: 768px"));
+    render(<Landing lang="fr" data={data()} />);
+
+    await waitFor(() => {
+      expect(document.documentElement.dataset.instantMotion).toBe("true");
+    });
+
+    const poles = document.getElementById("poles")!;
+    for (const article of within(poles).getAllByRole("article")) {
+      expect(article).toBeVisible();
+    }
+    expect(document.querySelector(".gsms-motion-reveal")).toBeTruthy();
+    expect(document.querySelector(".gsms-motion-hero-copy")).toBeTruthy();
   });
 
   it("utilise le logo de la marque en en-tête (transparent) et en pied de page (niveaux de gris)", () => {

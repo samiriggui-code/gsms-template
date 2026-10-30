@@ -107,6 +107,20 @@
       transform: none !important;
     }
   }
+  @media (max-width: 768px) {
+    .gsms-motion-reveal,
+    .gsms-motion-hero-copy > * {
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+    }
+  }
+  html[data-instant-motion="true"] .gsms-motion-reveal,
+  html[data-instant-motion="true"] .gsms-motion-hero-copy > * {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 @layer utilities {
