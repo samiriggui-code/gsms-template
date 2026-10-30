@@ -1420,6 +1420,23 @@ const resizeSidebar = (delta: number, keyboard: boolean) => {
         }
     }
 
+    @media (max-width: 768px) {
+        &:not(.aside_box--platform-mobile) {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            padding: 0;
+            overflow: hidden;
+            visibility: hidden;
+            pointer-events: none;
+            border: none;
+        }
+    }
+
     &.aside_box--platform-mobile {
         position: fixed;
         left: 0;

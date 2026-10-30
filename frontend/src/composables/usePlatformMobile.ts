@@ -7,11 +7,14 @@ export function usePlatformMobile() {
   let mql: MediaQueryList | null = null
   let sync: (() => void) | null = null
 
-  onMounted(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return
+  if (typeof window !== 'undefined' && window.matchMedia) {
     mql = window.matchMedia(platformMobileMediaQuery())
     sync = () => uiStore.setPlatformMobile(mql!.matches)
     sync()
+  }
+
+  onMounted(() => {
+    if (!mql || !sync) return
     mql.addEventListener('change', sync)
   })
 
