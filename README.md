@@ -24,6 +24,8 @@
   <b>English</b> · <a href="./README_CN.md">简体中文</a> · <a href="./README_JA.md">日本語</a> · <a href="./README_KO.md">한국어</a>
 </p>
 
+> **Global-IT-SS fork:** `git clone` ne télécharge pas le dossier `research/` (veille Tencent). Juste après le clone, exécuter **`./scripts/clone-research.sh`**. Guide : [README-GLOBAL-IT-SS.md](./README-GLOBAL-IT-SS.md) · [research/README.md](./research/README.md).
+
 <p align="center">
   <a href="#overview">Overview</a> ·
   <a href="#quick-start">Quick Start</a> ·
