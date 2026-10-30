@@ -12,6 +12,7 @@
 #   APP_HOST_FQDN=app.global-it-ss.com
 #   TRAEFIK_ENTRYPOINT=websecure
 #   TRAEFIK_CERT_RESOLVER=letsencrypt
+#   TRAEFIK_ROUTER_MIDDLEWARES=gsms-secure   # optional; Hostinger GSMS VPS (see deploy/docker-compose.traefik.gsms.yml)
 #
 # DNS A/AAAA: global-it-ss.com, www.global-it-ss.com, app.global-it-ss.com → VPS.
 # Optional CMS API (landing NEXT_PUBLIC_API_URL): api.global-it-ss.com → your Core host.
@@ -31,6 +32,7 @@ services:
       - traefik.http.routers.gsms-landing.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
       - traefik.http.routers.gsms-landing.tls=true
       - traefik.http.routers.gsms-landing.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.gsms-landing.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
       - traefik.http.services.gsms-landing.loadbalancer.server.port=3000
       # Optional: redirect apex → www (uncomment and set LANDING_HOST / LANDING_WWW_HOST)
       # - traefik.http.middlewares.gsms-landing-www.redirectregex.regex=^https://${LANDING_HOST:-global-it-ss.com}/(.*)
@@ -49,6 +51,7 @@ services:
       - traefik.http.routers.gsms-app.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
       - traefik.http.routers.gsms-app.tls=true
       - traefik.http.routers.gsms-app.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.gsms-app.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
       - traefik.http.services.gsms-app.loadbalancer.server.port=80
 
 networks:
