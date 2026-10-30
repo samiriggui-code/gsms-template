@@ -106,6 +106,12 @@ describe("Landing SSR / premier paint", () => {
 
   it("avec globals.css, hero et pôles ne sont pas masqués avant hydratation", async () => {
     await import("@/app/globals.css");
+    const themeProbe = document.createElement("div");
+    themeProbe.className = "theme-dark";
+    document.body.appendChild(themeProbe);
+    expect(getComputedStyle(themeProbe).getPropertyValue("--background").trim()).toBe("#04060c");
+    themeProbe.remove();
+
     const markup = renderToStaticMarkup(<Landing lang="fr" data={data()} />);
     const root = document.createElement("div");
     root.className = "theme-dark";
