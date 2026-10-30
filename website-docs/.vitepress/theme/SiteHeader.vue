@@ -2,7 +2,7 @@
 import { computed, h, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useData, useRoute } from 'vitepress'
 import Search from 'vitepress/dist/client/theme-default/components/VPNavBarSearch.vue'
-import { repositoryUrl, headerIcons, homeAssets } from '../../shared/header'
+import { repositoryUrl, headerIcons, siteBrand } from '../../shared/header'
 const { isDark } = useData()
 const route = useRoute()
 const isEn = computed(() => route.path === '/en' || route.path.startsWith('/en/'))
@@ -49,7 +49,15 @@ onUnmounted(() => document.removeEventListener('keydown', closeMenu))
 <template>
   <header class="wk-header wk-docs-header">
     <div class="wk-header-inner">
-      <a class="wk-brand" href="/" target="_self" :aria-label="isEn ? 'WeKnora home' : 'Accueil WeKnora'"><span class="wk-logo"><img :src="`${homeAssets}/brand/weknora-original.png`" alt="WeKnora" width="945" height="650"></span></a>
+      <a class="wk-brand" href="/" target="_self" :aria-label="isEn ? 'Global-IT-SS home' : 'Accueil Global-IT-SS'">
+        <span class="wk-logo-gis-mark">
+          <img class="wk-logo-gis-img" :src="siteBrand.logoSrc" :alt="`${siteBrand.name} — ${siteBrand.tagline}`" width="300" height="149">
+        </span>
+        <span class="wk-brand-lockup">
+          <span class="wk-brand-name">{{ siteBrand.name }}</span>
+          <span class="wk-brand-tagline">{{ siteBrand.tagline }}</span>
+        </span>
+      </a>
       <nav id="main-navigation" class="wk-navigation" :class="{ 'is-open': open }" :aria-label="isEn ? 'Documentation' : 'Navigation de la documentation'">
         <a v-for="item in docsNavigation" :key="item.href" :href="item.href" :aria-current="route.path.startsWith(item.section) ? 'page' : undefined" @click="open = false">{{ item.label }}</a>
         <a class="wk-locale" :href="otherLocaleHref">{{ isEn ? 'FR' : 'EN' }}</a>

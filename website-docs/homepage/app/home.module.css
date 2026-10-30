@@ -268,7 +268,8 @@
 
 :global(.dark) .integrations img, :global(.dark) .models img { background: var(--wk-logo-ground); padding: 2px; border-radius: 3px; }
 
-.ecosystemCore > :global(.wk-logo) { margin-bottom: 18px; }
+.ecosystemCore > :global(.wk-logo),
+.ecosystemCore > :global(.wk-logo-gis-mark) { margin-bottom: 18px; }
 
 /* Keep feature descriptions and state controls beside their screenshots. */
 .releaseTopic { padding-top: 48px; }

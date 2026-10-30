@@ -96,13 +96,13 @@
     </div>
 
     <!-- Logo - Top Left -->
-    <a href="https://github.com/Tencent/WeKnora" target="_blank" class="header-logo" :title="$t('common.github')">
+    <a :href="marketingSiteUrl" class="header-logo" :title="marketingSiteLabel">
       <img src="@/assets/img/weknora.png" alt="WeKnora" class="logo-image" />
     </a>
 
     <!-- Header Links - Top Right -->
     <div class="header-links">
-      <a href="https://weknora.weixin.qq.com" target="_blank" class="header-link" :title="$t('common.website')">
+      <a :href="marketingSiteUrl" target="_blank" rel="noopener noreferrer" class="header-link" :title="$t('common.website')">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
           stroke-linecap="round">
           <circle cx="12" cy="12" r="10" />
@@ -363,6 +363,10 @@ import {
 } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
+import { publicSiteUrl } from '@/utils/runtimeConfig'
+
+const marketingSiteUrl = publicSiteUrl()
+const marketingSiteLabel = 'Global-IT-SS'
 
 // Import screenshot images
 import screenshot1 from '@/assets/img/screenshot-1.svg'

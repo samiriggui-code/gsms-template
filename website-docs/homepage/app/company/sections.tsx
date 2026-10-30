@@ -14,9 +14,9 @@ export function CompanyHero() {
         <div>
           <p className={s.gisBrandName}>{company.brandName}</p>
           <p className={s.gisEyebrow}>{h.eyebrow}</p>
-          <h1 id="gis-hero-title" className={s.gisTitle}>
+          <h2 id="gis-hero-title" className={s.gisTitle}>
             {titleBase} <span className={s.gisGradient}>{h.titleHighlight}</span>
-          </h1>
+          </h2>
           <p className={s.gisLead}>{h.subtitle}</p>
           <div className={s.actions}>
             <a className={s.primary} href="#booking">{h.primary} <Icon name="arrow" /></a>
@@ -156,7 +156,7 @@ export function CompanyContact() {
 
 export function CompanyFooterExtras() {
   const f = company.footer;
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost").replace(/\/$/, "");
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://app.global-it-ss.com").replace(/\/$/, "");
   return (
     <p className={s.footerTagline}>
       {f.tagline}{" "}

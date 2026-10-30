@@ -1,0 +1,37 @@
+# Hostinger GSMS VPS — Traefik companion (merge after deploy/docker-compose.traefik.yml).
+
+services:
+  site:
+    container_name: !reset null
+    ports: !reset []
+    labels:
+      - traefik.http.routers.gsms-site.middlewares=gsms-secure
+      - traefik.http.routers.gsms-site.service=gsms-site
+      - traefik.http.services.gsms-site.loadbalancer.server.port=80
+
+  frontend:
+    container_name: !reset null
+    ports: !reset []
+    labels:
+      - traefik.http.routers.gsms-app.middlewares=gsms-secure
+      - traefik.http.routers.gsms-app.service=gsms-app
+      - traefik.http.services.gsms-app.loadbalancer.server.port=80
+
+  app:
+    container_name: !reset null
+    ports: !reset []
+
+  postgres:
+    container_name: !reset null
+
+  redis:
+    container_name: !reset null
+
+  docreader:
+    container_name: !reset null
+
+  sandbox:
+    container_name: !reset null
+
+  odl-hybrid:
+    container_name: !reset null

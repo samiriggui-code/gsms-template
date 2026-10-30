@@ -1,0 +1,39 @@
+# Traefik edge routing for gsms-template (VPS with an external Traefik stack).
+#
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml up -d
+#
+# Public vitrine: service `site` (Nginx, homepage + /docs/), not the removed landing/ Next app.
+
+services:
+  site:
+    networks:
+      - traefik
+    ports: !reset []
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.routers.gsms-site.rule=Host(`${LANDING_WWW_HOST:-www.global-it-ss.com}`) || Host(`${LANDING_HOST:-global-it-ss.com}`)
+      - traefik.http.routers.gsms-site.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.gsms-site.tls=true
+      - traefik.http.routers.gsms-site.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.gsms-site.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
+      - traefik.http.services.gsms-site.loadbalancer.server.port=80
+
+  frontend:
+    networks:
+      - traefik
+    ports: !reset []
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.routers.gsms-app.rule=Host(`${APP_HOST_FQDN:-app.global-it-ss.com}`)
+      - traefik.http.routers.gsms-app.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.gsms-app.tls=true
+      - traefik.http.routers.gsms-app.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.routers.gsms-app.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
+      - traefik.http.services.gsms-app.loadbalancer.server.port=80
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}

@@ -13,9 +13,9 @@ on:
           - site-only
           - app-only
       ref:
-        description: "Branche ou tag à déployer (app: git pull sur le VPS)"
+        description: "Branche sur le VPS (git checkout + pull)"
         required: false
-        default: main
+        default: feat/site-homepage-i18n
 
 concurrency:
   group: deploy-vps
@@ -24,42 +24,16 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  NODE_VERSION: "24"
-
 jobs:
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Require VPS secrets
         run: |
           test -n "${{ secrets.VPS_HOST }}" || { echo "Missing secret VPS_HOST"; exit 1; }
           test -n "${{ secrets.VPS_SSH_KEY }}" || { echo "Missing secret VPS_SSH_KEY"; exit 1; }
-
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ inputs.ref }}
-
-      - uses: actions/setup-node@v6
-        if: inputs.target != 'app-only'
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: |
-            website-docs/package-lock.json
-            website-docs/homepage/package-lock.json
-
-      - name: Install site dependencies
-        if: inputs.target != 'app-only'
-        working-directory: website-docs
-        run: npm run setup
-
-      - name: Build static site
-        if: inputs.target != 'app-only'
-        working-directory: website-docs
-        run: npm run build
 
       - name: Configure SSH
         run: |
@@ -69,26 +43,39 @@ jobs:
           printf 'Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking accept-new\n' \
             "${{ secrets.VPS_HOST }}" "${{ secrets.VPS_USER || 'root' }}" >> ~/.ssh/config
 
-      - name: Deploy static site
-        if: inputs.target != 'app-only'
+      - name: Deploy on VPS (site = website-docs, app = compose)
         env:
-          VPS_SITE_DIR: ${{ secrets.VPS_SITE_DIR || '/srv/www/weknora/current' }}
-          RELEASE: /srv/www/weknora/releases/${{ github.run_id }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR || '/opt/global-it-ss' }}
+          REF: ${{ inputs.ref }}
+          TARGET: ${{ inputs.target }}
         run: |
-          ssh vps "mkdir -p '$RELEASE' '$VPS_SITE_DIR'"
-          rsync -az --delete -e ssh website-docs/static-site/ "vps:${RELEASE}/"
-          ssh vps "ln -sfn '$RELEASE' '$VPS_SITE_DIR' && (nginx -t && nginx -s reload || systemctl reload nginx || true)"
-
-      - name: Deploy WeKnora (Docker Compose)
-        if: inputs.target != 'app-only'
-        env:
-          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR || '/opt/WeKnora' }}
-        run: |
-          ssh vps "set -e
+          ssh vps "set -euo pipefail
             cd '$VPS_APP_DIR'
-            git fetch --all --prune
-            git checkout '${{ inputs.ref }}' 2>/dev/null || git pull --ff-only
-            docker compose pull
-            docker compose up -d --build --remove-orphans
-            docker compose ps
+            cp -a .env \".env.bak.\$(date -u +%Y%m%dT%H%M%SZ)\"
+            git fetch origin
+            git checkout '$REF'
+            git pull --ff-only origin '$REF'
+            unset COMPOSE_PROJECT_NAME
+            chmod +x ./scripts/deploy-global-it-ss.sh
+            case '$TARGET' in
+              site-only)
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  build site
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  up -d --no-build site --remove-orphans
+                ;;
+              app-only)
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  build frontend
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  up -d --no-build frontend app docreader postgres redis --remove-orphans
+                ;;
+              *)
+                ./scripts/deploy-global-it-ss.sh
+                ;;
+            esac
           "

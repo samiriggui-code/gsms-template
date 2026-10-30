@@ -34,9 +34,15 @@ export const siteNavigation: SiteNavItem[] = [
 // Everything else the homepage loads (Next chunks, images) is served from here:
 // Next's assetPrefix points at it and homepage/public mirrors the same path.
 export const homeAssets = '/docs/_home';
+/** En-tête doc + homepage (assets sous homepage/public → /docs/_home/). */
+export const siteBrand = {
+  name: 'Global-IT-SS',
+  tagline: 'IT Services & Sales',
+  logoSrc: `${homeAssets}/brand-gis/logo-transparent.svg`,
+} as const;
 export const repositoryUrl = 'https://github.com/Tencent/WeKnora';
 const configuredAppUrl = typeof process === 'undefined' ? undefined : process.env.NEXT_PUBLIC_APP_URL;
-export const proAppUrl = (configuredAppUrl ?? 'http://localhost').replace(/\/$/, '');
+export const proAppUrl = (configuredAppUrl ?? 'https://app.global-it-ss.com').replace(/\/$/, '');
 export const headerIcons: Record<string, string> = {
   sun: 'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5',
   moon: 'M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z',

@@ -1,65 +1,52 @@
 # Déploiement VPS (Global-IT-SS)
 
-VPS Hostinger repéré : **`server.hosting-global-it-ss.com`** (`187.77.166.124`, VM id `1722028`).
+Production sur **`/opt/global-it-ss`** (`samiriggui-code/gsms-template`), projet Docker **`globalitss`**, réseau Traefik **`gsms`**.
 
-Deux surfaces distinctes :
+## Surfaces publiques
 
-| Surface | Contenu | Chemin typique sur le VPS |
-|--------|---------|---------------------------|
-| **Site vitrine + doc** | `website-docs/` → `static-site/` | `/srv/www/weknora/current` (symlink vers un release daté) |
-| **Application WeKnora** | `docker compose` (UI + app + postgres + redis + …) | `/opt/WeKnora` (clone git + `.env`) |
+| URL | Contenu | Service Compose |
+|-----|---------|-----------------|
+| `www.global-it-ss.com` / apex | **Homepage unifiée** + **`/docs/`** (FR/EN) | **`site`** → image `gsms-site` (build `website-docs/`) |
+| `app.global-it-ss.com` | Back-office WeKnora | **`frontend`** → `gsms-weknora-ui` |
 
-## Prérequis
+L’ancien dossier **`landing/`** et le conteneur **`landing`** ne sont plus utilisés.
 
-- Accès SSH (`root` ou utilisateur avec droits Docker + écriture site).
-- Sur le VPS : Docker + Compose v2, Nginx (ou autre) servant `root` → répertoire site statique ; proxy `/api` → conteneur `app` si besoin.
-- Sur la machine de déploiement : Node 24 pour builder le site, `rsync`, `ssh`.
-
-## Déploiement manuel (recommandé en dev)
-
-Depuis la racine du dépôt :
+## Mise à jour (VPS ou depuis ta machine)
 
 ```bash
-export VPS_HOST=187.77.166.124
-export VPS_USER=root
-# export VPS_APP_DIR=/opt/WeKnora
-# export VPS_SITE_DIR=/srv/www/weknora/current
-
-chmod +x scripts/deploy-vps.sh
-./scripts/deploy-vps.sh          # site + app
-./scripts/deploy-vps.sh --site-only   # homepage FR/EN + doc seulement
-./scripts/deploy-vps.sh --app-only    # pull images + rebuild conteneurs
+cd /opt/global-it-ss
+cp -a .env ".env.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+git fetch origin
+git checkout feat/site-homepage-i18n   # ou main une fois la PR #24 mergée
+git pull --ff-only
+unset COMPOSE_PROJECT_NAME
+chmod +x ./scripts/deploy-global-it-ss.sh
+./scripts/deploy-global-it-ss.sh
 ```
 
-Le script :
+Rebuild complet (site + UI) :
 
-1. `npm run build` dans `website-docs/` (homepage unifiée + VitePress FR/EN).
-2. `rsync` vers un release daté, bascule du symlink `current`, reload Nginx si disponible.
-3. `git pull` + `docker compose pull/up -d --build` dans `VPS_APP_DIR`.
+```bash
+./scripts/deploy-global-it-ss.sh --no-cache
+```
 
-## GitHub Actions
+Wrapper local : `./scripts/deploy-vps.sh` (SSH alias `vps`, branche `feat/site-homepage-i18n` par défaut).
 
-Workflow **Deploy VPS (site + app)** : `.github/workflows/deploy-vps.yml` (déclenchement manuel).
+## Fichiers Compose
 
-Secrets à définir dans le dépôt GitHub :
+Trois fichiers fusionnés :
 
-| Secret | Exemple |
-|--------|---------|
-| `VPS_HOST` | `187.77.166.124` |
-| `VPS_USER` | `root` |
-| `VPS_SSH_KEY` | clé privée SSH (PEM, une ligne par `\n` dans l’UI GitHub) |
-| `VPS_APP_DIR` | `/opt/WeKnora` (optionnel) |
-| `VPS_SITE_DIR` | `/srv/www/weknora/current` (optionnel) |
+1. `docker-compose.yml` — services `site`, `frontend`, `app`, …
+2. `deploy/docker-compose.traefik.yml` — routeurs `gsms-site` / `gsms-app`
+3. `deploy/docker-compose.traefik.gsms.yml` — réseau `gsms`, pas de port hôte sur `app`
 
-Choisir la branche (`ref`, ex. `main` ou `feat/site-homepage-i18n`) et **site-only / app-only / both**.
-
-## Ordre conseillé après merge PR site (#24)
-
-1. Merger **#24** (homepage + traductions).
-2. `./scripts/deploy-vps.sh --site-only` pour publier la doc FR/EN.
-3. Merger **#23** (Tencent Meeting) si souhaité, puis `./scripts/deploy-vps.sh --app-only` ou rebuild images custom.
+Détails : `deploy/deploy-global-it-ss-vps.md`.
 
 ## Vérifications
 
-- Site : `/`, `/docs/`, `/docs/en/…`
-- App : `GET /health`, connexion UI, `docker compose ps` sur le VPS.
+```bash
+docker ps --filter name=globalitss --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+curl -sI https://www.global-it-ss.com/ | head -5
+curl -sI https://www.global-it-ss.com/docs/ | head -5
+curl -sI https://app.global-it-ss.com/ | head -5
+```

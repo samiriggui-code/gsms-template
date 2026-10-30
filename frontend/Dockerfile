@@ -46,6 +46,10 @@ COPY . .
 # After npm ci so a new commit hash does not bust the dependency layer.
 ARG VITE_FRONTEND_COMMIT=unknown
 ENV VITE_FRONTEND_COMMIT=${VITE_FRONTEND_COMMIT}
+ARG VITE_PUBLIC_SITE_URL=https://www.global-it-ss.com
+ARG VITE_DOCS_BASE_URL=https://www.global-it-ss.com/docs/
+ENV VITE_PUBLIC_SITE_URL=${VITE_PUBLIC_SITE_URL}
+ENV VITE_DOCS_BASE_URL=${VITE_DOCS_BASE_URL}
 RUN npm run build
 
 # ---------------------------------------------------------------------------

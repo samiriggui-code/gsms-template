@@ -94,18 +94,18 @@ const repo = 'https://github.com/Tencent/WeKnora'
 
 export default withMermaid(
   defineConfig({
-    title: 'WeKnora',
+    title: 'Global-IT-SS',
     titleTemplate: ':title · Documentation WeKnora',
-    description: 'Documentation WeKnora : déploiement, configuration, fonctions, référence API et développement.',
+    description: 'Documentation WeKnora (Global-IT-SS) : déploiement, configuration, fonctions, référence API et développement.',
     lang: 'fr',
     locales: {
       root: { label: 'Français', lang: 'fr' },
       en: {
         label: 'English',
         lang: 'en',
-        title: 'WeKnora',
+        title: 'Global-IT-SS',
         titleTemplate: ':title · WeKnora docs',
-        description: 'WeKnora documentation: deploy, configure, features, API reference, and development.',
+        description: 'WeKnora documentation (Global-IT-SS): deploy, configure, features, API reference, and development.',
         themeConfig: {
           sidebar: sidebarEn,
           outline: { level: [2, 3], label: 'On this page' },
@@ -161,10 +161,10 @@ export default withMermaid(
     },
 
     head: [
-      ['link', { rel: 'icon', href: '/docs/favicon.ico', type: 'image/x-icon' }],
+      ['link', { rel: 'icon', href: '/docs/_home/brand-gis/icon.png', type: 'image/png' }],
       ['meta', { name: 'theme-color', content: '#101f38' }],
       ['meta', { property: 'og:type', content: 'website' }],
-      ['meta', { property: 'og:title', content: 'Documentation WeKnora' }],
+      ['meta', { property: 'og:title', content: 'Global-IT-SS · Documentation WeKnora' }],
       [
         'meta',
         {
@@ -189,7 +189,7 @@ export default withMermaid(
 
     themeConfig: {
       logoLink: { link: '/', target: '_self' },
-      siteTitle: 'WeKnora',
+      siteTitle: 'Global-IT-SS',
 
       nav: [],
 
