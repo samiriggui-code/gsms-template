@@ -2,6 +2,8 @@
 
 Audit en lecture seule, réalisé le 29/10/2026. Aucun code n'a été modifié, aucune fusion n'a été commencée (phase 6 : attente de validation).
 
+**Nouveau clone du repo :** les dépôts Tencent de veille ne sont pas dans Git — lancer `./scripts/clone-research.sh` à la racine (voir [README-GLOBAL-IT-SS.md](../../README-GLOBAL-IT-SS.md)).
+
 ## Versions examinées
 
 | Dépôt | URL | Branche examinée | Commit | Date du commit | Tag le plus proche |

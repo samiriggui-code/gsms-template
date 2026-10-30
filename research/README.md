@@ -1,5 +1,7 @@
 # Dossier research (template WeKnora / GIS)
 
+> Premier `git clone` ? Exécuter **`./scripts/clone-research.sh`** à la racine du repo (voir [README-GLOBAL-IT-SS.md](../README-GLOBAL-IT-SS.md)).
+
 Clones et notes de veille pour l’adaptation du template — **sans impact sur le build Go/frontend** (contrairement à `third_party/`, réservé aux dépendances intégrées).
 
 ## Dépôts locaux
