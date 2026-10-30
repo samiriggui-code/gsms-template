@@ -32,13 +32,14 @@ services:
       - traefik.http.routers.gsms-landing.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
       - traefik.http.routers.gsms-landing.tls=true
       - traefik.http.routers.gsms-landing.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      # Comma-separated chain (e.g. gsms-secure,gsms-landing-www@docker). Only one middlewares label — do not add another below.
       - traefik.http.routers.gsms-landing.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
       - traefik.http.services.gsms-landing.loadbalancer.server.port=3000
-      # Optional: redirect apex → www (uncomment and set LANDING_HOST / LANDING_WWW_HOST)
+      # Optional apex → www: uncomment the three middleware definition lines only, then extend TRAEFIK_ROUTER_MIDDLEWARES
+      # (e.g. gsms-secure,gsms-landing-www@docker). Do not uncomment a second routers.gsms-landing.middlewares label.
       # - traefik.http.middlewares.gsms-landing-www.redirectregex.regex=^https://${LANDING_HOST:-global-it-ss.com}/(.*)
       # - traefik.http.middlewares.gsms-landing-www.redirectregex.replacement=https://${LANDING_WWW_HOST:-www.global-it-ss.com}/$${1}
       # - traefik.http.middlewares.gsms-landing-www.redirectregex.permanent=true
-      # - traefik.http.routers.gsms-landing.middlewares=gsms-landing-www@docker
 
   frontend:
     networks:
