@@ -1,53 +1,53 @@
-# API 参考：IM、Embed 与文件服务
+# Référence API : IM, Embed et fichiers
 
-管理 IM 和网页嵌入渠道，并提供渠道回调、访客会话与文件访问接口。管理端、IM 平台回调和 Embed 访客使用各自的认证方式。
+Gestion des canaux IM et d’intégration Web (Embed), callbacks, sessions visiteur et accès aux fichiers. L’administration, les callbacks des plateformes IM et les visiteurs Embed utilisent chacun leur mode d’authentification.
 
-## IM 回调（免全局认证）
+## Callback IM (sans authentification globale)
 
 ### GET|POST /api/v1/im/callback/:channel_id
 
-用途：IM 平台（WeChat/Feishu/Slack/Telegram/DingTalk/QQBot/云之家等）事件回调与 URL 验证。注册在认证中间件之前，使用各平台自身的签名验证；验签失败 403，渠道不存在 404。收到消息立即 ACK，异步处理。Handler: `internal/handler/im.go`
+Rôle : Callback d’événements et validation d’URL pour les plateformes IM (WeChat, Feishu, Slack, Telegram, DingTalk, QQBot, Yunzhijia, etc.). Enregistré avant le middleware d’authentification ; chaque plateforme vérifie sa propre signature. Échec de signature → 403 ; canal inexistant → 404. Accusé de réception immédiat, traitement asynchrone. Handler : `internal/handler/im.go`
 
-响应：200 `{"success":true}` 或平台要求的 ACK 格式。
+Réponse : 200 `{"success":true}` ou format ACK exigé par la plateforme.
 
 ```bash
 curl -X POST $BASE/api/v1/im/callback/ch-1 -H 'Content-Type: application/json' -d '{"event":"..."}'
 ```
 
-## IM 渠道管理（需认证）
+## Gestion des canaux IM (authentification requise)
 
-API key：`manage_channels`/full。IM 渠道携带外部 bot 凭证：列表 Viewer+，变更/开关/扫码登录 Admin+。
+Clé API : `manage_channels` ou full-access. Les canaux IM portent les identifiants du bot externe : listes en Viewer+, modifications, activation/désactivation et connexion par QR en Admin+.
 
-飞书/Lark credentials.api_base_url 同时影响 HTTP API 和 WebSocket bootstrap；云之家支持 session_mode=thread。配置示例及网络要求见[IM 集成](../03-features/12-im-integration.md)。IM/Embed 的记忆偏好来自绑定 Agent 的 config.memory_enabled，当前渠道接口没有单独的 memory_enabled 参数。
+Pour Feishu/Lark, `credentials.api_base_url` affecte à la fois l’API HTTP et l’amorçage WebSocket ; Yunzhijia prend en charge `session_mode=thread`. Exemples de configuration et exigences réseau : voir [Intégration messagerie (IM)](../03-features/12-im-integration.md). Les préférences mémoire IM/Embed proviennent de `config.memory_enabled` de l’agent lié ; les API canal n’exposent pas de paramètre `memory_enabled` distinct.
 
 ### POST /api/v1/agents/:id/im-channels
 
-用途：为 Agent 创建 IM 渠道。权限：Admin+。
+Rôle : Créer un canal IM pour un agent. Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `platform` | string | 是 | `wecom/feishu/lark/slack/telegram/dingtalk/mattermost/wechat/qqbot/yunzhijia` |
-| `name` | string | 否 | 显示名 |
-| `mode` | string | 否 | `websocket`（默认；mattermost/yunzhijia 默认 `webhook`）/`webhook`/`longpoll`（wechat 强制 longpoll） |
-| `output_mode` | string | 否 | `stream`（默认）/`full`（wechat 强制 full） |
-| `locale` | string | 否 | 回复语言：`zh-CN`/`en-US`/`ja-JP`/`ko-KR`/`ru-RU`；空（默认）使用部署默认语言（`WEKNORA_LANGUAGE`，未设置为 `zh-CN`）；其他值 400 |
-| `session_mode` | string | 否 | `user`（默认）/`thread` |
-| `knowledge_base_id` | string | 否 | 附件额外入库的 KB，须属于本空间，否则 400 |
-| `credentials` | object | 否 | 平台凭证 |
-| `enabled` | bool | 否 | 默认 true |
+| `platform` | string | oui | `wecom/feishu/lark/slack/telegram/dingtalk/mattermost/wechat/qqbot/yunzhijia` |
+| `name` | string | non | Nom affiché |
+| `mode` | string | non | `websocket` (défaut ; mattermost/yunzhijia : `webhook` par défaut) / `webhook` / `longpoll` (wechat impose longpoll) |
+| `output_mode` | string | non | `stream` (défaut) / `full` (wechat impose full) |
+| `locale` | string | non | Langue des réponses : `zh-CN` / `en-US` / `ja-JP` / `ko-KR` / `ru-RU` ; vide (défaut) = langue du déploiement (`WEKNORA_LANGUAGE`, sinon `zh-CN`) ; autre valeur → 400 |
+| `session_mode` | string | non | `user` (défaut) / `thread` |
+| `knowledge_base_id` | string | non | Base de connaissances pour indexation supplémentaire des pièces jointes ; doit appartenir à l’espace, sinon 400 |
+| `credentials` | object | non | Identifiants plateforme |
+| `enabled` | bool | non | Défaut true |
 
-响应：200 `{"data":{IMChannel}}`；同渠道 bot 已存在返回 409。
+Réponse : 200 `{"data":{IMChannel}}` ; 409 si un bot existe déjà pour ce canal.
 
 ```bash
 curl -X POST $BASE/api/v1/agents/agent-1/im-channels -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"platform":"feishu","name":"飞书客服","locale":"en-US"}'
+  -H 'Content-Type: application/json' -d '{"platform":"feishu","name":"Support Feishu","locale":"en-US"}'
 ```
 
 ### GET /api/v1/agents/:id/im-channels
 
-用途：某 Agent 的 IM 渠道列表（摘要）。权限：Viewer+。
+Rôle : Liste des canaux IM d’un agent (résumé). Permissions : Viewer+.
 
-响应：200 `{"data":[IMChannel]}`
+Réponse : 200 `{"data":[IMChannel]}`
 
 ```bash
 curl $BASE/api/v1/agents/agent-1/im-channels -H "Authorization: Bearer $TOKEN"
@@ -55,9 +55,9 @@ curl $BASE/api/v1/agents/agent-1/im-channels -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/im-channels
 
-用途：全空间 IM 渠道总览（不含凭证）。权限：Viewer+。
+Rôle : Vue d’ensemble des canaux IM de l’espace (sans identifiants). Permissions : Viewer+.
 
-响应：200 `{"data":[IMChannel]}`
+Réponse : 200 `{"data":[IMChannel]}`
 
 ```bash
 curl $BASE/api/v1/im-channels -H "Authorization: Bearer $TOKEN"
@@ -65,9 +65,9 @@ curl $BASE/api/v1/im-channels -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/im-channels/:id
 
-用途：更新渠道（局部更新：`name/mode/output_mode/locale/session_mode/knowledge_base_id/credentials/enabled/agent_id` 均可选；`knowledge_base_id` 传空字符串解除关联，`locale` 传空字符串恢复默认语言）。权限：Admin+。
+Rôle : Mettre à jour un canal (mise à jour partielle : `name`, `mode`, `output_mode`, `locale`, `session_mode`, `knowledge_base_id`, `credentials`, `enabled`, `agent_id` — tous optionnels ; chaîne vide pour `knowledge_base_id` dissocie la base ; chaîne vide pour `locale` rétablit la langue par défaut). Permissions : Admin+.
 
-响应：200 `{"data":{IMChannel}}`
+Réponse : 200 `{"data":{IMChannel}}`
 
 ```bash
 curl -X PUT $BASE/api/v1/im-channels/ch-1 -H "Authorization: Bearer $TOKEN" \
@@ -76,9 +76,9 @@ curl -X PUT $BASE/api/v1/im-channels/ch-1 -H "Authorization: Bearer $TOKEN" \
 
 ### DELETE /api/v1/im-channels/:id
 
-用途：删除渠道。权限：Admin+。
+Rôle : Supprimer un canal. Permissions : Admin+.
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/im-channels/ch-1 -H "Authorization: Bearer $TOKEN"
@@ -86,9 +86,9 @@ curl -X DELETE $BASE/api/v1/im-channels/ch-1 -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/im-channels/:id/toggle
 
-用途：启停切换。权限：Admin+。无请求体。
+Rôle : Activer ou désactiver le canal. Permissions : Admin+. Sans corps de requête.
 
-响应：200 `{"data":{IMChannel}}`
+Réponse : 200 `{"data":{IMChannel}}`
 
 ```bash
 curl -X POST $BASE/api/v1/im-channels/ch-1/toggle -H "Authorization: Bearer $TOKEN"
@@ -96,9 +96,9 @@ curl -X POST $BASE/api/v1/im-channels/ch-1/toggle -H "Authorization: Bearer $TOK
 
 ### POST /api/v1/wechat/qrcode
 
-用途：生成 WeChat 登录二维码（绑定个人微信到空间）。权限：Admin+。无请求体。Handler: `internal/handler/wechat_qrcode.go`
+Rôle : Générer un QR code de connexion WeChat (lier un compte WeChat personnel à l’espace). Permissions : Admin+. Sans corps de requête. Handler : `internal/handler/wechat_qrcode.go`
 
-响应：200 `{"data":{"qrcode_url","qrcode"}}`
+Réponse : 200 `{"data":{"qrcode_url","qrcode"}}`
 
 ```bash
 curl -X POST $BASE/api/v1/wechat/qrcode -H "Authorization: Bearer $TOKEN"
@@ -106,51 +106,51 @@ curl -X POST $BASE/api/v1/wechat/qrcode -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/wechat/qrcode/status
 
-用途：轮询扫码状态；确认后返回凭证。权限：Admin+。请求体：`{"qrcode":"<标识>"}`（必填）。
+Rôle : Interroger l’état du scan ; renvoie les identifiants après confirmation. Permissions : Admin+. Corps : `{"qrcode":"<identifiant>"}` (obligatoire).
 
-响应：200 `{"data":{"status":"pending|scanned|confirmed|expired","credentials":{bot_token,ilink_bot_id,ilink_user_id,baseurl}}}`
+Réponse : 200 `{"data":{"status":"pending|scanned|confirmed|expired","credentials":{bot_token,ilink_bot_id,ilink_user_id,baseurl}}}`
 
 ```bash
 curl -X POST $BASE/api/v1/wechat/qrcode/status -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"qrcode":"qr-1"}'
 ```
 
-## Embed 渠道管理（需认证）
+## Gestion des canaux Embed (authentification requise)
 
-API key：`manage_channels`/full。Handler: `internal/handler/embed_channel.go`
+Clé API : `manage_channels` ou full-access. Handler : `internal/handler/embed_channel.go`
 
 ### POST /api/v1/agents/:id/embed-channels
 
-用途：为 Agent 创建 Web 嵌入渠道。权限：Admin+。
+Rôle : Créer un canal d’intégration Web pour un agent. Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `name` | string | 否 | 名称 |
-| `enabled` | bool | 否 | 默认 true |
-| `allowed_origins` | []string | 是 | 至少一个来源（精确 URL / `*.domain`；生产禁止 `*`） |
-| `welcome_message` | string | 否 | 欢迎语 |
-| `rate_limit_per_minute` | int | 否 | 每 IP/分钟，默认 30 |
-| `rate_limit_per_day` | int | 否 | 渠道/天，默认 10000 |
-| `primary_color` / `page_title` / `widget_position` | string | 否 | 外观（position: `bottom-right` 默认等四角） |
-| `header_title_mode` | string | 否 | `channel`（默认）/`session` |
-| `show_suggested_questions` | bool | 否 | 默认 true |
-| `allow_web_search` / `allow_file_upload` | bool | 否 | 默认 false |
-| `default_locale` | string | 否 | `zh-CN/en-US/ko-KR/ja-JP/ru-RU`/空（跟随浏览器） |
-| `webhook_url` / `webhook_secret` | string | 否 | 访客事件 webhook |
-| `agent_id` | string | 否 | 绑定 Agent |
+| `name` | string | non | Nom |
+| `enabled` | bool | non | Défaut true |
+| `allowed_origins` | []string | oui | Au moins une origine (URL exacte / `*.domain` ; `*` interdit en production) |
+| `welcome_message` | string | non | Message d’accueil |
+| `rate_limit_per_minute` | int | non | Par IP et minute, défaut 30 |
+| `rate_limit_per_day` | int | non | Par canal et jour, défaut 10000 |
+| `primary_color` / `page_title` / `widget_position` | string | non | Apparence (`widget_position` : `bottom-right` par défaut, etc.) |
+| `header_title_mode` | string | non | `channel` (défaut) / `session` |
+| `show_suggested_questions` | bool | non | Défaut true |
+| `allow_web_search` / `allow_file_upload` | bool | non | Défaut false |
+| `default_locale` | string | non | `zh-CN` / `en-US` / `ko-KR` / `ja-JP` / `ru-RU` / vide (langue du navigateur) |
+| `webhook_url` / `webhook_secret` | string | non | Webhook d’événements visiteur |
+| `agent_id` | string | non | Agent lié |
 
-响应：201 `{"success":true,"data":{embedChannelResponse 含 publish_token}}`
+Réponse : 201 `{"success":true,"data":{embedChannelResponse incluant publish_token}}`
 
 ```bash
 curl -X POST $BASE/api/v1/agents/agent-1/embed-channels -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"name":"官网客服","allowed_origins":["https://example.com"]}'
+  -H 'Content-Type: application/json' -d '{"name":"Support site","allowed_origins":["https://example.com"]}'
 ```
 
 ### GET /api/v1/agents/:id/embed-channels
 
-用途：某 Agent 的嵌入渠道列表。权限：Viewer+。
+Rôle : Liste des canaux Embed d’un agent. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":[embedChannelResponse]}`
+Réponse : 200 `{"success":true,"data":[embedChannelResponse]}`
 
 ```bash
 curl $BASE/api/v1/agents/agent-1/embed-channels -H "Authorization: Bearer $TOKEN"
@@ -158,9 +158,9 @@ curl $BASE/api/v1/agents/agent-1/embed-channels -H "Authorization: Bearer $TOKEN
 
 ### GET /api/v1/embed-channels
 
-用途：全空间嵌入渠道列表（不含 publish token）。权限：Viewer+。
+Rôle : Liste des canaux Embed de l’espace (sans publish token). Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":[embedChannelResponse]}`
+Réponse : 200 `{"success":true,"data":[embedChannelResponse]}`
 
 ```bash
 curl $BASE/api/v1/embed-channels -H "Authorization: Bearer $TOKEN"
@@ -168,9 +168,9 @@ curl $BASE/api/v1/embed-channels -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/embed-channels/:channel_id
 
-用途：渠道详情（含 publish token，用于复制部署代码）。权限：Viewer+。
+Rôle : Détail du canal (incluant publish token, pour copier le code de déploiement). Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{embedChannelResponse}}`
+Réponse : 200 `{"success":true,"data":{embedChannelResponse}}`
 
 ```bash
 curl $BASE/api/v1/embed-channels/ec-1 -H "Authorization: Bearer $TOKEN"
@@ -178,9 +178,9 @@ curl $BASE/api/v1/embed-channels/ec-1 -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/embed-channels/:channel_id
 
-用途：更新渠道（字段同创建，均可选）。权限：Admin+。
+Rôle : Mettre à jour le canal (mêmes champs que la création, tous optionnels). Permissions : Admin+.
 
-响应：200 `{"success":true,"data":{embedChannelResponse}}`
+Réponse : 200 `{"success":true,"data":{embedChannelResponse}}`
 
 ```bash
 curl -X PUT $BASE/api/v1/embed-channels/ec-1 -H "Authorization: Bearer $TOKEN" \
@@ -189,9 +189,9 @@ curl -X PUT $BASE/api/v1/embed-channels/ec-1 -H "Authorization: Bearer $TOKEN" \
 
 ### DELETE /api/v1/embed-channels/:channel_id
 
-用途：删除渠道。权限：Admin+。
+Rôle : Supprimer le canal. Permissions : Admin+.
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/embed-channels/ec-1 -H "Authorization: Bearer $TOKEN"
@@ -199,9 +199,9 @@ curl -X DELETE $BASE/api/v1/embed-channels/ec-1 -H "Authorization: Bearer $TOKEN
 
 ### POST /api/v1/embed-channels/:channel_id/rotate-token
 
-用途：轮换 publish token（旧 token 失效）。权限：Admin+。无请求体。
+Rôle : Faire tourner le publish token (l’ancien token devient invalide). Permissions : Admin+. Sans corps de requête.
 
-响应：200 `{"success":true,"data":{embedChannelResponse 含新 publish_token}}`
+Réponse : 200 `{"success":true,"data":{embedChannelResponse incluant le nouveau publish_token}}`
 
 ```bash
 curl -X POST $BASE/api/v1/embed-channels/ec-1/rotate-token -H "Authorization: Bearer $TOKEN"
@@ -209,9 +209,9 @@ curl -X POST $BASE/api/v1/embed-channels/ec-1/rotate-token -H "Authorization: Be
 
 ### POST /api/v1/embed-channels/:channel_id/preview-session
 
-用途：签发管理端预览用短时效 session token（无需 publish token）。权限：Viewer+。
+Rôle : Émettre un session token de courte durée pour l’aperçu admin (sans publish token). Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{"session_token","expires_in"}}`；渠道禁用 403。
+Réponse : 200 `{"success":true,"data":{"session_token","expires_in"}}` ; 403 si le canal est désactivé.
 
 ```bash
 curl -X POST $BASE/api/v1/embed-channels/ec-1/preview-session -H "Authorization: Bearer $TOKEN"
@@ -219,41 +219,41 @@ curl -X POST $BASE/api/v1/embed-channels/ec-1/preview-session -H "Authorization:
 
 ### GET /api/v1/embed-channels/:channel_id/stats
 
-用途：渠道用量统计。权限：Viewer+。
+Rôle : Statistiques d’usage du canal. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{"session_count":N}}`
+Réponse : 200 `{"success":true,"data":{"session_count":N}}`
 
 ```bash
 curl $BASE/api/v1/embed-channels/ec-1/stats -H "Authorization: Bearer $TOKEN"
 ```
 
-## Embed 嵌入页框架策略
+## Politique de cadre pour les pages Embed
 
 ### GET /api/v1/embed-frame-policy
 
-用途：供 Nginx `auth_request` 子请求在返回 `/embed/:channel_id` 页面前获取该渠道的 `Content-Security-Policy: frame-ancestors`。免 token，只返回策略头，不返回渠道配置；响应 `Cache-Control: no-store`。
+Rôle : Pour une sous-requête Nginx `auth_request` avant de servir la page `/embed/:channel_id`, renvoie l’en-tête `Content-Security-Policy: frame-ancestors` du canal. Sans token ; uniquement l’en-tête de politique, pas la configuration du canal ; réponse `Cache-Control: no-store`.
 
-| 请求头 | 必填 | 说明 |
+| En-tête | Obligatoire | Description |
 | --- | --- | --- |
-| `X-Embed-Page-URI` | 是 | 嵌入页的相对 URI，如 `/embed/<channel_id>` |
+| `X-Embed-Page-URI` | oui | URI relative de la page embed, ex. `/embed/<channel_id>` |
 
-响应：204 并带 CSP 头；渠道不存在、已停用、路径非法或白名单为空时 403。
+Réponse : 204 avec en-têtes CSP ; 403 si le canal n’existe pas, est désactivé, le chemin est invalide ou la liste blanche est vide.
 
 ```bash
 curl -i $BASE/api/v1/embed-frame-policy -H "X-Embed-Page-URI: /embed/ec-1"
 ```
 
-## Embed 公开路由（/api/v1/embed/:channel_id，EmbedAuth）
+## Routes publiques Embed (`/api/v1/embed/:channel_id`, EmbedAuth)
 
-认证：`Authorization: Embed <publish_token|session_token>`；会话级操作附加 `X-Embed-Session: <sig>`。限流与 Origin 校验见总览。Handler: `internal/handler/embed_channel.go`；中间件：`internal/middleware/embed_auth.go`
+Authentification : `Authorization: Embed <publish_token|session_token>` ; opérations au niveau session : en-tête `X-Embed-Session: <sig>`. Limitation de débit et contrôle Origin : voir la vue d’ensemble API. Handler : `internal/handler/embed_channel.go` ; middleware : `internal/middleware/embed_auth.go`
 
-以下 `$ET` 表示 Embed token 头：`-H "Authorization: Embed $EMBED_TOKEN"`。
+Ci-dessous, `$ET` désigne l’en-tête de token Embed : `-H "Authorization: Embed $EMBED_TOKEN"`.
 
 ### POST /api/v1/embed/:channel_id/exchange
 
-用途：用 publish token 换取短时效 session token（session token 不可再次 exchange）。无请求体。
+Rôle : Échanger un publish token contre un session token de courte durée (un session token ne peut pas être rééchangé). Sans corps de requête.
 
-响应：200 `{"success":true,"data":{"session_token","expires_in"}}`
+Réponse : 200 `{"success":true,"data":{"session_token","expires_in"}}`
 
 ```bash
 curl -X POST $BASE/api/v1/embed/ec-1/exchange -H "Authorization: Embed $PUBLISH_TOKEN"
@@ -261,9 +261,9 @@ curl -X POST $BASE/api/v1/embed/ec-1/exchange -H "Authorization: Embed $PUBLISH_
 
 ### GET /api/v1/embed/:channel_id/config
 
-用途：渠道公开配置（无密钥）。
+Rôle : Configuration publique du canal (sans secrets).
 
-响应：200 `{"success":true,"data":{channel_id,name,display_title,knowledge_base_ids,agent_id,agent_name,welcome_message,primary_color,widget_position,allow_web_search,allow_file_upload,default_locale,...}}`
+Réponse : 200 `{"success":true,"data":{channel_id,name,display_title,knowledge_base_ids,agent_id,agent_name,welcome_message,primary_color,widget_position,allow_web_search,allow_file_upload,default_locale,...}}`
 
 ```bash
 curl $BASE/api/v1/embed/ec-1/config -H "Authorization: Embed $EMBED_TOKEN"
@@ -271,9 +271,9 @@ curl $BASE/api/v1/embed/ec-1/config -H "Authorization: Embed $EMBED_TOKEN"
 
 ### GET /api/v1/embed/:channel_id/suggested-questions
 
-用途：起始建议问题。查询参数：`limit`（≤12）。
+Rôle : Questions suggérées initiales. Paramètre de requête : `limit` (≤ 12).
 
-响应：200 `{"success":true,"data":{"questions":[...]}}`
+Réponse : 200 `{"success":true,"data":{"questions":[...]}}`
 
 ```bash
 curl "$BASE/api/v1/embed/ec-1/suggested-questions?limit=6" -H "Authorization: Embed $EMBED_TOKEN"
@@ -281,9 +281,9 @@ curl "$BASE/api/v1/embed/ec-1/suggested-questions?limit=6" -H "Authorization: Em
 
 ### GET /api/v1/embed/:channel_id/chunks/:chunk_id
 
-用途：查看引用分块（内容脱敏；越权 403）。
+Rôle : Consulter un fragment cité (contenu masqué ; 403 en cas d’accès non autorisé).
 
-响应：200 `{"success":true,"data":{chunk}}`
+Réponse : 200 `{"success":true,"data":{chunk}}`
 
 ```bash
 curl $BASE/api/v1/embed/ec-1/chunks/c-1 -H "Authorization: Embed $EMBED_TOKEN"
@@ -291,9 +291,9 @@ curl $BASE/api/v1/embed/ec-1/chunks/c-1 -H "Authorization: Embed $EMBED_TOKEN"
 
 ### POST /api/v1/embed/:channel_id/sessions
 
-用途：创建访客会话，返回会话 ID 与签名句柄。无请求体。
+Rôle : Créer une session visiteur ; renvoie l’ID de session et la signature. Sans corps de requête.
 
-响应：201 `{"success":true,"data":{"id":"<session_id>","sig":"<签名>"}}`
+Réponse : 201 `{"success":true,"data":{"id":"<session_id>","sig":"<signature>"}}`
 
 ```bash
 curl -X POST $BASE/api/v1/embed/ec-1/sessions -H "Authorization: Embed $EMBED_TOKEN"
@@ -301,29 +301,29 @@ curl -X POST $BASE/api/v1/embed/ec-1/sessions -H "Authorization: Embed $EMBED_TO
 
 ### POST /api/v1/embed/:channel_id/knowledge-chat/:session_id
 
-用途：访客知识问答（SSE；payload 会被渠道约束改写后委托给 KnowledgeQA）。需 `X-Embed-Session`。请求体同 `/knowledge-chat`（`query` 必填）。
+Rôle : Q&R connaissances visiteur (SSE ; le corps est adapté aux contraintes du canal puis délégué à KnowledgeQA). Requiert `X-Embed-Session`. Corps identique à `/knowledge-chat` (`query` obligatoire).
 
 ```bash
 curl -N -X POST $BASE/api/v1/embed/ec-1/knowledge-chat/s-1 \
   -H "Authorization: Embed $EMBED_TOKEN" -H "X-Embed-Session: $SIG" \
-  -H 'Content-Type: application/json' -d '{"query":"营业时间?"}'
+  -H 'Content-Type: application/json' -d '{"query":"Horaires d''ouverture ?"}'
 ```
 
 ### POST /api/v1/embed/:channel_id/agent-chat/:session_id
 
-用途：访客 Agent 问答（SSE）。需 `X-Embed-Session`。请求体同上。
+Rôle : Chat agent visiteur (SSE). Requiert `X-Embed-Session`. Même corps que ci-dessus.
 
 ```bash
 curl -N -X POST $BASE/api/v1/embed/ec-1/agent-chat/s-1 \
   -H "Authorization: Embed $EMBED_TOKEN" -H "X-Embed-Session: $SIG" \
-  -H 'Content-Type: application/json' -d '{"query":"帮我下单"}'
+  -H 'Content-Type: application/json' -d '{"query":"Passer une commande"}'
 ```
 
 ### GET /api/v1/embed/:channel_id/messages/:session_id/load
 
-用途：加载访客会话消息（委托 `LoadMessages`，查询参数 `limit/before_time`）。需 `X-Embed-Session`。
+Rôle : Charger les messages de la session visiteur (délègue `LoadMessages` ; paramètres `limit` / `before_time`). Requiert `X-Embed-Session`.
 
-响应：200 `{"success":true,"data":[Message]}`
+Réponse : 200 `{"success":true,"data":[Message]}`
 
 ```bash
 curl "$BASE/api/v1/embed/ec-1/messages/s-1/load?limit=20" \
@@ -332,7 +332,7 @@ curl "$BASE/api/v1/embed/ec-1/messages/s-1/load?limit=20" \
 
 ### POST /api/v1/embed/:channel_id/sessions/:session_id/stop
 
-用途：停止生成（委托 StopSession；请求体 `{"message_id":"..."}`）。需 `X-Embed-Session`。
+Rôle : Arrêter la génération (délègue StopSession ; corps `{"message_id":"..."}`). Requiert `X-Embed-Session`.
 
 ```bash
 curl -X POST $BASE/api/v1/embed/ec-1/sessions/s-1/stop \
@@ -342,9 +342,9 @@ curl -X POST $BASE/api/v1/embed/ec-1/sessions/s-1/stop \
 
 ### GET|POST /api/v1/embed/:channel_id/sessions/:session_id/messages/:message_id/suggestions
 
-用途：读取 / 触发生成消息建议（渠道关闭建议时返回 `suppressed`）。需 `X-Embed-Session`。
+Rôle : Lire ou déclencher la génération de suggestions de message (`suppressed` si le canal les désactive). Requiert `X-Embed-Session`.
 
-响应：200 `{"success":true,"data":{"status","questions":[...]}}`
+Réponse : 200 `{"success":true,"data":{"status","questions":[...]}}`
 
 ```bash
 curl $BASE/api/v1/embed/ec-1/sessions/s-1/messages/m-1/suggestions \
@@ -353,7 +353,7 @@ curl $BASE/api/v1/embed/ec-1/sessions/s-1/messages/m-1/suggestions \
 
 ### POST /api/v1/embed/:channel_id/sessions/:session_id/suggestion-events
 
-用途：上报建议交互事件（委托 RecordEvent，字段同认证版）。需 `X-Embed-Session`。响应：204。
+Rôle : Enregistrer un événement d’interaction sur une suggestion (délègue RecordEvent, mêmes champs que la version authentifiée). Requiert `X-Embed-Session`. Réponse : 204.
 
 ```bash
 curl -X POST $BASE/api/v1/embed/ec-1/sessions/s-1/suggestion-events \
@@ -363,32 +363,32 @@ curl -X POST $BASE/api/v1/embed/ec-1/sessions/s-1/suggestion-events \
 
 ### POST /api/v1/embed/:channel_id/sessions/:session_id/events
 
-用途：转发访客事件到渠道 webhook。需 `X-Embed-Session`。
+Rôle : Transmettre un événement visiteur au webhook du canal. Requiert `X-Embed-Session`.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `type` | string | 是 | `message_sent` / `message_received` |
-| `query` / `content` | string | 否 | 用户问题 / 机器人回复 |
+| `type` | string | oui | `message_sent` / `message_received` |
+| `query` / `content` | string | non | Question utilisateur / réponse du bot |
 
-响应：200 `{"success":true}`；不支持的类型 400。
+Réponse : 200 `{"success":true}` ; 400 si le type n’est pas pris en charge.
 
 ```bash
 curl -X POST $BASE/api/v1/embed/ec-1/sessions/s-1/events \
   -H "Authorization: Embed $EMBED_TOKEN" -H "X-Embed-Session: $SIG" \
-  -H 'Content-Type: application/json' -d '{"type":"message_sent","query":"你好"}'
+  -H 'Content-Type: application/json' -d '{"type":"message_sent","query":"Bonjour"}'
 ```
 
-### MCP OAuth 与工具审批（访客侧）
+### OAuth MCP et approbation d’outils (côté visiteur)
 
-以下路由均需 `X-Embed-Session`，委托到对应认证版 handler（`internal/handler/mcp_oauth.go`、`internal/handler/mcp_service.go`）：
+Les routes suivantes requièrent toutes `X-Embed-Session` et délèguent aux handlers authentifiés (`internal/handler/mcp_oauth.go`, `internal/handler/mcp_service.go`) :
 
-| 方法+路径 | 用途 |
+| Méthode + chemin | Rôle |
 | --- | --- |
-| `POST /api/v1/embed/:channel_id/sessions/:session_id/mcp-oauth-resolutions/:pending_id` | 恢复 OAuth 暂停的运行（体：`service_id` 必填，`decision` 可选） |
-| `POST /api/v1/embed/:channel_id/sessions/:session_id/mcp-oauth-resolutions/:pending_id/cancel` | 取消 OAuth 流程 |
-| `POST /api/v1/embed/:channel_id/sessions/:session_id/mcp-services/:id/oauth/authorize-url` | 生成授权 URL（体：`redirect_uri` 必填） |
-| `GET /api/v1/embed/:channel_id/sessions/:session_id/mcp-services/:id/oauth/status` | 查询授权状态 |
-| `POST /api/v1/embed/:channel_id/sessions/:session_id/tool-approvals/:pending_id` | 工具审批（体：`decision` 必填） |
+| `POST /api/v1/embed/:channel_id/sessions/:session_id/mcp-oauth-resolutions/:pending_id` | Reprendre une exécution suspendue OAuth (corps : `service_id` obligatoire, `decision` optionnel) |
+| `POST /api/v1/embed/:channel_id/sessions/:session_id/mcp-oauth-resolutions/:pending_id/cancel` | Annuler le flux OAuth |
+| `POST /api/v1/embed/:channel_id/sessions/:session_id/mcp-services/:id/oauth/authorize-url` | Générer l’URL d’autorisation (corps : `redirect_uri` obligatoire) |
+| `GET /api/v1/embed/:channel_id/sessions/:session_id/mcp-services/:id/oauth/status` | État de l’autorisation |
+| `POST /api/v1/embed/:channel_id/sessions/:session_id/tool-approvals/:pending_id` | Approbation d’outil (corps : `decision` obligatoire) |
 
 ```bash
 curl -X POST $BASE/api/v1/embed/ec-1/sessions/s-1/tool-approvals/p-1 \
@@ -398,28 +398,28 @@ curl -X POST $BASE/api/v1/embed/ec-1/sessions/s-1/tool-approvals/p-1 \
 
 ### GET /api/v1/embed/:channel_id/files
 
-用途：访客侧图片代理（机器人回复内嵌图片；EmbedAuth 注入渠道空间，handler 强制同空间路径）。查询参数：`file_path`（必填）。
+Rôle : Proxy d’images côté visiteur (images inline dans les réponses du bot ; EmbedAuth injecte l’espace du canal, le handler impose un chemin du même espace). Paramètre de requête : `file_path` (obligatoire).
 
-响应：200 文件流。
+Réponse : 200 flux fichier.
 
 ```bash
 curl "$BASE/api/v1/embed/ec-1/files?file_path=local://1/exports/chart.png" \
   -H "Authorization: Embed $EMBED_TOKEN" -o chart.png
 ```
 
-## 文件服务
+## Service de fichiers
 
-实现于 `internal/router/files.go`（非 handler 包）。
+Implémenté dans `internal/router/files.go` (hors package handler).
 
 ### GET /files
 
-用途：认证后的统一文件代理（本地/MinIO/COS/TOS 等）。权限：任意已认证空间成员；API key 需非 KB 受限（full-access 或全空间 retrieve，`middleware.AllowFileServeAPIKey()`）；路径强制同空间（`ValidateStoragePathTenant`）。
+Rôle : Proxy de fichiers unifié après authentification (local / MinIO / COS / TOS, etc.). Permissions : tout membre authentifié de l’espace ; clé API non limitée aux KB (full-access ou retrieve sur tout l’espace, `middleware.AllowFileServeAPIKey()`) ; chemin limité au même espace (`ValidateStoragePathTenant`).
 
-| 查询参数 | 类型 | 必填 | 说明 |
+| Paramètre | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `file_path` | string | 是 | `provider://...` 路径（禁止 `..`；跨空间 403） |
+| `file_path` | string | oui | Chemin `provider://...` (`..` interdit ; autre espace → 403) |
 
-响应：200 文件流（`X-Content-Type-Options: nosniff`；非白名单类型强制 `Content-Disposition: attachment`）。
+Réponse : 200 flux fichier (`X-Content-Type-Options: nosniff` ; types hors liste blanche forcés en `Content-Disposition: attachment`).
 
 ```bash
 curl "$BASE/files?file_path=local://1/docs/a.png" -H "Authorization: Bearer $TOKEN" -o a.png
@@ -427,16 +427,16 @@ curl "$BASE/files?file_path=local://1/docs/a.png" -H "Authorization: Bearer $TOK
 
 ### GET|HEAD /api/v1/files/presigned
 
-用途：HMAC 签名 URL 文件访问（IM 平台内嵌图片；免认证，验签+过期校验，`SYSTEM_AES_KEY` 参与签名）。
+Rôle : Accès fichier par URL signée HMAC (images inline sur plateformes IM ; sans authentification, vérification signature + expiration, `SYSTEM_AES_KEY` dans la signature).
 
-| 查询参数 | 类型 | 必填 | 说明 |
+| Paramètre | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `file_path` | string | 是 | 存储路径 |
-| `tenant_id` | uint64 | 是 | 空间 ID |
-| `expires` | string | 是 | Unix 过期时间 |
-| `sig` | string | 是 | HMAC 签名 |
+| `file_path` | string | oui | Chemin de stockage |
+| `tenant_id` | uint64 | oui | ID d’espace |
+| `expires` | string | oui | Horodatage Unix d’expiration |
+| `sig` | string | oui | Signature HMAC |
 
-响应：200 文件流（HEAD 仅返回头）；签名无效/过期 403。
+Réponse : 200 flux fichier (HEAD : en-têtes seulement) ; 403 si signature invalide ou expirée.
 
 ```bash
 curl "$BASE/api/v1/files/presigned?file_path=local://1/x.png&tenant_id=1&expires=1790000000&sig=abc" -o x.png
@@ -444,11 +444,11 @@ curl "$BASE/api/v1/files/presigned?file_path=local://1/x.png&tenant_id=1&expires
 
 ### GET /api/v1/files/presigned-preview
 
-用途：诊断端点：返回给定路径将生成的预签名 HTTP URL。权限：Admin+，显式拒绝 API key（`DenyAPIKeyPrincipal`）。查询参数：`file_path`（必填）。
+Rôle : Point de diagnostic : renvoie l’URL HTTP présignée qui serait générée pour un chemin donné. Permissions : Admin+ ; clés API refusées explicitement (`DenyAPIKeyPrincipal`). Paramètre de requête : `file_path` (obligatoire).
 
-`file_path` 必须属于当前空间，与 `/files` 相同：`resource://` 句柄要求资源归属本空间，存储路径要求租户段为本空间 ID；否则 403，不会签发任何 URL。
+`file_path` doit appartenir à l’espace courant, comme pour `/files` : les handles `resource://` exigent une ressource de l’espace ; les chemins de stockage exigent un segment locataire égal à l’ID de l’espace ; sinon 403, aucune URL n’est émise.
 
-响应：200 `{"file_path","provider","url","rewritten":bool,"hint"}`
+Réponse : 200 `{"file_path","provider","url","rewritten":bool,"hint"}`
 
 ```bash
 curl "$BASE/api/v1/files/presigned-preview?file_path=local://1/x.png" -H "Authorization: Bearer $TOKEN"
@@ -456,14 +456,14 @@ curl "$BASE/api/v1/files/presigned-preview?file_path=local://1/x.png" -H "Author
 
 ### GET|HEAD /r/:token
 
-用途：短时效资源授权 URL（IM 等无法携带认证头的客户端）。免认证，token 即能力凭证；无效/过期 404。
+Rôle : URL d’autorisation de ressource à courte durée (clients IM sans en-tête d’authentification). Sans authentification ; le token est le droit d’accès ; 404 si invalide ou expiré.
 
-响应：200 文件流（`Cache-Control: private, max-age=300`）。
+Réponse : 200 flux fichier (`Cache-Control: private, max-age=300`).
 
 ```bash
 curl $BASE/r/abc123 -o file.png
 ```
 
-## 实现参考
+## Référence d’implémentation
 
-路由注册：`internal/router/routes_agent.go` 的 `RegisterIMRoutes`、`RegisterIMChannelRoutes`、`RegisterEmbedChannelRoutes`、`RegisterEmbedPublicRoutes`；`internal/router/files.go` 的 `serveFilesWithResources`、`servePresignedFiles`、`servePresignedPreview`、`serveResourceGrants`。Handler：`internal/handler/im.go`、`internal/handler/wechat_qrcode.go`、`internal/handler/embed_channel.go`。
+Enregistrement des routes : `RegisterIMRoutes`, `RegisterIMChannelRoutes`, `RegisterEmbedChannelRoutes`, `RegisterEmbedPublicRoutes` dans `internal/router/routes_agent.go` ; `serveFilesWithResources`, `servePresignedFiles`, `servePresignedPreview`, `serveResourceGrants` dans `internal/router/files.go`. Handlers : `internal/handler/im.go`, `internal/handler/wechat_qrcode.go`, `internal/handler/embed_channel.go`.

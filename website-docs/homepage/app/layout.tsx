@@ -1,12 +1,26 @@
 import type { Metadata } from "next";
+import { Almarai, Montserrat } from "next/font/google";
 import "./globals.css";
 import { themeInitializationScript } from "./theme";
 
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-montserrat",
+  display: "swap",
+});
+const almarai = Almarai({
+  subsets: ["latin"],
+  weight: ["300", "400", "700"],
+  variable: "--font-almarai",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "WeKnora — 帮你找到答案，并将知识付诸实践",
-  description: "腾讯开源知识框架 WeKnora，集 RAG 问答、Agent 推理与自动 Wiki 于一体。v0.8.3 新增画廊、多模态 Embedding、原文引用定位、附件按需读取和平台用户管理；支持私有化部署。",
-  // Reuse the documentation favicon so the homepage adds nothing at the site root.
-  icons: { icon: "/docs/favicon.ico" },
+  title: "Global-IT-SS — Services informatiques & moteur IA WeKnora",
+  description:
+    "Global-IT-SS : infogérance, réseau, cybersécurité, cloud, développement, IA, domotique, dépannage et formation. Moteur de connaissances WeKnora (RAG, agents, Wiki) en déploiement privé.",
+  icons: { icon: "/docs/_home/brand-gis/icon.png" },
 };
 
 export default function RootLayout({
@@ -15,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className="h-full antialiased" suppressHydrationWarning>
+    <html lang="fr" className={`h-full antialiased ${montserrat.variable} ${almarai.variable}`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: themeInitializationScript }} /></head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

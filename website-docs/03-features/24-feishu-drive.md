@@ -1,62 +1,62 @@
-# 飞书云盘接入
+# Intégration Feishu Drive
 
-`feishu_drive` / `lark_drive` 将指定文件夹内的文档和文件同步到知识库。Wiki 空间使用 `feishu` / `lark` 连接器；通用同步流程见[数据源同步](10-datasource.md)。
+`feishu_drive` / `lark_drive` synchronise documents et fichiers d’un dossier donné vers la base de connaissances. Les espaces Wiki utilisent le connecteur `feishu` / `lark` ; flux de synchronisation général : [Synchronisation des sources de données](10-datasource.md).
 
-## 应用身份与文件夹权限
+## Identité d’application et droits sur les dossiers
 
-使用对应区域的企业自建应用 App ID 与 App Secret；飞书与 Lark 的凭据不能混用。权限在开放平台「权限管理」中开通，均为只读权限，开通后需创建并发布新版本才生效。
+Utilisez l’App ID et App Secret de l’application entreprise de la région concernée ; les identifiants Feishu et Lark ne sont pas interchangeables. Les permissions se déclarent dans « Gestion des permissions » du portail développeur, en lecture seule ; après ajout, créez et publiez une nouvelle version pour qu’elles prennent effet.
 
-必要权限：
+Permissions requises :
 
-| 权限 | blocks 模式（默认） | export 模式 | 缺少时的表现 |
+| Permission | Mode blocks (défaut) | Mode export | Si manquante |
 | --- | --- | --- | --- |
-| `drive:drive:readonly` | 必选：列举文件夹、下载普通文件、下载 docx 内嵌图片/附件 | 必选：列举文件夹、下载普通文件 | 加载文件夹或同步报 403，提示「需先将文件夹分享给应用所在的群」 |
-| `docx:document:readonly` | 必选：blocks API 解析新版文档正文 | 不需要 | 云文档 docx 解析失败 |
-| `drive:export:readonly` | 按需：表格/多维表格文件导出 xlsx；blocks 失败或正文为空时的回退导出 | 必选：docx/doc/sheet/bitable 全部走异步导出 | 表格类文件同步失败；blocks 回退不可用 |
+| `drive:drive:readonly` | Obligatoire : lister dossiers, télécharger fichiers, images/pièces docx | Obligatoire : lister dossiers, télécharger fichiers | 403 à la liste ou à la sync, message « partager le dossier au groupe de l’app » |
+| `docx:document:readonly` | Obligatoire : blocks API pour docx | Non requis | Échec parsing doc cloud |
+| `drive:export:readonly` | Optionnel : export xlsx tableaux ; repli export si blocks échoue ou corps vide | Obligatoire : docx/doc/sheet/bitable en export async | Échec sync tableaux ; repli blocks indisponible |
 
-云盘连接器**不需要** `wiki:wiki:readonly`（那是知识库连接器的权限）。
+Le connecteur Drive **n’a pas besoin** de `wiki:wiki:readonly` (réservé au connecteur Wiki).
 
-可选增强权限（@成员真实姓名 `contact:user.base:readonly`、云文档引用标题 `drive:drive.metadata:readonly`、画板导出 `board:whiteboard:node:read`、内嵌电子表格/多维表格转 Markdown 表格 `sheets:spreadsheet:readonly` / `bitable:app:readonly`）：仅 blocks 渲染路径使用，缺失时同步不失败，仅对应内容降级。知识库连接器的完整权限矩阵见[数据源同步](10-datasource.md)的 Feishu/Lark 小节。
+Permissions optionnelles (noms réels @membres `contact:user.base:readonly`, titres de refs cloud `drive:drive.metadata:readonly`, export tableau blanc `board:whiteboard:node:read`, tableaux Markdown embarqués `sheets:spreadsheet:readonly` / `bitable:app:readonly`) : uniquement sur le chemin de rendu blocks ; absence = pas d’échec de sync, contenu dégradé. Matrice complète Wiki : section Feishu/Lark de [Synchronisation des sources de données](10-datasource.md).
 
-配置权限后发布应用版本，并把目标文件夹授权给应用可访问的范围。若通过应用所在群分享，核对应用、文件夹管理者和群的授权关系。API 权限与文件访问权是两层检查：能取得 tenant access token，不代表能读取任意文件夹。
+Après configuration des permissions, publiez la version de l’app et autorisez le dossier cible dans le périmètre accessible à l’app. Si partage via le groupe de l’app, vérifiez app, gestionnaire du dossier et groupe. Droits API et droits fichier sont deux niveaux : obtenir un tenant access token ne garantit pas la lecture de n’importe quel dossier.
 
-WeKnora 内的连接测试验证应用凭据；随后加载资源树才会验证文件夹访问。若连接成功但目录报 403，应先检查分享范围和权限发布状态。
+Le test de connexion WeKnora valide les identifiants app ; l’arborescence ne vérifie l’accès dossier qu’ensuite. Connexion OK mais 403 sur l’arborescence : partage et publication des permissions.
 
-## 在知识库中配置
+## Configuration dans la base de connaissances
 
-1. 知识库设置 → 数据源 → 新建，选择「飞书云盘」或「Lark Drive」。
-2. 填写 App ID 与 App Secret，执行连接测试。
-3. 输入具体文件夹的 `folder_token` 或完整 `/drive/folder/<token>` 链接，加载资源树并选择同步范围。不能留空使用云空间根目录。
-4. 选择全量/增量、同步计划、冲突策略与同步删除；保存后先手动同步少量文件，检查日志和解析结果。
+1. Paramètres KB → Sources de données → Nouveau, choisir « Feishu Drive » ou « Lark Drive ».
+2. Renseigner App ID et App Secret, tester la connexion.
+3. Saisir le `folder_token` du dossier ou le lien complet `/drive/folder/<token>`, charger l’arborescence et choisir le périmètre. La racine du drive cloud ne peut pas être laissée vide.
+4. Choisir full/incrémental, planification, politique de conflit et suppression sync ; sauvegarder puis sync manuelle sur quelques fichiers, vérifier logs et parsing.
 
-增量同步会对照旧游标与当前文件树：仅在选定资源完整列举成功时，将消失的文件标记为删除；子目录列举失败时暂缓检测。开启同步删除才会据此删除**当前数据源对应的知识条目**，关闭则保留。全量同步（包括升级触发的全量重同步）同样保留旧游标用于删除对账；首次同步没有历史基线，无法检测更早的删除。删除失败时仍应检查同步日志与剩余条目。
+La sync incrémentale compare curseur et arborescence : si la liste des ressources sélectionnées réussit entièrement, les fichiers disparus sont marqués supprimés ; échec de sous-dossier = détection reportée. « Sync suppression » supprime alors **les entrées KB de cette source** ; sinon conservation. Full sync (y compris re-sync après upgrade) conserve l’ancien curseur pour le rapprochement des suppressions ; première sync sans baseline historique ne détecte pas les suppressions antérieures. En cas d’échec de suppression, consulter logs et entrées restantes.
 
-文档自身更新还会清理 blocks 模式中已消失的附件子项，这是内容更新的一部分，不受上述源文档同步删除开关控制。
+Les mises à jour document suppriment aussi les sous-éléments pièce disparus en mode blocks (partie de la mise à jour contenu), indépendamment de l’interrupteur sync suppression source.
 
-## 文件与解析模式
+## Fichiers et modes de parsing
 
-普通文件下载后按文件类型进入解析流程；表格/多维表格导出为 xlsx，文件夹递归遍历，快捷方式解析到目标文件。不支持的云文档类型会跳过，应查看同步日志中的跳过原因。
+Les fichiers ordinaires passent au pipeline de parsing selon le type ; tableaux exportés en xlsx, dossiers parcourus récursivement, raccourcis résolus vers la cible. Types cloud non supportés ignorés : voir logs pour la raison.
 
-新版 docx 有两条路径，在**知识库设置 → 数据源编辑页 → 解析模式**按数据源选择（存于数据源的 `settings.parse_mode`），默认 `blocks`，同时影响 Wiki 与云盘连接器：
+Les docx récents ont deux chemins, choisis dans **Paramètres KB → édition source → mode parsing** (`settings.parse_mode` sur la source), défaut `blocks`, pour Wiki et Drive :
 
-| 模式 | 路径 | 适用与限制 |
+| Mode | Chemin | Usage et limites |
 | --- | --- | --- |
-| `blocks`（默认） | blocks API 转 Markdown；API 失败、正文为空或超过 30 个图片/画板块时回退导出 | 图片/画板随父文档入库并建立关联；可解析附件（pdf/office 等）保留为独立条目并与父文档互相关联；内嵌电子表格/多维表格转为文档内 Markdown 表格 |
-| `export` | 异步导出 docx，再进入文档解析 | 图片随父文档解析；导出和解析耗时较长；内嵌 file block 附件不随导出保留；电子表格/多维表格变为 docx 内嵌表格，无法按表格解析 |
+| `blocks` (défaut) | blocks API → Markdown ; repli export si API échoue, corps vide ou > 30 blocs image/tableau | Images/tableaux indexés avec le parent ; pièces pdf/office etc. en entrées séparées liées ; feuilles embarquées en tableaux Markdown dans le doc |
+| `export` | Export async docx puis parsing document | Images avec le parent ; export et parsing plus longs ; pièces file block d’export non conservées ; feuilles en tableaux dans docx, pas de parsing table dédié |
 
-已废弃的环境变量 `FEISHU_DOCX_PARSE_MODE` 仅在数据源未配置解析模式时作为回退读取（打印弃用警告，后续版本移除）；在 `.env` 中显式设为 `export` 的部署升级后行为不变。
+La variable obsolète `FEISHU_DOCX_PARSE_MODE` n’est lue en repli que si la source n’a pas de mode (avertissement de dépréciation) ; `.env` explicitement `export` conserve le comportement après upgrade.
 
-修改有效解析模式后，下一次同步（含增量）会重新抓取已有 docx；仅保存其他设置不会触发模式变化。超过内联图片预算而回退导出时，blocks API 已列出的 file block 附件仍会单独入库并关联父文档；原生导出正文的格式限制与 `export` 模式一致。图片内容能否被检索还取决于对象存储、OCR/多模态处理和索引状态，见[文档解析](03-document-parsing.md)。
+Changer le mode effectif déclenche un re-fetch docx à la prochaine sync (y compris incrémental) ; sauvegarder d’autres réglages sans changer le mode ne le déclenche pas. Repli export pour budget images dépassé : les pièces file block déjà listées par blocks API restent indexées et liées au parent ; limites de format export natif alignées sur le mode `export`. Rappel image dépend aussi du stockage objet, OCR/multimodal et index : [Parsing documentaire](03-document-parsing.md).
 
-## 常见问题
+## Problèmes courants
 
-| 现象 | 处理 |
+| Symptôme | Action |
 | --- | --- |
-| Token 无效或凭据测试失败 | 核对飞书/Lark 区域、App ID/Secret 和私有代理地址 |
-| 加载文件夹失败 | 使用具体文件夹链接；检查 API 权限及文件夹分享授权 |
-| 云文档失败而普通文件正常 | 检查导出权限；blocks 模式另需 docx 读取权限 |
-| 同步数少于目录文件数 | 检查不支持类型、子目录授权、失败/跳过统计 |
-| 图片无法随正文召回 | 确认对象存储、OCR/多模态处理与索引状态；两种解析模式的图片均与父文档建立关联 |
-| 文档变更后短暂不可检索 | 更新可能删除旧知识并重新入库，等待新版本解析和索引完成 |
+| Token invalide ou échec test identifiants | Région Feishu/Lark, App ID/Secret, proxy privé |
+| Échec chargement dossier | Lien dossier concret ; permissions API et partage |
+| Doc cloud en échec, fichiers OK | Permissions export ; mode blocks exige aussi lecture docx |
+| Moins de fichiers sync que dans le dossier | Types non supportés, droits sous-dossiers, stats échec/ignoré |
+| Images non rappelées avec le corps | Stockage objet, OCR/multimodal, index ; les deux modes lient images au parent |
+| Doc temporairement non searchable après changement | Mise à jour peut supprimer ancienne connaissance et réindexer ; attendre fin parsing |
 
-实现参考：`internal/datasource/connector/feishu/drive/`、`core/shared.go` 和 `internal/application/service/datasource_service.go`。
+Référence implémentation : `internal/datasource/connector/feishu/drive/`, `core/shared.go` et `internal/application/service/datasource_service.go`.

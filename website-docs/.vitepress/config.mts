@@ -20,15 +20,14 @@ function installedDep(id: string): boolean {
   }
 }
 
-const sections: { dir: string; label: string; newestFirst?: boolean }[] = [
-  { dir: '01-getting-started', label: '快速开始' },
-  { dir: '02-architecture', label: '架构' },
-  { dir: '03-features', label: '功能模块' },
-  { dir: '04-api', label: 'API 参考' },
-  { dir: '05-clients', label: '客户端' },
-  { dir: '06-development', label: '开发指南' },
-  // 每个版本一页（v0.8.2.md），最新版本排在最前
-  { dir: '07-releases', label: '版本发布', newestFirst: true },
+const sections: { dir: string; label: string; labelEn: string; newestFirst?: boolean }[] = [
+  { dir: '01-getting-started', label: 'Démarrage', labelEn: 'Getting started' },
+  { dir: '02-architecture', label: 'Architecture', labelEn: 'Architecture' },
+  { dir: '03-features', label: 'Fonctions', labelEn: 'Features' },
+  { dir: '04-api', label: 'Référence API', labelEn: 'API reference' },
+  { dir: '05-clients', label: 'Clients', labelEn: 'Clients' },
+  { dir: '06-development', label: 'Développement', labelEn: 'Development' },
+  { dir: '07-releases', label: 'Versions', labelEn: 'Releases', newestFirst: true },
 ]
 
 /** 侧边栏条目文字：取正文一级标题，去掉冗余前后缀 */
@@ -36,7 +35,8 @@ function itemText(dir: string, file: string): string {
   const raw = readFileSync(resolve(root, dir, file), 'utf-8')
   const heading = raw.match(/^#\s+(.+)$/m)?.[1] ?? file.replace(/\.md$/, '')
   return heading
-    .replace(/^API 参考[:：]\s*/, '')
+    .replace(/^API 参考[:：]\s*/, 'API : ')
+    .replace(/^API Reference[:：]\s*/i, 'API: ')
     .replace(/\s*[（(][^（()）]*[)）]\s*/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim()
@@ -52,20 +52,29 @@ function compareVersions(a: string, b: string): number {
   return 0
 }
 
-function itemsOf(dir: string, newestFirst = false): DefaultTheme.SidebarItem[] {
-  const files = readdirSync(resolve(root, dir)).filter((f) => f.endsWith('.md'))
+function itemsOf(dir: string, newestFirst = false, contentDir = ''): DefaultTheme.SidebarItem[] {
+  const folder = contentDir ? `${contentDir}/${dir}` : dir
+  const files = readdirSync(resolve(root, folder)).filter(
+    (f) => f.endsWith('.md') && !f.includes('-zh-backup'),
+  )
+  const linkPrefix = contentDir ? `/${contentDir}` : ''
   return (newestFirst ? files.sort(compareVersions).reverse() : files.sort())
     .map((f) => ({
-      text: itemText(dir, f),
-      link: `/${dir}/${f.replace(/\.md$/, '')}`,
+      text: itemText(folder, f),
+      link: `${linkPrefix}/${dir}/${f.replace(/\.md$/, '')}`,
     }))
 }
 
-const sidebar: DefaultTheme.SidebarItem[] = sections.map((s) => ({
-  text: s.label,
-  collapsed: false,
-  items: itemsOf(s.dir, s.newestFirst),
-}))
+function sidebarFor(contentDir: string, labelKey: 'label' | 'labelEn'): DefaultTheme.SidebarItem[] {
+  return sections.map((s) => ({
+    text: s[labelKey],
+    collapsed: false,
+    items: itemsOf(s.dir, s.newestFirst, contentDir),
+  }))
+}
+
+const sidebar = sidebarFor('', 'label')
+const sidebarEn = sidebarFor('en', 'labelEn')
 
 /** 本地搜索默认按空白分词，中文整段会被当作一个词，这里退化为字粒度切分 */
 function tokenize(text: string): string[] {
@@ -86,14 +95,65 @@ const repo = 'https://github.com/Tencent/WeKnora'
 export default withMermaid(
   defineConfig({
     title: 'WeKnora',
-    titleTemplate: ':title · WeKnora 文档',
-    description: 'WeKnora（维娜拉）官方文档：部署、配置、功能说明、API 参考与二次开发',
-    lang: 'zh-CN',
+    titleTemplate: ':title · Documentation WeKnora',
+    description: 'Documentation WeKnora : déploiement, configuration, fonctions, référence API et développement.',
+    lang: 'fr',
+    locales: {
+      root: { label: 'Français', lang: 'fr' },
+      en: {
+        label: 'English',
+        lang: 'en',
+        title: 'WeKnora',
+        titleTemplate: ':title · WeKnora docs',
+        description: 'WeKnora documentation: deploy, configure, features, API reference, and development.',
+        themeConfig: {
+          sidebar: sidebarEn,
+          outline: { level: [2, 3], label: 'On this page' },
+          docFooter: { prev: 'Previous', next: 'Next' },
+          returnToTopLabel: 'Back to top',
+          sidebarMenuLabel: 'Menu',
+          darkModeSwitchLabel: 'Appearance',
+          lightModeSwitchTitle: 'Switch to light',
+          darkModeSwitchTitle: 'Switch to dark',
+          lastUpdated: { text: 'Last updated', formatOptions: { dateStyle: 'medium', timeStyle: undefined } },
+          editLink: { pattern: `${repo}/edit/main/website-docs/:path`, text: 'Edit this page on GitHub' },
+          search: {
+            provider: 'local',
+            options: {
+              translations: {
+                button: { buttonText: 'Search docs', buttonAriaLabel: 'Search docs' },
+                modal: {
+                  displayDetails: 'Show details',
+                  resetButtonTitle: 'Clear',
+                  backButtonTitle: 'Back',
+                  noResultsText: 'No results',
+                  footer: { selectText: 'Select', navigateText: 'Navigate', closeText: 'Close' },
+                },
+              },
+            },
+          },
+          footer: {
+            message: `Built from WeKnora ${repoVersionLabel} · MIT License`,
+            copyright: '© Tencent WeKnora',
+          },
+        },
+      },
+    },
     base: '/docs/',
     cleanUrls: true,
     appearance: { storageKey: 'vitepress-theme-appearance' },
     lastUpdated: true,
-    srcExclude: ['README.md', 'MIGRATION.md', 'homepage/**', 'shared/**', 'scripts/**', 'deploy/**', 'static-site/**', 'releases/**'],
+    srcExclude: [
+      'README.md',
+      'MIGRATION.md',
+      'homepage/**',
+      'shared/**',
+      'scripts/**',
+      'deploy/**',
+      'static-site/**',
+      'releases/**',
+      '**/*-zh-backup.md',
+    ],
     metaChunk: true,
     transformPageData(pageData) {
       // The shared masthead replaces the default documentation navbar.
@@ -104,12 +164,12 @@ export default withMermaid(
       ['link', { rel: 'icon', href: '/docs/favicon.ico', type: 'image/x-icon' }],
       ['meta', { name: 'theme-color', content: '#101f38' }],
       ['meta', { property: 'og:type', content: 'website' }],
-      ['meta', { property: 'og:title', content: 'WeKnora 文档' }],
+      ['meta', { property: 'og:title', content: 'Documentation WeKnora' }],
       [
         'meta',
         {
           property: 'og:description',
-          content: '把 PDF、Word、网页与飞书 / Notion / 语雀的资料收进知识库，做成答案带出处的问答系统',
+          content: 'Centralisez PDF, Word, pages web et bases d’équipe dans une base de connaissances, avec des réponses sourcées.',
         },
       ],
     ],
@@ -140,39 +200,39 @@ export default withMermaid(
 
       socialLinks: [{ icon: 'github', link: repo }],
 
-      outline: { level: [2, 3], label: '本页目录' },
+      outline: { level: [2, 3], label: 'Sur cette page' },
 
-      docFooter: { prev: '上一篇', next: '下一篇' },
-      returnToTopLabel: '回到顶部',
-      sidebarMenuLabel: '目录',
-      darkModeSwitchLabel: '外观',
-      lightModeSwitchTitle: '切换到浅色',
-      darkModeSwitchTitle: '切换到深色',
+      docFooter: { prev: 'Précédent', next: 'Suivant' },
+      returnToTopLabel: 'Haut de page',
+      sidebarMenuLabel: 'Menu',
+      darkModeSwitchLabel: 'Apparence',
+      lightModeSwitchTitle: 'Passer en clair',
+      darkModeSwitchTitle: 'Passer en sombre',
 
       lastUpdated: {
-        text: '最后更新',
+        text: 'Dernière mise à jour',
         formatOptions: { dateStyle: 'medium', timeStyle: undefined },
       },
 
       editLink: {
         pattern: `${repo}/edit/main/website-docs/:path`,
-        text: '在 GitHub 上编辑此页',
+        text: 'Modifier cette page sur GitHub',
       },
 
       search: {
         provider: 'local',
         options: {
           translations: {
-            button: { buttonText: '搜索文档', buttonAriaLabel: '搜索文档' },
+            button: { buttonText: 'Rechercher', buttonAriaLabel: 'Rechercher dans la documentation' },
             modal: {
-              displayDetails: '展开详情',
-              resetButtonTitle: '清除',
-              backButtonTitle: '返回',
-              noResultsText: '没有找到结果',
+              displayDetails: 'Afficher le détail',
+              resetButtonTitle: 'Effacer',
+              backButtonTitle: 'Retour',
+              noResultsText: 'Aucun résultat',
               footer: {
-                selectText: '选择',
-                navigateText: '切换',
-                closeText: '关闭',
+                selectText: 'Choisir',
+                navigateText: 'Naviguer',
+                closeText: 'Fermer',
               },
             },
           },
@@ -188,7 +248,7 @@ export default withMermaid(
       },
 
       footer: {
-        message: `基于 WeKnora ${repoVersionLabel} 源码整理 · MIT License`,
+        message: `Documentation issue de WeKnora ${repoVersionLabel} · MIT License`,
         copyright: '© Tencent WeKnora',
       },
     },

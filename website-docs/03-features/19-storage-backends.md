@@ -1,86 +1,86 @@
-# 存储后端（Storage Backends）
+# Backends de stockage (Storage Backends)
 
-存储后端保存原始文件、解析图片和导出产物。一个空间可以注册多个实例，指定默认实例，并为知识库单独选择存储位置。
+Les backends de stockage conservent les fichiers bruts, les images issues de l’analyse et les artefacts exportés. Un espace peut enregistrer plusieurs instances, en désigner une par défaut et choisir un emplacement par base de connaissances.
 
-多实例存储适用于以下场景：
+Le multi-instance convient notamment lorsque :
 
-- 将不同团队或项目的资料保存到独立存储桶，分别管理用量与权限；
-- 按数据存放要求选择存储桶所在地域；
-- 迁移到云对象存储时，让新知识库使用新后端，已有知识库继续访问原文件。
+- des équipes ou projets distincts utilisent des buckets séparés pour l’usage et les droits ;
+- la région du bucket doit respecter des contraintes de localisation des données ;
+- une migration vers un stockage objet cloud se fait progressivement : nouvelles bases sur le nouveau backend, anciennes fichiers inchangés.
 
 <Screenshot
   src="/screenshots/settings-storage-backends.png"
-  caption="存储后端设置：多实例列表、默认实例与连通性测试"
-  hint="展示已注册的存储后端卡片（provider、状态、默认标记）与新建/编辑表单，含「测试连接」结果。" />
+  caption="Paramètres stockage : liste multi-instance, instance par défaut et test de connectivité"
+  hint="Cartes des backends enregistrés (provider, état, marque par défaut) et formulaire création/édition avec résultat « Tester la connexion »." />
 
-## 注册和选择存储后端 {#怎么配}
+## Enregistrer et choisir un backend {#enregistrer-backend}
 
-空间 Admin 可在「设置 → 存储」注册和管理实例：
+Un Admin d’espace gère les instances dans « Paramètres → Stockage » :
 
-1. 新建后端，选 provider（`local` / `minio` / `cos` / `tos` / `s3` / `oss` / `ks3` / `obs`，与[文档入库流程](../02-architecture/03-document-pipeline.md)里的存储 provider 一致），填连接参数（见下表）。可选列表受环境变量 `STORAGE_ALLOW_LIST` 限制，留空表示全部可选；
-2. **测试连接**：测试会实际读写存储，验证端点、存储桶和凭据；
-3. 将实例设为空间默认。新建知识库未指定实例时使用该默认值；
-4. 需要单独指定时，在知识库编辑弹窗的「存储」页签选择实例。
+1. Créer un backend, choisir le provider (`local` / `minio` / `cos` / `tos` / `s3` / `oss` / `ks3` / `obs`, aligné sur les providers du [pipeline documentaire](../02-architecture/03-document-pipeline.md)), renseigner les paramètres de connexion (table ci-dessous). La liste peut être restreinte par `STORAGE_ALLOW_LIST` ; vide = tous disponibles ;
+2. **Tester la connexion** : lecture/écriture réelle pour valider point de terminaison, bucket et identifiants ;
+3. Définir l’instance par défaut de l’espace. Les nouvelles bases sans instance explicite l’utilisent ;
+4. Si besoin, onglet « Stockage » de l’édition de base pour une instance dédiée.
 
-知识库为空时可修改存储后端；已有文件时，界面会禁用选择并提示迁移。文件路径依赖入库时的后端，直接更换会影响原文件访问。需要更换时，应新建知识库并迁移内容。
+Le backend n’est modifiable que si la base est vide ; avec des fichiers, le sélecteur est désactivé et un message indique la migration. Les chemins dépendent du backend à l’ingestion : un changement direct casse l’accès. Pour changer, créer une nouvelle base et migrer le contenu.
 
-## 连接参数 {#连接参数}
+## Paramètres de connexion {#parametres-connexion}
 
-各 provider 共用一组配置字段，`access_key_id` / `secret_access_key` 加密保存，接口响应中掩码显示。
+Champs communs à tous les providers ; `access_key_id` / `secret_access_key` chiffrés en base, masqués dans les réponses API.
 
-| 名称 | 类型 | 默认值 | 说明 |
+| Nom | Type | Défaut | Description |
 | --- | --- | --- | --- |
-| `endpoint` | string | 空 | 服务地址。`minio`（`mode=remote`）、`tos`、`s3`、`oss`、`ks3`、`obs` 必填；`cos` 不需要。保存时做 SSRF 校验，内网地址需加入 `SSRF_WHITELIST` |
-| `region` | string | 空 | 地域。`cos`、`tos`、`s3`、`oss`、`ks3`、`obs` 必填 |
-| `access_key_id` / `secret_access_key` | string | 空 | 访问密钥；COS 对应 SecretId / SecretKey。`local` 与 `mode=docker` 的 MinIO 不需要 |
-| `bucket_name` | string | 空 | 存储桶，除 `local` 外必填 |
-| `path_prefix` | string | 空 | 对象键前缀，必须是相对路径，不能以 `/` 开头或包含 `..` |
-| `mode` | string | `remote` | 仅 MinIO：`docker` 使用部署自带的 MinIO（地址与密钥读取 `MINIO_ENDPOINT` 等环境变量），`remote` 连接外部 MinIO |
-| `use_ssl` | bool | false | MinIO、S3、OBS 是否使用 HTTPS |
-| `force_path_style` | bool | false | 仅 S3：使用 path-style 寻址，多数 S3 兼容服务需要开启 |
-| `app_id` | string | 空 | 仅 COS：腾讯云 AppID |
-| `temp_bucket_name` / `temp_region` | string | 空 | 仅 COS、TOS、OSS：临时文件使用的存储桶与地域；OSS 另需 `use_temp_bucket=true` 启用 |
+| `endpoint` | string | vide | Adresse du service. Obligatoire pour `minio` (`mode=remote`), `tos`, `s3`, `oss`, `ks3`, `obs` ; inutile pour `cos`. Contrôle SSRF à l’enregistrement ; adresses internes via `SSRF_WHITELIST` |
+| `region` | string | vide | Région. Obligatoire pour `cos`, `tos`, `s3`, `oss`, `ks3`, `obs` |
+| `access_key_id` / `secret_access_key` | string | vide | Clés d’accès ; pour COS = SecretId / SecretKey. Inutiles pour `local` et MinIO `mode=docker` |
+| `bucket_name` | string | vide | Bucket, obligatoire sauf `local` |
+| `path_prefix` | string | vide | Préfixe de clé objet : chemin relatif, sans `/` initial ni `..` |
+| `mode` | string | `remote` | MinIO seulement : `docker` = MinIO du déploiement (`MINIO_ENDPOINT`, etc.), `remote` = MinIO externe |
+| `use_ssl` | bool | false | HTTPS pour MinIO, S3, OBS |
+| `force_path_style` | bool | false | S3 seulement : style path ; souvent requis pour les services compatibles S3 |
+| `app_id` | string | vide | COS seulement : AppID Tencent |
+| `temp_bucket_name` / `temp_region` | string | vide | COS, TOS, OSS : bucket/région pour fichiers temporaires ; OSS requiert aussi `use_temp_bucket=true` |
 
-- **OBS**：endpoint 为域名时使用虚拟主机寻址（`<bucket>.<endpoint>`），华为云自 2023-12-30 起拒绝域名 endpoint 的 path-style 请求；endpoint 为 IP 时仍用 path-style。未配置代理域名时，文件 URL 形如 `<scheme>://<bucket>.<endpoint-host>/<key>`。
-- **传输超时**：S3、COS、KS3、OBS、OSS 的单次上传/下载不再受 30 秒整体超时限制，改为单次传输最长 30 分钟；建连、TLS 握手和等待响应头仍有各自的超时，对端失联时会较快失败。
-- **KS3 重定向**：跟随重定向时逐跳做 SSRF 校验，不再把请求签名转发到重定向目标主机。
+- **OBS** : endpoint en nom de domaine → style virtual-hosted (`<bucket>.<endpoint>`) ; Huawei Cloud refuse le path-style sur domaine depuis 2023-12-30 ; IP → path-style. Sans domaine proxy, URL fichier `<scheme>://<bucket>.<endpoint-host>/<key>`.
+- **Timeouts de transfert** : upload/download S3, COS, KS3, OBS, OSS — plus de plafond global 30 s ; durée max 30 min par transfert ; connexion, TLS et en-têtes de réponse restent limités pour échouer vite si le pair disparaît.
+- **Redirections KS3** : chaque saut est revu SSRF ; la signature n’est plus relayée vers l’hôte de redirection.
 
-## 与向量存储的区别
+## Différence avec le stockage vectoriel
 
-文件存储和向量存储分别管理原文件与检索索引：
+Fichiers bruts et index de recherche sont gérés séparément :
 
-| | 存储后端（Storage Backend） | 向量存储（Vector Store） |
+| | Backend de stockage (Storage Backend) | Stockage vectoriel (Vector Store) |
 | --- | --- | --- |
-| 存什么 | 原始文件、图片、导出产物 | 向量与检索索引 |
-| 配在哪 | 「设置 → 存储」 | 「设置 → 向量库」 |
-| 知识库字段 | `storage_backend_id` | `vector_store_id` |
-| 相关章节 | 本篇 | [检索引擎与向量存储](05-retrieval-engines.md) |
+| Contenu | Fichiers bruts, images, exports | Vecteurs et index de recherche |
+| Configuration | « Paramètres → Stockage » | « Paramètres → Vector store » |
+| Champ base | `storage_backend_id` | `vector_store_id` |
+| Chapitre | celui-ci | [Moteurs de recherche et stockage vectoriel](05-retrieval-engines.md) |
 
-## 接口参考 {#接口}
+## Référence API {#reference-api}
 
-| 方法 | 路径 | 权限 |
+| Méthode | Chemin | Permission |
 | --- | --- | --- |
-| GET | `/storage-backends/types` | Viewer+，返回 `STORAGE_ALLOW_LIST` 允许的 provider 名称列表 |
+| GET | `/storage-backends/types` | Viewer+, liste des providers autorisés par `STORAGE_ALLOW_LIST` |
 | GET | `/storage-backends`、`/storage-backends/:id` | Viewer+ |
 | POST | `/storage-backends` | Admin+ |
 | PUT / DELETE | `/storage-backends/:id` | Admin+ |
-| POST | `/storage-backends/test` | Admin+，用未保存的参数试连 |
-| POST | `/storage-backends/:id/test` | Admin+，测已保存的实例 |
-| PUT | `/storage-backends/:id/default` | Admin+，设为空间默认 |
+| POST | `/storage-backends/test` | Admin+, test avec paramètres non enregistrés |
+| POST | `/storage-backends/:id/test` | Admin+, test instance enregistrée |
+| PUT | `/storage-backends/:id/default` | Admin+, défaut de l’espace |
 
-API Key 需要 `manage_storage_backends` 能力或 full-access。
+Clé API : capacité `manage_storage_backends` ou full-access.
 
-## 数据模型与兼容规则 {#数据模型与几个约束}
+## Modèle de données et règles de compatibilité {#modele-donnees-contraintes}
 
-`storage_backends` 表（`tenant_id` 隔离，软删除）关键字段：
+Table `storage_backends` (isolation `tenant_id`, suppression logique) :
 
-| 字段 | 说明 |
+| Champ | Description |
 | --- | --- |
-| `name` | 空间内唯一（软删除下的部分唯一索引） |
-| `provider` | 存储类型 |
-| `config` | JSONB，含加密后的密钥 |
-| `source` | `user`（界面或 API 注册）/ `env`（由环境变量配置生成） |
+| `name` | Unique dans l’espace (index partiel sous suppression logique) |
+| `provider` | Type de stockage |
+| `config` | JSONB, clés chiffrées |
+| `source` | `user` (UI ou API) / `env` (généré depuis variables d’environnement) |
 | `status` | `active` / `disabled` |
-| `legacy_alias` | 见下 |
+| `legacy_alias` | voir ci-dessous |
 
-`legacy_alias` 用于兼容环境变量配置的历史存储。升级时创建别名记录，使已有文件路径继续可解析，无需搬迁数据。同一空间、同一 provider 只允许一条别名记录，手动注册的实例独立保存。
+`legacy_alias` assure la compatibilité avec l’historique configuré par variables d’environnement. À la montée de version, un enregistrement alias permet de résoudre les chemins existants sans déplacer les données. Un seul alias par espace et par provider ; les instances créées manuellement restent distinctes.

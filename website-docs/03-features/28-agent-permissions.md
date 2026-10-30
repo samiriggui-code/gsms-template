@@ -1,35 +1,35 @@
-# 执行权限与审批
+# Permissions d’exécution et approbations
 
-执行权限决定智能体在任务中可以直接做什么、哪些操作需要先询问你。它与空间角色和资源权限共同生效：允许智能体执行写入，不代表获得原本无权编辑的知识库或文件。
+Les permissions d’exécution définissent ce que l’agent peut faire directement dans une tâche et quelles opérations demandent confirmation. Elles s’ajoutent au rôle dans l’espace et aux droits ressources : autoriser une écriture n’accorde pas l’édition d’une KB ou de fichiers auparavant interdits.
 
-<Screenshot src="/screenshots/assistant-permissions.png" caption="写入前核对目标文档和待修改字段，再决定是否批准" />
+<Screenshot src="/screenshots/assistant-permissions.png" caption="Avant écriture : vérifier le document cible et les champs à modifier, puis approuver ou refuser" />
 
-## 三种执行权限 {#levels}
+## Trois niveaux d’exécution {#levels}
 
-| 权限 | 可以直接执行 | 写入与高影响操作 |
+| Permission | Exécution directe | Écritures et opérations à fort impact |
 | --- | --- | --- |
-| 只读 `read_only` | 读取和探测类操作，例如查询状态、检索资料 | 不允许写入，不能用一次审批绕过只读限制 |
-| 修改前确认 `confirm` | 读取和探测类操作 | 写入前请求确认；删除等破坏性操作也需要确认 |
-| 自动执行 `auto_write` | 读取、探测和一般写入 | 破坏性操作仍需要确认；被标记为始终审批的工具仍逐次确认 |
+| Lecture seule `read_only` | Lecture et sonde (statut, recherche) | Pas d’écriture ; une approbation ne contourne pas la lecture seule |
+| Confirmation avant modification `confirm` | Lecture et sonde | Écritures sur demande de confirmation ; suppressions et opérations destructives aussi |
+| Exécution auto `auto_write` | Lecture, sonde et écritures courantes | Opérations destructives encore confirmées ; outils marqués approbation systématique confirmés à chaque fois |
 
-助手会话中的选择受空间设置的上限限制，普通智能体通过自身的 `config.access_level` 配置执行权限。WeKnora 助手默认上限是 `confirm`，普通智能体未配置上限时默认 `auto_write`，升级后应按实际使用场景核对配置。
+En session assistant, le choix est plafonné par les paramètres espace ; les agents personnalisés utilisent `config.access_level`. Plafond assistant par défaut `confirm` ; agent personnalisé sans plafond explicite : défaut `auto_write` après upgrade — vérifier selon l’usage.
 
-## 查看和处理审批 {#prompts}
+## Consulter et traiter les approbations {#prompts}
 
-审批卡片说明准备执行的操作。确认前检查资源、参数和可能产生的影响；拒绝后，智能体需要调整方案或结束相应操作。
+La carte d’approbation décrit l’opération prévue. Avant confirmation : ressources, paramètres, impact ; refus = l’agent doit ajuster ou abandonner l’opération.
 
-待审批事项和可恢复的运行状态会持久化，刷新页面后可以继续处理。恢复等待状态不等于自动重放一切操作；服务中断后无法确认结果的执行，需要先核对现状。
+Éléments en attente et exécutions reprenables persistent ; rafraîchir la page permet de continuer. Reprendre l’attente ne rejoue pas automatiquement toutes les actions ; après interruption, une exécution d’issue incertaine exige vérification de l’état actuel.
 
-可持久化的审批卡片显示等待状态，并在有到期时间时显示有效期限；后台短暂等待结束不代表审批失效。不支持挂起的即时审批仍会显示倒计时，应在截止前处理。
+Les cartes persistées affichent l’attente et l’échéance le cas échéant ; fin d’attente courte en arrière-plan ≠ approbation expirée. Approbations instantanées non suspendables peuvent afficher un compte à rebours : traiter avant expiration.
 
-对 MCP 工具，服务中的工具风险与审批配置也会参与判断。即使选择自动执行，强制逐次审批也不会被普通授权跳过。详见 [MCP](08-mcp.md)。
+Pour les outils MCP, la config risque/approbation côté service participe aussi. Même en auto, une approbation forcée à chaque fois n’est pas contournée par une autorisation générale. Voir [MCP](08-mcp.md).
 
-## 会话授权与自动化授权 {#grants}
+## Autorisations de session et d’automatisation {#grants}
 
-会话中可以对符合条件的一般写入授予后续执行权限，授权限于该根会话和指定范围。删除等破坏性操作不能通过普通会话授权被一概放行。
+En session, une autorisation peut couvrir les écritures courantes ultérieures, limitée à la session racine et au périmètre indiqué. Les suppressions et opérations destructives ne sont pas globalement autorisées par une grant de session ordinaire.
 
-自动化还支持在任务设置中管理更明确的长期授权，可基于实际审批记录选择操作及资源范围，包括符合条件的破坏性操作。需要逐次审批的操作不在此范围内。长期授权不会覆盖角色权限检查，配置变化、过期、撤销或长期闲置都会影响有效性。
+Les automatisations permettent aussi des autorisations durables plus explicites dans les paramètres de tâche, dérivées des approbations passées, opération et ressources, y compris destructives éligibles. Opérations à approbation systématique exclues. Les grants durables ne contournent pas les contrôles de rôle ; changement de config, expiration, révocation ou inactivité affectent la validité.
 
-不要把「自动执行」理解为无限权限。涉及外部系统、技能安装或本机文件的任务，还会受到对应工具、本机沙箱与资源授权的限制。
+« Exécution auto » n’est pas une permission illimitée : systèmes externes, installation de skills ou fichiers locaux restent limités par outils, sandbox locale et autorisations ressources.
 
-相关内容：[WeKnora 助手](26-weknora-assistant.md) · [自动化](27-automations.md) · [技能与沙箱](22-skills-sandbox.md)
+Voir aussi : [Assistant WeKnora](26-weknora-assistant.md) · [Automatisations](27-automations.md) · [Skills et sandbox](22-skills-sandbox.md)

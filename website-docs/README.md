@@ -1,24 +1,24 @@
-# WeKnora 官网与文档
+# Site officiel et documentation WeKnora
 
-`website-docs/` 包含官网、文档、共享样式和全部构建部署脚本，可独立复制和构建，不依赖仓库外层文件。官网和文档共用一个域名、一次构建和一份部署产物。
+Le répertoire `website-docs/` regroupe le site produit, la documentation, les styles partagés et l’ensemble des scripts de build et de déploiement. Il peut être copié et construit de façon autonome, sans dépendre des fichiers à la racine du dépôt. Site et documentation partagent un domaine, un build et un artefact de déploiement.
 
-产品、部署、API 和开发文档统一在这里维护。旧 `docs/` 的有效内容已按主题合并，过时和重复正文已删除；迁移取舍及仍保留的工程资源见[迁移记录](MIGRATION.md)；该记录仅供维护者使用，不发布到站点。
+La documentation produit, déploiement, API et développement est maintenue ici. Le contenu utile de l’ancien `docs/` a été fusionné par thème ; textes obsolètes et doublons supprimés. Voir [Historique de migration](MIGRATION.md) pour les choix de migration et les ressources d’ingénierie conservées — document réservé aux mainteneurs, non publié sur le site.
 
-- `/`：产品首页。
-- `/docs/`：直接进入“快速上手”。
-- `/docs/…`：完整文档，保留分类导航、搜索和侧栏。
+- `/` : page d’accueil produit.
+- `/docs/` : entrée directe vers « Démarrage rapide ».
+- `/docs/…` : documentation complète avec navigation par catégories, recherche et barre latérale.
 
-站点只占用这两个路径：根目录下只有 `index.html`、`404.html` 和 `docs/`。官网的脚本、样式和图片都放在 `/docs/_home/` 下，所以上游网关只需转发 `/`（精确匹配）和 `/docs/` 前缀。`build` 会拒绝引用这两个路径以外资源的页面。
+Le site n’expose que ces deux chemins : à la racine, seuls `index.html`, `404.html` et `docs/`. Scripts, styles et images du site officiel sont sous `/docs/_home/` ; la passerelle amont doit donc transférer `/` (correspondance exacte) et le préfixe `/docs/`. Le `build` rejette les pages qui référencent des ressources hors de ces chemins.
 
-顶栏高 64px、横向铺满。两边使用 README 原版商标，共用颜色、字体和深浅色偏好；Logo 在当前标签返回官网。官网和文档各自使用适合当前页面的导航。
+Barre supérieure de 64 px, pleine largeur. Marque d’origine du README des deux côtés, couleurs, polices et préférences clair/sombre partagées ; le logo ramène au site officiel dans l’onglet courant. Site et documentation ont chacun une navigation adaptée à la page.
 
-首页视频区使用一个播放器和横向选择入口，默认展示 v0.9.0 发布视频，保留之前的产品全览。新视频和封面随静态站部署，旧视频沿用原有 GitHub 地址。视频在用户点击播放后才加载，切换会停止上一部视频。
+La zone vidéo de la page d’accueil utilise un lecteur et un sélecteur horizontal ; par défaut la vidéo de release v0.9.0, avec conservation de la vue d’ensemble produit antérieure. Nouvelle vidéo et couverture déployées avec le site statique ; l’ancienne vidéo garde son URL GitHub. Chargement au clic ; changer de vidéo arrête la précédente.
 
-## 发布方式：静态文件 + Nginx
+## Publication : fichiers statiques + Nginx
 
-### 1. 准备部署包
+### 1. Préparer le paquet de déploiement
 
-使用 Node.js 24，在仓库的 `website-docs/` 目录执行。首次构建或依赖锁文件变更后，先安装依赖：
+Avec Node.js 24, exécuter dans `website-docs/` du dépôt. Après un premier build ou un changement de lockfile, installer les dépendances :
 
 ```bash
 cd website-docs
@@ -27,89 +27,91 @@ npm run build
 npm run package:site
 ```
 
-`build` 会编译官网、检查文档链接和 Mermaid、编译文档，并校验合并后的资源路径。全部通过后更新 `static-site/`；`package:site` 将其打包到 `releases/`。
+`build` compile le site officiel, vérifie les liens et Mermaid de la doc, compile la documentation et valide les chemins de ressources fusionnés. En cas de succès, mise à jour de `static-site/` ; `package:site` produit l’archive dans `releases/`.
 
-### 2. 上传并解压
+### 2. Téléverser et extraire
 
-只需把压缩包上传到服务器。服务器不需要 Node.js，也不需要 WeKnora 后端或独立文档服务。
+Il suffit de téléverser l’archive sur le serveur. Pas besoin de Node.js, du backend WeKnora ni d’un service de documentation séparé sur le serveur.
 
-每次发布使用一个新的空目录，避免混入旧站点文件。下面的 `20261027-v090` 是示例发布编号，后续发布换一个编号：
+Chaque publication utilise un répertoire vide neuf pour éviter de mélanger d’anciens fichiers. `20261027-v090` ci-dessous est un numéro d’exemple ; en changer à chaque release :
 
 ```bash
 sudo mkdir -p /srv/www/weknora/releases/20261027-v090
 sudo tar -xzf weknora-site-v0.9.0.tar.gz -C /srv/www/weknora/releases/20261027-v090
 ```
 
-解压后该目录下应直接有 `index.html`、`404.html`、`docs/`，无需再套一层 `static-site/`。
+Après extraction, le répertoire doit contenir directement `index.html`, `404.html` et `docs/`, sans couche `static-site/` supplémentaire.
 
-### 3. 配置域名根目录
+### 3. Configurer la racine du domaine
 
-以 [deploy/nginx.conf](deploy/nginx.conf) 为模板添加站点配置，修改：
+S’appuyer sur [deploy/nginx.conf](deploy/nginx.conf) comme modèle et modifier :
 
 ```nginx
-server_name 你的域名;
+server_name votre-domaine.example;
 root /srv/www/weknora/releases/20261027-v090;
 ```
 
-如果域名已有 HTTPS 配置，保留原来的证书及监听设置，把模板中的 `root`、`index` 和 `location` 规则合入现有站点配置。域名应指向这台服务器。
+Si HTTPS existe déjà, conserver certificats et écoute, et fusionner `root`, `index` et règles `location` du modèle dans la config du site. Le domaine doit pointer vers ce serveur.
 
-必须保留文档的 `.html` 路由解析规则；不要把所有未知路径回退到官网 `index.html`。当前构建部署在域名根路径，不支持直接放进 `/weknora/` 等子目录。
+Conserver les règles de résolution des routes `.html` de la documentation ; ne pas renvoyer toutes les URLs inconnues vers `index.html` du site officiel. Le build actuel est prévu pour la racine du domaine, pas pour un sous-chemin comme `/weknora/`.
 
-检查配置后重载：
+Vérifier puis recharger :
 
 ```bash
 sudo nginx -t
 sudo nginx -s reload
 ```
 
-### 4. 确认上线
+### 4. Vérifier en production
 
-访问以下路径：
+Tester :
 
-- `/`：官网。
-- `/docs/`：快速上手。
-- `/docs/03-features/23-memory`：长期记忆文档，直接打开和刷新均正常。
-- `/docs/not-found`：返回 404。
+- `/` : site officiel.
+- `/docs/` : démarrage rapide.
+- `/docs/03-features/23-memory` : mémoire à long terme, ouverture et rafraîchissement directs.
+- `/docs/not-found` : réponse 404.
 
-再确认搜索、深浅色切换和 Logo 返回官网正常。
+Confirmer aussi recherche, bascule clair/sombre et retour logo vers le site officiel.
 
-后续更新重复构建、打包、上传到新目录，再修改 Nginx `root` 并重载。需要回滚时，将 `root` 改回上一发布目录。确认新版本稳定后再清理旧发布目录。
+Pour les mises à jour : rebuild, pack, upload dans un nouveau répertoire, modifier `root` Nginx et recharger. Rollback : remettre `root` sur le répertoire précédent. Nettoyer l’ancien release une fois la nouvelle version stable.
 
-## 可选：Docker 部署
+## Option : déploiement Docker
 
-从干净源码即可构建，无需在宿主机安装 Node.js 或提前生成静态文件。Dockerfile 使用两个阶段：Node.js 24 按两份锁文件安装依赖并构建官网与文档，最终 Nginx 镜像只包含静态产物和服务配置。
+Build depuis des sources propres sans Node.js ni génération statique sur l’hôte. Dockerfile en deux étapes : Node.js 24 installe et build site + doc selon les deux lockfiles ; l’image finale Nginx ne contient que les statiques et la config.
 
-在仓库根目录执行：
+À la racine du dépôt :
 
 ```bash
 docker build -t weknora-site:0.9.0 website-docs
 docker run -d --name weknora-site --restart unless-stopped -p 8080:80 weknora-site:0.9.0
 ```
 
-访问 `http://服务器地址:8080/`。如使用域名和 HTTPS，让现有反向代理转发到该端口即可。镜像内已经包含官网、文档和 Nginx 路由配置。
+Visiter `http://adresse-du-serveur:8080/`. Avec domaine et HTTPS, faire transiter le reverse proxy existant vers ce port. L’image inclut site, documentation et routage Nginx.
 
-容器内的 Nginx 默认监听 80 端口，可以用环境变量 `WEBSITE_NGINX_PORT` 修改，无需重新构建。使用 `--network host`，或者部署平台要求容器监听指定端口时，这样设置：
+Nginx dans le conteneur écoute par défaut sur le port 80 ; `WEBSITE_NGINX_PORT` permet de le changer sans rebuild. Avec `--network host` ou si la plateforme exige un port précis :
 
 ```bash
 docker run -d --name weknora-site --restart unless-stopped -e WEBSITE_NGINX_PORT=8080 -p 8080:8080 weknora-site:0.9.0
 ```
 
-只是想换一个对外端口时，改 `-p` 左侧的宿主机端口就够了，例如 `-p 9000:80`。
+Pour changer seulement le port exposé, modifier le port hôte à gauche de `-p`, par ex. `-p 9000:80`.
 
-也可以只复制 `website-docs/` 目录，在该目录执行 `docker build -t weknora-site:0.9.0 .`。构建上下文必须是 `website-docs/`，宿主机的依赖、旧构建产物和部署包由 `.dockerignore` 排除。
+On peut aussi copier uniquement `website-docs/` et exécuter `docker build -t weknora-site:0.9.0 .` dans ce répertoire. Le contexte de build doit être `website-docs/` ; dépendances hôte, anciens builds et paquets sont exclus via `.dockerignore`.
 
-从旧文档镜像迁移时，将容器端口映射或反向代理目标端口从 `8081` 改为 `80`（宿主机端口可自行选择，例如 `-p 8081:80`）。域名根路径 `/` 现在提供官网，`/docs/` 提供文档，反向代理需覆盖整个站点并保留请求路径。容器使用 Nginx 官方镜像的默认入口，无需额外的 `docker-entrypoint.sh`。
+En migration depuis une ancienne image doc, mapper le port conteneur ou la cible proxy de `8081` vers `80` (port hôte au choix, ex. `-p 8081:80`). `/` sert le site officiel, `/docs/` la documentation ; le reverse proxy doit couvrir tout le site en préservant le chemin demandé. L’image Nginx officielle suffit, sans `docker-entrypoint.sh` additionnel.
 
-构建后可在安装了 Node.js 24 和 Docker 的机器上执行以下检查，无需安装 npm 依赖。检查会临时启动容器并自动清理，验证两站路由、静态资源、404、压缩和响应头：
+Après build, sur une machine avec Node.js 24 et Docker (sans `npm install`) :
 
 ```bash
 cd website-docs
 npm run test:docker -- weknora-site:0.9.0
 ```
 
-## 本地开发
+Le test démarre un conteneur temporaire, le nettoie, et vérifie routage des deux sites, statiques, 404, compression et en-têtes.
 
-使用 Node.js 24 LTS（目录内提供 `.nvmrc`，使用 nvm 时可执行 `nvm use`）。首次获取源码后安装依赖（分别按文档和官网的锁文件安装）：
+## Développement local
+
+Node.js 24 LTS (`.nvmrc` fourni ; avec nvm : `nvm use`). Après clone, installer les dépendances (lockfiles doc et site séparés) :
 
 ```bash
 cd website-docs
@@ -118,76 +120,78 @@ npm run build
 npm run preview
 ```
 
-预览地址：`http://127.0.0.1:3000/`。修改源码后重新构建并刷新；可用 `npm run preview -- --port 8080` 指定其他端口。
+Aperçu : `http://127.0.0.1:3000/`. Rebuild après modification ; `npm run preview -- --port 8080` pour un autre port.
 
 ```bash
 npm run check
 npm run test:integration
 ```
 
-集成检查需要安装 Google Chrome，验证主题同步、两边导航、搜索、手机端控件及直达文档路由。可用 `SITE_TEST_URL` 指定待验证的站点。
+Les tests d’intégration nécessitent Google Chrome (thème, navigation des deux sites, recherche, mobile, routes doc directes). `SITE_TEST_URL` pour cibler un site déjà déployé.
 
-开发时可分别使用 `npm run dev:homepage`（官网）和 `npm run dev:docs`（文档）获得热更新；完整站内跳转请使用统一构建后的 `npm run preview`。
+En dev : **`npm run dev`** lance la passerelle sur [http://127.0.0.1:3000](http://127.0.0.1:3000) (homepage Next + VitePress `/docs/`). Alternatives : `npm run dev:homepage` ou `npm run dev:docs` seuls ; pour le comportement production, `npm run preview` après `npm run build`.
 
-`npm run build:docs` 只编译文档，`npm run build:homepage` 只编译官网；正式发布使用 `npm run build`，输出会同时包含两者。`VERSION` 是这份站点构建使用的发布版本。
+**Locales doc** : français à la racine (`/docs/…`), anglais sous `/docs/en/…`. Scripts de maintenance dans `scripts/` (`sync-en-from-fr.py`, `fix-en-anchors.py`, `verify-en-locale.py`, etc.).
 
-## 工程目录（相对于 website-docs）
+`npm run build:docs` ne compile que la doc, `npm run build:homepage` que le site ; la release officielle utilise `npm run build` (les deux). `VERSION` est la version de release utilisée pour ce build de site.
 
-- `homepage/`：Next.js 官网源码、品牌素材及独立依赖锁文件。
-- `01-getting-started/` 至 `06-development/`：文档正文，原有路径不变。
-- `.vitepress/`：文档站配置与主题。
-- `public/`、`sample-data/`：文档截图和示例。
-- `shared/`：品牌变量、顶栏样式及共用图标。
-- `scripts/`：统一构建、检查、预览和打包。
-- `static-site/`：唯一的部署目录，由构建生成。
-- `deploy/`、`Dockerfile`：Nginx 和 Docker 部署配置。
-- `releases/`：生成的部署压缩包。
-- `embed.go`：把 `01-getting-started/` 至 `07-releases/` 的正文编进 WeKnora 服务端，供内置的 WeKnora 助手检索和引用。新增分类目录时，同步更新 `embed.go` 和 `internal/productdocs/library.go` 中的分类列表。服务端测试会检查每篇正文能否解析、站内链接与锚点是否有效。
+## Arborescence (relative à `website-docs/`)
 
-品牌素材来源见 [homepage/BRAND-ASSETS.md](homepage/BRAND-ASSETS.md)。v0.9.0 视频、页面、文档和截图随包部署；保留的旧版产品全览使用 GitHub 原始附件，播放需要访问 GitHub。
+- `homepage/` : sources Next.js du site, assets de marque, lockfile propre.
+- `01-getting-started/` à `06-development/` : corps de la documentation, chemins inchangés.
+- `.vitepress/` : config et thème du site doc.
+- `public/`, `sample-data/` : captures et exemples.
+- `shared/` : variables de marque, styles de barre supérieure, icônes communes.
+- `scripts/` : build, contrôles, preview et packaging unifiés.
+- `static-site/` : seul répertoire de déploiement généré.
+- `deploy/`, `Dockerfile` : Nginx et Docker.
+- `releases/` : archives de déploiement générées.
+- `embed.go` : compile le texte de `01-getting-started/` à `07-releases/` dans le service WeKnora pour l’assistant intégré (recherche et citation). Lors d’une nouvelle catégorie, mettre à jour `embed.go` et la liste dans `internal/productdocs/library.go`. Les tests serveur vérifient parsing, liens internes et ancres.
 
-## v0.8.3 截图清单
+Assets de marque : [homepage/BRAND-ASSETS.md](homepage/BRAND-ASSETS.md). Vidéo, pages, doc et captures v0.9.0 sont dans le paquet ; l’ancienne vue d’ensemble produit utilise la pièce jointe GitHub d’origine (accès GitHub requis).
 
-文档使用 `Screenshot` 组件展示真实产品截图，首页复用对应图片。维护截图时使用演示数据，隐藏 Token、真实邮箱和内部地址。
+## Checklist captures v0.8.3
 
-v0.8.3 的 11 张截图已全部接入，画廊、多模态设置、Wiki 分组图谱、原文引用定位均已同步到首页。多模态截图展示图片向量开关，Seafile 截图展示凭据配置，模型目录截图展示列表，创建用户截图展示成功结果。下表记录截图内容与使用位置，未展示的操作由正文说明。
+La doc utilise le composant `Screenshot` ; la page d’accueil réutilise les mêmes images. Utiliser des données de démo pour masquer tokens, e-mails réels et adresses internes.
 
-所有文档图片放在 `website-docs/public/screenshots/`：
+Les 11 captures v0.8.3 sont intégrées ; galerie, réglages multimodaux, graphe Wiki par groupes et localisation des citations sont synchronisés avec l’accueil. Les captures multimodales montrent l’interrupteur vecteur image ; Seafile la configuration des identifiants ; le catalogue modèles une liste ; la création utilisateur un succès. Le tableau ci-dessous indique contenu et emplacements ; le texte décrit le reste.
 
-| 文件名 | 拍摄内容 | 使用位置 |
+Toutes les images doc sont dans `website-docs/public/screenshots/` :
+
+| Fichier | Contenu capturé | Emplacements |
 | --- | --- | --- |
-| `kb-image-gallery-detail.png` | 图片详情，展示原图、图片描述、识别文字与来源文档 | 知识库功能、版本说明、首页 |
-| `kb-image-gallery.png` | 画廊瀑布流，展开来源文档多选筛选，包含图表与照片 | 知识库功能、版本说明、首页 |
-| `kb-image-vector-settings.png` | 支持图片输入的向量模型、多模态设置和图片向量检索开关（可用腾讯 WeMM-Embedding 示例） | 知识库功能、版本说明、首页 |
-| `chat-source-location.png` | 带引用的回答，以及原始 PDF/Office 文件中的对应高亮 | 会话体验、版本说明、首页 |
-| `chat-mention-selector.png` | 输入框的 @ 资源选择菜单，展示分类、资源数量和搜索入口 | 版本说明 |
-| `chat-attachment-read.png` | 含图片文档的附件卡片、正文按需阅读和图片观察结果 | 会话体验、版本说明 |
-| `system-user-management.png` | 用户列表、启停状态、系统管理员标记和操作菜单 | 平台管理、版本说明 |
-| `system-model-catalog.png` | 模型目录、来源标记、覆盖编辑或版本历史 | 版本说明 |
-| `wiki-graph-groups.png` | 新图谱布局、主题说明与分组聚焦，保留切换分组和返回全图入口 | Wiki 功能、版本说明、首页 |
-| `datasource-seafile.png` | Seafile 数据源与资料库/目录/文件选择 | Seafile 功能 |
-| `system-admin-create-user.png` | 创建用户成功结果，使用演示账号并隐藏密码 | 平台管理 |
+| `kb-image-gallery-detail.png` | Détail image : original, description, texte reconnu, document source | Fonctions base de connaissances, notes de version, accueil |
+| `kb-image-gallery.png` | Galerie en flux, filtre multi-sources (graphiques et photos) | Idem |
+| `kb-image-vector-settings.png` | Modèle vecteur avec entrée image, réglages multimodaux, recherche vecteur image (ex. WeMM-Embedding Tencent) | Idem |
+| `chat-source-location.png` | Réponse avec citations et surlignage dans PDF/Office source | Expérience de chat, notes de version, accueil |
+| `chat-mention-selector.png` | Menu @ ressources : catégories, quantités, recherche | Notes de version |
+| `chat-attachment-read.png` | Pièce jointe avec images, lecture à la demande et observation d’image | Expérience de chat, notes de version |
+| `system-user-management.png` | Liste utilisateurs, statut, badge admin système, actions | Admin plateforme, notes de version |
+| `system-model-catalog.png` | Catalogue modèles, source, édition de surcharge ou historique | Notes de version |
+| `wiki-graph-groups.png` | Nouveau graphe, thèmes, focus par groupe, retour vue complète | Wiki, notes de version, accueil |
+| `datasource-seafile.png` | Source Seafile et sélection bibliothèque/dossier/fichier | Fonction Seafile |
+| `system-admin-create-user.png` | Création utilisateur réussie (compte démo, mot de passe masqué) | Admin plateforme |
 
-首页复用其中的 `kb-image-gallery.png`、`kb-image-gallery-detail.png`、`kb-image-vector-settings.png`、`wiki-graph-groups.png`、`chat-source-location.png`，更新时只需替换 `website-docs/public/screenshots/` 中的源图；首页的 `prebuild` / `predev` 会自动同步已有同名副本（终端截图的旧文件名也会对应同步）。添加全新首页截图时，先在 `website-docs/homepage/public/docs/_home/product/` 建立副本。完成后运行 `npm run build`，检查图片引用与本地资源校验结果；页面外观由维护者人工确认。
+L’accueil réutilise `kb-image-gallery.png`, `kb-image-gallery-detail.png`, `kb-image-vector-settings.png`, `wiki-graph-groups.png`, `chat-source-location.png` ; remplacer les fichiers dans `website-docs/public/screenshots/` — `prebuild` / `predev` synchronisent les copies homonymes (y compris anciens noms de captures terminal). Pour une nouvelle capture accueil, créer d’abord une copie dans `website-docs/homepage/public/docs/_home/product/`. Puis `npm run build` et vérification manuelle par le mainteneur.
 
-v0.8.3 的提交清单、文档核对依据和验证记录保存在主仓库 `docs/release-v0.8.3-audit.md`，不随独立站点发布。v0.8.3 发布日期为 2026-10-14，版本页、CHANGELOG 与四种语言 README 保持一致。
+Checklists de soumission, rapprochement doc et traces de validation v0.8.3 : `docs/release-v0.8.3-audit.md` dans le dépôt principal (non publié sur le site autonome). Date de release v0.8.3 : 2026-10-14 ; page de version, CHANGELOG et README quadri-lingues alignés.
 
-v0.8.3 首页内容按两层维护：当期版本区以左侧功能导航、右侧截图展示画廊、多模态 Embedding（含腾讯 WeMM 支持）、Wiki 图谱、原文引用定位四项重点；左侧四项说明均保持展开，画廊通过「浏览图片 / 查看详情」切换两张截图；本机浏览器左侧分别展开「执行任务」「连接扩展」两种状态的说明，右侧切换对应截图，MCP Server 归入生态集成，对话追加、分叉与回滚归入 Agent 介绍。技能与沙箱、Wiki、模型生态与企业部署保留独立位置。语言新增等较小更新归入版本说明，后续换版时不要随版本区一并移除这些长期能力。
+Contenu accueil v0.8.3 sur deux niveaux : zone « version courante » avec navigation gauche et captures à droite pour galerie, embedding multimodal (WeMM), graphe Wiki et citations sources ; les quatre blocs explicatifs restent ouverts ; la galerie alterne « Parcourir les images / Voir le détail ». Navigateur local : à gauche « Exécuter une tâche » et « Connecter une extension », à droite les captures correspondantes ; MCP Server regroupé sous écosystème ; ajouts, bifurcation et rollback dans la section Agent. Compétences/sandbox, Wiki, écosystème modèles et déploiement entreprise restent des sections dédiées. Petites nouveautés (langues, etc.) dans les notes de version — ne pas retirer ces capacités durables lors d’un changement de zone version.
 
-首页每项重点只用一句话说明用途，配置条件放到对应功能文档；引用定位与图谱更新同列版本重点；附件阅读、用户管理、Seafile 与 Docker 终端保留次级链接。本机浏览器复用「执行任务／连接扩展」两张大图与 BrowserSkill 图标、GitHub 入口。版本说明面向使用者，提交计数、代码快照和撤回记录留在发布核对报告。
+Une phrase par focus accueil ; conditions de configuration dans la doc fonctionnelle ; citations et graphe au même niveau que les autres highlights version ; liens secondaires pour pièces jointes, utilisateurs, Seafile, terminal Docker. Navigateur local : deux grandes cartes « tâche / extension » plus icône BrowserSkill et entrée GitHub. Notes de version orientées utilisateur ; métriques de commits, snapshots code et retraits restent dans le rapport de release.
 
-首页章节底色按顺序交替：01／03／05／07 与使用入口使用基础底色，02／04／06／08 使用浅色背景；深色模式使用对应主题变量。所有章节背景铺满页面，正文使用同一宽度容器，浅色背景区负责相邻章节的分隔线，统一章节间距。
+Fonds de chapitre alternés : 01/03/05/07 et entrées « utilisation » en fond de base ; 02/04/06/08 en fond clair ; variables thème en mode sombre. Fond pleine page, contenu dans un conteneur de largeur unique ; les zones claires séparent les chapitres adjacents et unifient l’espacement.
 
-## v0.9.0 发布材料
+## Matériel de release v0.9.0
 
-v0.9.0 发布日期统一为 2026-10-29。正式 tag、镜像和官网部署的执行状态以主仓库 `docs/release-v0.9.0-audit.md` 为准；发布前完成其中的构建验收与上线检查。
+Date de release unifiée : 2026-10-29. État d’exécution tag, images et déploiement site : `docs/release-v0.9.0-audit.md` dans le dépôt principal ; effectuer l’acceptation build et les checks en ligne avant publication.
 
-当前首页重点为 WeKnora 助手、多智能体协作、自动化和执行权限。画廊、Wiki、原文引用与浏览器等长期能力保留在对应章节；视频区优先展示 v0.9.0，通过横向标签切换旧版产品全览，共用一个播放器。
+Focus accueil actuel : assistant WeKnora, collaboration multi-agents, automatisations, permissions d’exécution. Galeries, Wiki, citations sources et navigateur restent dans leurs chapitres ; la zone vidéo privilégie v0.9.0 avec onglets horizontaux vers l’ancienne vue d’ensemble, lecteur partagé.
 
-- 文档与发布说明：`07-releases/v0.9.0.md`，新增助手、自动化和执行权限三篇指南。
-- 发布截图：助手「产品问答 / 任务协助」使用 `assistant-release-guide.png` 与 `assistant-overview.png`；自动化「一句话设置 / 手动设置」使用 `automation-conversation.png` 与 `automation-setup.png`；另有 `agent-collaboration.png` 和 `assistant-permissions.png`。实际浏览器采集，1920 × 1056，与上一版 3840 × 2112 保持相同宽高比，未放大像素或重绘界面。知识库使用卡片视图。
-- 截图来源为 `public/screenshots/`，首页同名副本由 prebuild 同步。
-- 视频源工程：主仓库 `misc/release-v0.9.0-video/`；165 秒（2 分 45 秒）、横屏 1920 × 1080、60 fps，全英文界面、配音与内嵌字幕，含同步打字音效，无背景音乐。成片、封面和独立 SRT 位于 `public/videos/`。
-- 群通知与 GitHub Release 文案：主仓库 `docs/release-v0.9.0-announcement.md`。
+- Doc et notes : `07-releases/v0.9.0.md` plus trois guides assistant, automatisations, permissions.
+- Captures : assistant « Q&R produit / aide aux tâches » → `assistant-release-guide.png`, `assistant-overview.png` ; automatisations « en une phrase / configuration manuelle » → `automation-conversation.png`, `automation-setup.png` ; aussi `agent-collaboration.png`, `assistant-permissions.png`. Captures navigateur réelles 1920×1056, même ratio que l’édition 3840×2112, sans upscaling ni recomposition UI. Base de connaissances en vue cartes.
+- Sources : `public/screenshots/` ; copies accueil synchronisées par prebuild.
+- Projet vidéo : `misc/release-v0.9.0-video/` (dépôt principal) ; 165 s, 1920×1080, 60 fps, UI anglaise, voix et sous-titres intégrés, effet frappe synchronisé, sans musique de fond. Vidéo, couverture et SRT dans `public/videos/`.
+- Annonce groupe et texte GitHub Release : `docs/release-v0.9.0-announcement.md`.
 
-历史版本页与旧截图继续保留，确保旧链接可用。
+Pages et captures des versions antérieures conservées pour les anciens liens.

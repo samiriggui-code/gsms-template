@@ -1,8 +1,8 @@
-# DeepSeek Harness 插件
+# Plugin DeepSeek Harness
 
-DeepSeek Harness（dsh）插件通过 REST API 连接已有 WeKnora 部署，支持检索原文、读取完整文档和生成带引用的回答。插件源码位于 `packages/dsh-weknora`。
+Le plugin DeepSeek Harness (dsh) se connecte à un déploiement WeKnora existant via REST : recherche de passages, lecture intégrale de documents et réponses avec citations. Code source : `packages/dsh-weknora`.
 
-## 安装与连接
+## Installation et connexion
 
 ```sh
 dsh plugin --profile web add @wxg-prc-cpg/dsh-weknora
@@ -14,26 +14,26 @@ export WEKNORA_RESOURCE_URLS=public
 dsh web
 ```
 
-也可在仓库根目录运行 `dsh plugin --profile web add ./packages/dsh-weknora`。插件自身要求 Node ≥20.11；仓库验证的 dsh 运行环境需要带 zstd 的 Node（≥22.15 或 ≥24）和 pnpm ≥10。已验证版本为 dsh 0.1.0-rc.8 / WeKnora 0.8.0，其他版本需按其插件接口确认兼容性。
+Vous pouvez aussi exécuter `dsh plugin --profile web add ./packages/dsh-weknora` à la racine du dépôt. Le plugin exige Node ≥20.11 ; l’environnement dsh validé requiert Node avec zstd (≥22.15 ou ≥24) et pnpm ≥10. Versions testées : dsh 0.1.0-rc.8 / WeKnora 0.8.0 ; pour d’autres versions, vérifier la compatibilité de l’interface plugin.
 
-服务地址可包含 `/api/v1`，未包含时自动补全。API Key 通过 `X-API-Key` 发送，需要 `retrieve` 能力；调用 `ask` 还需 `chat`。使用平台 Key 时，需配置 `tenantId`，请求将其作为 `X-Tenant-ID` 发送。
+L’URL de service peut inclure `/api/v1` ; sinon elle est complétée automatiquement. La clé API est envoyée via `X-API-Key`, capacité `retrieve` requise ; `ask` exige aussi `chat`. Avec une clé plateforme, configurez `tenantId` (envoyé en `X-Tenant-ID`).
 
-## 四个工具
+## Quatre outils
 
-| 工具 | 用途 |
+| Outil | Usage |
 | --- | --- |
-| `weknora_list_knowledge_bases` | 列出可见知识库及 ID |
-| `weknora_search` | 混合检索片段，同时匹配文档标题；返回知识 ID、分块序号与得分 |
-| `weknora_read_document` | 按文档读取有序正文，首屏含标题/摘要，长文可翻页 |
-| `weknora_ask` | 在 WeKnora 创建或续接会话，返回答案、引用和服务端工具过程 |
+| `weknora_list_knowledge_bases` | Bases visibles et leurs ID |
+| `weknora_search` | Recherche hybride de fragments, titres de documents inclus ; retourne ID connaissance, index de chunk et score |
+| `weknora_read_document` | Corps ordonné par document ; première page avec titre/résumé, pagination pour les longs textes |
+| `weknora_ask` | Crée ou reprend une session WeKnora ; réponse, citations et trace d’outils côté serveur |
 
-`search` 返回检索证据，供 dsh 生成回答；`ask` 在 WeKnora 服务端调用模型并创建会话和消息，适合综合多篇资料。两者均不修改知识库内容。
+`search` fournit des preuves pour que dsh rédige la réponse ; `ask` invoque le modèle côté WeKnora et crée session/messages, adapté à la synthèse multi-documents. Aucun des deux ne modifie le contenu des bases.
 
-未指定知识库范围时，插件解析该凭据可见的全部知识库，进程内缓存并供 search/ask 共用。配置 agentId 后 ask 走 Agent 流程，知识范围由该 Agent 在服务端解析。
+Sans périmètre de bases explicite, le plugin résout toutes les bases visibles pour le credential, cache en mémoire et partage entre search/ask. Avec `agentId`, `ask` suit le flux Agent ; le périmètre est résolu côté serveur.
 
-## Profile 配置
+## Configuration du profil
 
-在 `$DSH_HOME/profiles/<name>/cordis.patch.yml` 中设置：
+Dans `$DSH_HOME/profiles/<name>/cordis.patch.yml` :
 
 ```yaml
 - id: weknora
@@ -55,20 +55,20 @@ dsh web
       ask: true
 ```
 
-配置更新会整体替换该行 `config`，应包含需要保留的字段。`tools.*` 默认全部启用。连接多个部署时，分别设置不同的 `toolPrefix`；名称须以小写字母开头，且仅含小写字母、数字和下划线。
+La mise à jour remplace entièrement `config` sur cette ligne ; incluez les champs à conserver. `tools.*` est activé par défaut. Pour plusieurs déploiements, des `toolPrefix` distincts ; le nom commence par une minuscule et ne contient que minuscules, chiffres et `_`.
 
-## 引用图片与排查
+## Images citées et dépannage
 
-`resourceUrls` 默认为 `public`，请求服务端将资源句柄转换为可加载链接。限定知识库的 API Key 收到 403 时，插件会自动改用 `handle`，并在后续调用中保持该模式。`resource://` 句柄不能直接在浏览器中加载，外链部署要求见[文件访问](../03-features/21-file-access.md)。
+`resourceUrls` vaut `public` par défaut : le serveur convertit les handles en liens chargeables. Sur 403 avec clé limitée à certaines bases, le plugin bascule en `handle` et le conserve. Les handles `resource://` ne se chargent pas directement dans le navigateur ; voir [Accès aux fichiers](../03-features/21-file-access.md) pour les liens publics.
 
-| 现象 | 检查 |
+| Symptôme | Vérification |
 | --- | --- |
-| 加载阶段配置错误 | 根据逐字段错误修正 baseUrl、参数范围、toolPrefix |
-| 检索 401/403 | Key 是否有效、有 retrieve 能力及目标空间/知识库授权 |
-| ask 被拒绝 | Key 是否另有 chat，平台 Key 是否提供 tenantId |
-| 没有图片直链 | 是否为限定知识库 Key，或部署未配置可访问外链 |
-| 长问题超时 | 调整 chatTimeoutMs，并检查 WeKnora 模型调用 |
+| Erreur de config au chargement | Corriger baseUrl, plages, toolPrefix selon les messages |
+| Recherche 401/403 | Clé valide, capacité retrieve, espace/bases autorisés |
+| ask refusé | Clé avec `chat`, `tenantId` pour clé plateforme |
+| Pas de lien image direct | Clé limitée à des bases ou déploiement sans URL publique |
+| Timeout sur longues questions | Ajuster `chatTimeoutMs`, vérifier les appels modèle WeKnora |
 
-## 实现参考
+## Référence d’implémentation
 
-`packages/dsh-weknora/src/`、`test/fixtures/api-contract.json`、`contract/contract_test.go`。
+`packages/dsh-weknora/src/`, `test/fixtures/api-contract.json`, `contract/contract_test.go`.

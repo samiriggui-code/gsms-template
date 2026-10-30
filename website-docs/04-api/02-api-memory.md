@@ -1,12 +1,12 @@
-# API 参考：长期记忆
+# Référence API : mémoire à long terme
 
-管理当前调用者的长期记忆、主题和文档偏好，以及空间级记忆配置。路径使用 `/api/v1` 前缀。
+Gestion de la mémoire à long terme de l’appelant, des thèmes et préférences document, et de la configuration mémoire au niveau de l’espace. Les chemins utilisent le préfixe `/api/v1`.
 
-个人接口均要求 Viewer+，API Key 必须 full-access。作用域从凭证中确定，不接受任意 `subject_id`。示例中的 `$BASE` 为服务地址，`$TOKEN` 为当前用户的 Bearer token。
+Toutes les interfaces personnelles exigent Viewer+ ; la clé API doit être full-access. Le périmètre est dérivé des identifiants ; aucun `subject_id` arbitraire. Dans les exemples, `$BASE` est l’URL du service et `$TOKEN` le Bearer token de l’utilisateur courant.
 
-## 空间配置与请求开关
+## Configuration de l’espace et interrupteurs de requête
 
-空间配置使用 `GET/PUT /tenants/kv/memory-config`，不使用租户名称/描述的更新接口。读取需 Viewer+，写入需 Admin+，API Key 需 manage_tenant_settings 或 full-access。响应为 `{success,data:MemoryConfig}`，PUT 直接传配置对象；个人 `PUT /memory/settings` 不能替代空间开关。
+La configuration d’espace passe par `GET/PUT /tenants/kv/memory-config`, pas par la mise à jour du nom ou de la description de l’espace. Lecture : Viewer+ ; écriture : Admin+ ; clé API : `manage_tenant_settings` ou full-access. Réponse `{success,data:MemoryConfig}` ; le PUT envoie directement l’objet de configuration ; `PUT /memory/settings` ne remplace pas les interrupteurs d’espace.
 
 ```bash
 curl -X PUT "$BASE/api/v1/tenants/kv/memory-config" \
@@ -14,18 +14,18 @@ curl -X PUT "$BASE/api/v1/tenants/kv/memory-config" \
   -d '{"enabled":true,"write_mode":"explicit_only","max_items":200}'
 ```
 
-`memory_config` 字段：`enabled`、`write_mode`（explicit_only/auto）、`extract_model_id`、`max_items`、`extract_delay_seconds`、`extract_min_interval_seconds`、`extract_instructions`、`interest_threshold`、`embedding_model_id`、`vector_recall`、`retrieval_conditioning`。语义见[长期记忆](../03-features/23-memory.md)。更新时提交需要保留的完整配置对象。
+Champs `memory_config` : `enabled`, `write_mode` (`explicit_only` / `auto`), `extract_model_id`, `max_items`, `extract_delay_seconds`, `extract_min_interval_seconds`, `extract_instructions`, `interest_threshold`, `embedding_model_id`, `vector_recall`, `retrieval_conditioning`. Sémantique : [Mémoire à long terme](../03-features/23-memory.md). À la mise à jour, soumettre l’objet de configuration complet à conserver.
 
-`CustomAgentConfig.memory_enabled` 省略继承空间，false 禁止本智能体使用记忆；IM/Embed 使用绑定智能体的配置，当前渠道结构没有独立的 memory_enabled 字段。
+`CustomAgentConfig.memory_enabled` : omis = héritage de l’espace ; `false` interdit lecture/écriture mémoire pour cet agent. IM/Embed suivent l’agent lié ; la structure canal actuelle n’a pas de champ `memory_enabled` dédié.
 
-## 个人设置
+## Paramètres personnels
 
-| 方法 | 路径 | 请求 / 响应 |
+| Méthode | Chemin | Requête / réponse |
 | --- | --- | --- |
 | GET | `/memory/settings` | `{success,data:{workspace_enabled,user_enabled,effective,write_mode,item_count,max_items}}` |
-| PUT | `/memory/settings` | `{"enabled":true}`，enabled 必填；返回更新后的 settings |
+| PUT | `/memory/settings` | `{"enabled":true}`, `enabled` obligatoire ; renvoie les settings mis à jour |
 
-`effective` 表示空间与个人开关的合并结果；一次聊天还受智能体开关约束。
+`effective` fusionne les interrupteurs espace et utilisateur ; une conversation dépend aussi de l’interrupteur agent.
 
 ```bash
 curl -X PUT "$BASE/api/v1/memory/settings" \
@@ -33,28 +33,28 @@ curl -X PUT "$BASE/api/v1/memory/settings" \
   -d '{"enabled":true}'
 ```
 
-## 条目
+## Entrées
 
-| 方法 | 路径 | 请求 / 响应 |
+| Méthode | Chemin | Requête / réponse |
 | --- | --- | --- |
-| GET | `/memory/items` | 可选 status、limit、offset；`{success,data:[MemoryItem],total}` |
-| POST | `/memory/items` | `{kind,content,importance}`；200 `{success,data:MemoryItem}` |
-| PUT | `/memory/items/:id` | `{content,importance}`；200 `{success,data:MemoryItem}` |
+| GET | `/memory/items` | `status`, `limit`, `offset` optionnels ; `{success,data:[MemoryItem],total}` |
+| POST | `/memory/items` | `{kind,content,importance}` ; 200 `{success,data:MemoryItem}` |
+| PUT | `/memory/items/:id` | `{content,importance}` ; 200 `{success,data:MemoryItem}` |
 | DELETE | `/memory/items/:id` | 200 `{"success":true}` |
-| POST | `/memory/items/:id/confirm` | 200 `{success,data:MemoryItem}`；推断已失效或其依据已被修改时返回 409 |
+| POST | `/memory/items/:id/confirm` | 200 `{success,data:MemoryItem}` ; 409 si l’inférence a expiré ou sa base a changé |
 | POST | `/memory/items/:id/reject` | 200 `{"success":true}` |
-| DELETE | `/memory/items` | 清空当前身份；200 `{success,removed}` |
+| DELETE | `/memory/items` | Vide l’identité courante ; 200 `{success,removed}` |
 
-`status` 可为 active、pending、superseded、archived，省略不过滤。`limit` 默认 50，合法范围 1–200，越界回落 50；`offset` 默认 0，负值归零。kind 为 profile/preference/fact/task/interest；内容为简短记忆，最长 300 个字符，importance 用于重要度排序。
+`status` : `active`, `pending`, `superseded`, `archived` ; omis = pas de filtre. `limit` par défaut 50, plage 1–200, hors plage → 50. `offset` par défaut 0, négatif → 0. `kind` : `profile` / `preference` / `fact` / `task` / `interest` ; contenu court (max 300 caractères), `importance` pour le tri.
 
-MemoryItem 包括 `id`、`kind`、`content`、`topic`、`importance`、`origin`、`status`、`source_session_id`、`source_message_id`、`expires_at`、`superseded_by` 和创建/修改时间。pending 不参与提示词；编辑后按手工维护处理。
+MemoryItem inclut `id`, `kind`, `content`, `topic`, `importance`, `origin`, `status`, `source_session_id`, `source_message_id`, `expires_at`, `superseded_by`, horodatages. `pending` n’est pas injecté dans le prompt ; après édition manuelle, traité comme maintenance manuelle.
 
-用于修改已有记忆的 pending 推断，确认前旧条目继续生效；确认会在同一事务中激活推断并替换旧条目。已失效、已到期或所依据内容已被修改/删除的推断不能确认，返回 409，客户端应刷新列表。内容几乎全是凭据等敏感信息时，新增或编辑返回 400。
+Une inférence `pending` qui modifie une entrée existante laisse l’ancienne active jusqu’à confirmation ; la confirmation active l’inférence et remplace l’ancienne entrée dans la même transaction. Inférence expirée, échue ou dont la base a été modifiée/supprimée → impossible à confirmer, 409 — le client doit rafraîchir la liste. Contenu composé surtout d’identifiants sensibles → 400 à la création/édition.
 
 ```bash
 curl -X POST "$BASE/api/v1/memory/items" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"kind":"preference","content":"回答先给结论，再解释依据","importance":3}'
+  -d '{"kind":"preference","content":"Donner d’abord la conclusion, puis le raisonnement","importance":3}'
 
 curl "$BASE/api/v1/memory/items?status=pending&limit=50&offset=0" \
   -H "Authorization: Bearer $TOKEN"
@@ -63,17 +63,17 @@ curl -X POST "$BASE/api/v1/memory/items/item-1/confirm" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-## 主题和文档偏好
+## Thèmes et préférences document
 
-| 方法 | 路径 | 说明 |
+| Méthode | Chemin | Description |
 | --- | --- | --- |
-| GET | `/memory/topics` | 正在跟踪、尚未提升的主题；limit/offset 同条目，返回 data 与 total |
-| POST | `/memory/topics/:id/promote` | 手动提升为长期关注；返回 `{success,data:MemoryItem}` |
-| DELETE | `/memory/topics/:id` | 停止跟踪该主题；返回 success |
-| GET | `/memory/documents` | 文档偏好；limit/offset 同条目，返回 data 与 total |
-| DELETE | `/memory/documents/:id` | 删除该偏好记录；返回 success，不删除知识库文档 |
+| GET | `/memory/topics` | Thèmes suivis non encore promus ; `limit`/`offset` comme pour les entrées ; `data` et `total` |
+| POST | `/memory/topics/:id/promote` | Promotion manuelle en intérêt durable ; `{success,data:MemoryItem}` |
+| DELETE | `/memory/topics/:id` | Arrêter le suivi du thème ; `success` |
+| GET | `/memory/documents` | Préférences document ; `limit`/`offset` ; `data` et `total` |
+| DELETE | `/memory/documents/:id` | Supprime l’enregistrement de préférence, pas le document en base de connaissances |
 
-Topic 字段包括 id/topic/aliases/hits/threshold/last_seen_at；Document 字段包括 id/knowledge_id/knowledge_base_id/title/hits/last_used_at。删除使用的是偏好记录 id。
+Thème : `id` / `topic` / `aliases` / `hits` / `threshold` / `last_seen_at` ; Document : `id` / `knowledge_id` / `knowledge_base_id` / `title` / `hits` / `last_used_at`. La suppression utilise l’id de préférence.
 
 ```bash
 curl "$BASE/api/v1/memory/topics" -H "Authorization: Bearer $TOKEN"
@@ -83,11 +83,11 @@ curl -X DELETE "$BASE/api/v1/memory/documents/affinity-1" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-## 导出与立即整理
+## Export et consolidation immédiate
 
-`GET /memory/export` 返回 `{success,total,truncated,data}`，带下载文件名 `weknora-memories.json`。最多导出 20,000 条，触及上限时检查 truncated。
+`GET /memory/export` → `{success,total,truncated,data}` avec nom de fichier `weknora-memories.json`. Plafond 20 000 entrées ; vérifier `truncated` si la limite est atteinte.
 
-`POST /memory/consolidate` 返回 `{success,data:{merged,demoted,expired,reviewed,candidates,skipped?}}`，立即合并近义条目、归档到期事项。没有变化时 skipped 说明原因。
+`POST /memory/consolidate` → `{success,data:{merged,demoted,expired,reviewed,candidates,skipped?}}` : fusionne les entrées proches, archive les éléments échus. `skipped` indique la raison s’il n’y a aucun changement.
 
 ```bash
 curl "$BASE/api/v1/memory/export" -H "Authorization: Bearer $TOKEN" \
@@ -95,4 +95,4 @@ curl "$BASE/api/v1/memory/export" -H "Authorization: Bearer $TOKEN" \
 curl -X POST "$BASE/api/v1/memory/consolidate" -H "Authorization: Bearer $TOKEN"
 ```
 
-参数无效、内容为敏感信息或记忆未开启时返回 400；找不到当前身份的条目返回 404；确认冲突返回 409；认证/权限不满足返回 401/403。接口没有管理员读取他人记忆的 subject 参数。实现：`internal/handler/memory.go`、`internal/router/routes_memory.go`。
+Paramètres invalides, contenu sensible ou mémoire désactivée → 400 ; entrée introuvable pour l’identité courante → 404 ; conflit de confirmation → 409 ; authentification/permissions insuffisantes → 401/403. Aucun paramètre admin pour lire la mémoire d’un autre sujet. Implémentation : `internal/handler/memory.go`, `internal/router/routes_memory.go`.
