@@ -23,8 +23,9 @@ usage() {
   cat <<'EOF'
 Usage: ./scripts/deploy-global-it-ss.sh [--no-cache]
 
-  Validates the three-file Compose stack, builds landing and frontend locally,
-  then runs `up -d --no-build`. Does not `docker compose pull` frontend/landing.
+  Validates the three-file Compose stack (includes deploy/docker-compose.traefik.gsms.yml:
+  project-prefixed container names, no published app port), builds landing and
+  frontend locally, then runs `up -d --no-build`. Does not pull frontend/landing.
 
   COMPOSE_PROJECT_NAME (typically globalitss) must be set in .env — not passed on the CLI.
 EOF

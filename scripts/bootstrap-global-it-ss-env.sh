@@ -7,10 +7,12 @@ cd "$ROOT"
 ADMIN_EMAIL="${1:-admin@gsms-security.com}"
 umask 077
 JWT_SECRET="$(openssl rand -hex 32)"
-SYSTEM_AES_KEY="$(openssl rand -hex 32)"
+# 32-byte AES-256 key as 32 ASCII chars (see internal/utils/crypto.go GetAESKey).
+SYSTEM_AES_KEY="$(openssl rand -hex 16)"
 DB_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)"
 REDIS_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)"
 cat > .env <<EOF
+COMPOSE_PROJECT_NAME=globalitss
 TRAEFIK_NETWORK=gsms
 TRAEFIK_ENTRYPOINT=websecure
 TRAEFIK_CERT_RESOLVER=letsencrypt

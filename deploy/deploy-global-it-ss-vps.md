@@ -48,7 +48,9 @@ chmod +x ./scripts/deploy-global-it-ss.sh   # once
 ./scripts/deploy-global-it-ss.sh
 ```
 
-The script validates the three Compose files, **`build`s `landing` and `frontend`** (local `./landing` and `./frontend` — images **`gsms-landing`** and **`gsms-weknora-ui`**), then **`up -d --no-build`**. It does **not** `pull` frontend/landing. Compose reads **`COMPOSE_PROJECT_NAME=globalitss`** from `.env`.
+The script validates three Compose files (base + Traefik + **`deploy/docker-compose.traefik.gsms.yml`**). The GSMS overlay clears fixed `container_name` values and **`app` host ports** so stacks stay isolated under **`COMPOSE_PROJECT_NAME=globalitss`** and the API is not exposed beside Traefik.
+
+It **`build`s `landing` and `frontend`** (local `./landing` and `./frontend` — images **`gsms-landing`** and **`gsms-weknora-ui`**), then **`up -d --no-build`**. It does **not** `pull` frontend/landing.
 
 Force a clean frontend/landing rebuild:
 
