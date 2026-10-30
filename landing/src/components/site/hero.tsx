@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
+import { useInstantLandingMotion } from "@/hooks/use-instant-landing-motion";
 import type { Dictionary } from "@/lib/i18n";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } } };
@@ -14,9 +15,43 @@ const item = {
 };
 
 export function Hero({ t }: { t: Dictionary["hero"] }) {
+  const instant = useInstantLandingMotion();
   // Dernier mot du titre mis en dégradé
   const words = t.title.split(" ");
   const last = words.pop();
+
+  const copy = (
+    <>
+      <p className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/50 px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-brand-cyan backdrop-blur">
+        <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan" />
+        {t.eyebrow}
+      </p>
+      <h1 className="text-5xl leading-[1.05] sm:text-7xl">
+        {words.join(" ")} <span className="text-gradient-shimmer animate-shimmer">{last}</span>
+      </h1>
+      <p className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">{t.subtitle}</p>
+      <div className="mt-10 flex flex-wrap gap-4">
+        <Button asChild size="lg">
+          <a href="#booking">
+            {t.primary} <ArrowRight />
+          </a>
+        </Button>
+        <Button asChild size="lg" variant="outline">
+          <a href="#poles">
+            {t.secondary} <ArrowDownRight />
+          </a>
+        </Button>
+      </div>
+      <dl className="mt-14 grid max-w-lg grid-cols-3 gap-6 border-t pt-8">
+        {t.stats.map((s) => (
+          <div key={s.label}>
+            <dt className="font-display text-2xl font-bold sm:text-3xl">{s.value}</dt>
+            <dd className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{s.label}</dd>
+          </div>
+        ))}
+      </dl>
+    </>
+  );
 
   return (
     <section className="noise relative isolate overflow-hidden pb-24 pt-36 sm:pt-44">
@@ -29,39 +64,42 @@ export function Hero({ t }: { t: Dictionary["hero"] }) {
       </div>
 
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-5 sm:px-8 lg:grid-cols-[1.25fr_0.75fr]">
-        {/* initial={false} : contenu visible au SSR / avant hydratation (évite opacity:0 bloquée). */}
-        <motion.div variants={container} initial={false} animate="show">
-          <motion.p variants={item} className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/50 px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-brand-cyan backdrop-blur">
-            <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan" />
-            {t.eyebrow}
-          </motion.p>
-          <motion.h1 variants={item} className="text-5xl leading-[1.05] sm:text-7xl">
-            {words.join(" ")} <span className="text-gradient-shimmer animate-shimmer">{last}</span>
-          </motion.h1>
-          <motion.p variants={item} className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-            {t.subtitle}
-          </motion.p>
-          <motion.div variants={item} className="mt-10 flex flex-wrap gap-4">
-            <Button asChild size="lg">
-              <a href="#booking">
-                {t.primary} <ArrowRight />
-              </a>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href="#poles">
-                {t.secondary} <ArrowDownRight />
-              </a>
-            </Button>
+        {instant ? (
+          <div className="gsms-motion-hero-copy">{copy}</div>
+        ) : (
+          <motion.div variants={container} initial={false} animate="show">
+            <motion.p variants={item} className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/50 px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-brand-cyan backdrop-blur">
+              <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan" />
+              {t.eyebrow}
+            </motion.p>
+            <motion.h1 variants={item} className="text-5xl leading-[1.05] sm:text-7xl">
+              {words.join(" ")} <span className="text-gradient-shimmer animate-shimmer">{last}</span>
+            </motion.h1>
+            <motion.p variants={item} className="mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              {t.subtitle}
+            </motion.p>
+            <motion.div variants={item} className="mt-10 flex flex-wrap gap-4">
+              <Button asChild size="lg">
+                <a href="#booking">
+                  {t.primary} <ArrowRight />
+                </a>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href="#poles">
+                  {t.secondary} <ArrowDownRight />
+                </a>
+              </Button>
+            </motion.div>
+            <motion.dl variants={item} className="mt-14 grid max-w-lg grid-cols-3 gap-6 border-t pt-8">
+              {t.stats.map((s) => (
+                <div key={s.label}>
+                  <dt className="font-display text-2xl font-bold sm:text-3xl">{s.value}</dt>
+                  <dd className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{s.label}</dd>
+                </div>
+              ))}
+            </motion.dl>
           </motion.div>
-          <motion.dl variants={item} className="mt-14 grid max-w-lg grid-cols-3 gap-6 border-t pt-8">
-            {t.stats.map((s) => (
-              <div key={s.label}>
-                <dt className="font-display text-2xl font-bold sm:text-3xl">{s.value}</dt>
-                <dd className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{s.label}</dd>
-              </div>
-            ))}
-          </motion.dl>
-        </motion.div>
+        )}
 
         {/* Symbole de la marque, en suspension */}
         <motion.div
