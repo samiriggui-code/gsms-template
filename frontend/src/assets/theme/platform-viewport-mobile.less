@@ -35,6 +35,44 @@
     padding: 16px;
   }
 
+  // Settings / org / KB modals: stack label+control rows (shared .setting-row pattern).
+  .settings-modal-shell .setting-row:not(.instructions-row):not(.setting-row-vertical):not(.vertical) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .settings-modal-shell .setting-info {
+    max-width: 100% !important;
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 auto;
+    padding-right: 0;
+  }
+
+  .settings-modal-shell .setting-control,
+  .settings-modal-shell .setting-control-full,
+  .settings-modal-shell .instructions-control {
+    min-width: 0 !important;
+    max-width: 100%;
+    width: 100%;
+    justify-content: flex-start;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .settings-modal-shell .t-radio-group {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  .settings-modal-shell .t-select,
+  .settings-modal-shell .t-input,
+  .settings-modal-shell .t-input-number,
+  .settings-modal-shell .model-selector {
+    max-width: 100%;
+  }
+
   .setting-drawer-resize-handle {
     display: none !important;
   }
