@@ -4,11 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-ADMIN_EMAIL="${1:-}"
-if [[ -z "$ADMIN_EMAIL" ]]; then
-  echo "Usage: $0 <admin-email>" >&2
-  exit 1
-fi
+ADMIN_EMAIL="${1:-admin@gsms-security.com}"
 umask 077
 JWT_SECRET="$(openssl rand -hex 32)"
 SYSTEM_AES_KEY="$(openssl rand -hex 32)"
