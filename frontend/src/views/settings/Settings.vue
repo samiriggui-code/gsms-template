@@ -659,6 +659,11 @@ onUnmounted(() => {
   height: 900px;
 }
 
+.settings-modal-shell.all-settings-overlay.settings-modal-shell--platform-mobile > .settings-modal {
+  max-width: none;
+  height: 100dvh;
+}
+
 </style>
 
 <style lang="less" scoped>
