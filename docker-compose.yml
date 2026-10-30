@@ -33,6 +33,25 @@ services:
       - WeKnora-network
     restart: unless-stopped
 
+  landing:
+    # Public marketing site (Next.js standalone). WeKnora UI stays on service `frontend`.
+    build:
+      context: ./landing
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    image: gsms-landing:${WEKNORA_VERSION:-latest}
+    container_name: gsms-landing
+    ports:
+      - "${LANDING_PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    networks:
+      - WeKnora-network
+    restart: unless-stopped
+
   app:
     image: wechatopenai/weknora-app:${WEKNORA_VERSION:-latest}
     build:
