@@ -99,7 +99,7 @@ if grep -qE '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env 2>/dev/null; then
       | sed -e 's/[[:space:]]*$//' -e "s/^['\"]//" -e "s/['\"]$//"
   )"
 fi
-TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-gsms}"
+TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-traefik}"
 
 echo "Validating Compose configuration…"
 docker compose "${COMPOSE_FILES[@]}" config >/dev/null
@@ -144,7 +144,7 @@ warn_traefik_router_containers() {
   local -a ps_filters=(
     --filter "status=running"
     --filter "network=${TRAEFIK_NETWORK}"
-    --filter "label=traefik.http.services.${router}.loadbalancer.server.port"
+    --filter "label=traefik.http.routers.${router}.rule"
   )
   if ! ids=($(docker ps -q "${ps_filters[@]}")); then
     echo "WARNING (minor): docker ps failed while checking Traefik router ${router} on network ${TRAEFIK_NETWORK}." >&2
