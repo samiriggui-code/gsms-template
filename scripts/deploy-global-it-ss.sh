@@ -91,28 +91,36 @@ if [[ "${PROJECT_NAME}" != "${REQUIRED_PROJECT_NAME}" ]]; then
 fi
 echo "Using COMPOSE_PROJECT_NAME=${PROJECT_NAME} (from .env)"
 
-if [[ -z "${TRAEFIK_NETWORK:-}" ]]; then
-  if grep -qE '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env 2>/dev/null; then
-    TRAEFIK_NETWORK="$(
-      grep -E '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env | tail -1 \
-        | sed -E 's/^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=[[:space:]]*//' \
-        | sed -e 's/[[:space:]]*$//' -e "s/^['\"]//" -e "s/['\"]$//"
-    )"
-  fi
-  TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-traefik}"
-  echo "Using TRAEFIK_NETWORK=${TRAEFIK_NETWORK} (from .env or default)"
-else
-  echo "Using TRAEFIK_NETWORK=${TRAEFIK_NETWORK} (from environment)"
-fi
-
 echo "Validating Compose configuration…"
 docker compose "${COMPOSE_FILES[@]}" config >/dev/null
+
+# Resolved edge network for docker ps checks only — do not mutate exported TRAEFIK_NETWORK (Compose semantics).
+resolve_traefik_network_for_check() {
+  local compose_json resolved_name
+  if ! compose_json=$(docker compose "${COMPOSE_FILES[@]}" config --format json 2>&1); then
+    echo "WARNING (minor): could not read Compose JSON for Traefik network; using traefik." >&2
+    TRAEFIK_NETWORK_FOR_CHECK=traefik
+    return 0
+  fi
+  resolved_name="$(
+    printf '%s' "$compose_json" | python3 -c 'import json, sys
+try:
+    cfg = json.load(sys.stdin)
+    print(cfg.get("networks", {}).get("traefik", {}).get("name") or "traefik")
+except Exception:
+    print("traefik")'
+  )"
+  TRAEFIK_NETWORK_FOR_CHECK="${resolved_name:-traefik}"
+  echo "Traefik router duplicate check uses network: ${TRAEFIK_NETWORK_FOR_CHECK} (resolved Compose config)"
+}
 
 echo "Building landing and frontend (local images gsms-landing / gsms-weknora-ui)…"
 docker compose "${COMPOSE_FILES[@]}" build "${NO_CACHE[@]}" landing frontend
 
 echo "Starting stack (up -d --no-build; no pull for frontend/landing)…"
 docker compose "${COMPOSE_FILES[@]}" up -d --no-build
+
+resolve_traefik_network_for_check
 
 # Traefik load-balances every matching running container. Orphan replicas (old landing/frontend
 # still up) can serve HTML with different _next/static chunk hashes → broken CSS/JS.
@@ -150,16 +158,16 @@ warn_traefik_router_containers() {
   local -a ids=()
   local -a ps_filters=(
     --filter "status=running"
-    --filter "network=${TRAEFIK_NETWORK}"
+    --filter "network=${TRAEFIK_NETWORK_FOR_CHECK}"
     --filter "label=traefik.http.routers.${router}.rule"
   )
   if ! ids=($(docker ps -q "${ps_filters[@]}")); then
-    echo "WARNING (minor): docker ps failed while checking Traefik router ${router} on network ${TRAEFIK_NETWORK}." >&2
+    echo "WARNING (minor): docker ps failed while checking Traefik router ${router} on network ${TRAEFIK_NETWORK_FOR_CHECK}." >&2
     return 0
   fi
   if ((${#ids[@]} > 1)); then
     echo "" >&2
-    echo "WARNING (minor): ${#ids[@]} running containers expose Traefik router ${router} on network ${TRAEFIK_NETWORK}." >&2
+    echo "WARNING (minor): ${#ids[@]} running containers expose Traefik router ${router} on network ${TRAEFIK_NETWORK_FOR_CHECK}." >&2
     echo "Stop legacy stacks from an old COMPOSE_PROJECT_NAME so Traefik does not load-balance mixed landing/frontend images." >&2
     if ! docker ps "${ps_filters[@]}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2; then
       echo "WARNING (minor): docker ps failed while reporting duplicate Traefik router ${router}." >&2
