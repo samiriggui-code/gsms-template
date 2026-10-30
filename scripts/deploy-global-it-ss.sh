@@ -14,6 +14,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 COMPOSE_FILES=(
+  --env-file .env
   -f docker-compose.yml
   -f deploy/docker-compose.traefik.yml
   -f deploy/docker-compose.traefik.gsms.yml

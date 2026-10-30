@@ -19,12 +19,22 @@ Point A/AAAA to your VPS IP for `www`, apex, and `app`.
 
 ## On the VPS
 
+**New install** (no `.env` yet):
+
 ```bash
 mkdir -p /opt/global-it-ss && cd /opt/global-it-ss
 git clone https://github.com/samiriggui-code/gsms-template.git .
-git pull && git checkout main
+git checkout main
 cp .env.example .env
 # Or: ./scripts/bootstrap-global-it-ss-env.sh admin@example.com
+```
+
+**Existing server** (already has `.env`): back it up before `git pull`; **never** `cp .env.example .env` (that wipes secrets). Merge new keys from `.env.example` by hand if needed:
+
+```bash
+cd /opt/global-it-ss
+cp -a .env ".env.bak.$(date -u +%Y%m%dT%H%M%SZ)"
+git pull && git checkout main
 ```
 
 Edit `.env` — minimum:
@@ -48,10 +58,11 @@ Use this when `/opt/global-it-ss` already has data under an **older Compose proj
 3. **Stop the old project** from the repo root (replace `OLD` with the name from `docker ps --format '{{.Label "com.docker.compose.project"}}' | sort -u` for global-it-ss containers):
 
    ```bash
-   docker compose -p OLD -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml down
+   docker compose --env-file .env -p OLD \
+     -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml down
    ```
 
-   Do not pass `-v` unless you intend to delete databases and uploads.
+   Use the same **`COMPOSE_PROFILES`** (if any) as when the old stack was started, or optional profile services may be left running. Do not pass `-v` unless you intend to delete databases and uploads.
 
 4. **Volumes** — named volumes are prefixed by project name. Old data lives in volumes such as `OLD_postgres-data` and `OLD_data-files`; the new stack expects `globalitss_postgres-data`, etc. If you must keep Postgres/MinIO data, stop the old stack, then copy or rename volumes (or restore from backup) before the first `globalitss` deploy. A brand-new `globalitss` deploy with empty volumes runs migrations on a fresh DB (`DB_NAME=WeKnora_globalitss` in bootstrap).
 5. Deploy with `./scripts/deploy-global-it-ss.sh` (it refuses a shell vs `.env` `COMPOSE_PROJECT_NAME` mismatch).
@@ -80,9 +91,9 @@ Do **not** use bare `docker compose … up -d` without building frontend first �
 ## Manual equivalent (debug only)
 
 ```bash
-docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml config
-docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build landing frontend
-docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d --no-build
+docker compose --env-file .env -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml config
+docker compose --env-file .env -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build landing frontend
+docker compose --env-file .env -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d --no-build
 ```
 
 **Still seeing Chinese / zh-CN on `app.global-it-ss.com`?** The running container is almost certainly still **`wechatopenai/weknora-ui`**. Re-run `./scripts/deploy-global-it-ss.sh --no-cache`, then check:
