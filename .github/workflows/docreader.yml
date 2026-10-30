@@ -58,10 +58,10 @@ jobs:
       - name: Reject blocked direct docreader dependencies
         run: |
           set -euo pipefail
-          blocked=(ebooklib)
-          for pkg in "${blocked[@]}"; do
-            if grep -q "\"${pkg}" docreader/pyproject.toml; then
-              echo "Blocked dependency ${pkg} listed in docreader/pyproject.toml"
+          blocked=('ebook[-_.]?lib')
+          for pattern in "${blocked[@]}"; do
+            if grep -Eiq "[\"']\\s*${pattern}([^a-z0-9]|$)" docreader/pyproject.toml; then
+              echo "Blocked dependency matching ${pattern} listed in docreader/pyproject.toml"
               exit 1
             fi
           done

@@ -8,7 +8,6 @@ import logging
 import os
 import posixpath
 import re
-import tempfile
 import uuid
 import xml.etree.ElementTree as ET
 import zipfile
@@ -38,6 +37,8 @@ _HTML_MEDIA_TYPES = frozenset(
 )
 
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")
+_MAX_EPUB_ENTRY_BYTES = 32 * 1024 * 1024
+_MAX_EPUB_DECOMPRESSED_BYTES = 128 * 1024 * 1024
 
 
 class EPUBParser(BaseParser):
@@ -65,29 +66,39 @@ class EPUBParser(BaseParser):
 
         with zipfile.ZipFile(BytesIO(content), "r") as epub_zip:
             zip_names = set(epub_zip.namelist())
-            opf_path, opf_root = self._load_opf(epub_zip)
+            decompressed_budget = [_MAX_EPUB_DECOMPRESSED_BYTES]
+            opf_path, opf_root = self._load_opf(epub_zip, zip_names, decompressed_budget)
             opf_dir = posixpath.dirname(opf_path) if opf_path else ""
             if opf_root is not None:
                 metadata.update(self._extract_opf_metadata(opf_root))
                 manifest = self._parse_manifest(opf_root, opf_dir, zip_names)
                 spine_ids = self._parse_spine(opf_root)
                 html_paths = self._html_paths_in_reading_order(
-                    manifest, spine_ids, epub_zip
+                    manifest, spine_ids, zip_names
                 )
             else:
                 manifest = {}
-                html_paths = self._fallback_html_paths(epub_zip)
+                html_paths = self._fallback_html_paths(zip_names)
 
             if self.extract_images:
                 self._extract_images_from_zip(
-                    epub_zip, manifest, opf_dir, images, image_aliases
+                    epub_zip,
+                    manifest,
+                    opf_dir,
+                    zip_names,
+                    decompressed_budget,
+                    images,
+                    image_aliases,
                 )
 
             for toc_index, archive_path in enumerate(html_paths):
                 try:
-                    html_content = epub_zip.read(archive_path).decode(
-                        "utf-8", errors="ignore"
+                    html_bytes = self._read_zip_entry_capped(
+                        epub_zip, archive_path, zip_names, decompressed_budget
                     )
+                    if html_bytes is None:
+                        continue
+                    html_content = html_bytes.decode("utf-8", errors="ignore")
                     chapter_md = self._process_chapter_html(
                         html_content,
                         archive_path,
@@ -106,12 +117,52 @@ class EPUBParser(BaseParser):
             content="\n\n".join(markdown_parts), images=images, metadata=metadata
         )
 
-    def _load_opf(
-        self, epub_zip: zipfile.ZipFile
-    ) -> Tuple[Optional[str], Optional[ET.Element]]:
+    @staticmethod
+    def _read_zip_entry_capped(
+        epub_zip: zipfile.ZipFile,
+        name: str,
+        zip_names: set[str],
+        decompressed_budget: List[int],
+    ) -> Optional[bytes]:
+        if name not in zip_names:
+            return None
         try:
-            container_xml = epub_zip.read("META-INF/container.xml")
+            info = epub_zip.getinfo(name)
         except KeyError:
+            return None
+        if info.file_size > _MAX_EPUB_ENTRY_BYTES:
+            logger.warning(
+                "Skipping EPUB entry %s: declared size %d exceeds per-entry limit",
+                name,
+                info.file_size,
+            )
+            return None
+        if decompressed_budget[0] <= 0:
+            logger.warning(
+                "Skipping EPUB entry %s: decompression budget exhausted", name
+            )
+            return None
+        read_limit = min(_MAX_EPUB_ENTRY_BYTES, decompressed_budget[0])
+        with epub_zip.open(name) as entry:
+            data = entry.read(read_limit + 1)
+        if len(data) > read_limit:
+            logger.warning(
+                "Skipping EPUB entry %s: expands past %d bytes", name, read_limit
+            )
+            return None
+        decompressed_budget[0] -= len(data)
+        return data
+
+    def _load_opf(
+        self,
+        epub_zip: zipfile.ZipFile,
+        zip_names: set[str],
+        decompressed_budget: List[int],
+    ) -> Tuple[Optional[str], Optional[ET.Element]]:
+        container_xml = self._read_zip_entry_capped(
+            epub_zip, "META-INF/container.xml", zip_names, decompressed_budget
+        )
+        if container_xml is None:
             logger.warning("EPUB missing META-INF/container.xml")
             return None, None
         try:
@@ -125,11 +176,17 @@ class EPUBParser(BaseParser):
         opf_path = rootfile.get("full-path")
         if not opf_path:
             return None, None
+        opf_path = EPUBParser._normalize_epub_path(opf_path)
+        opf_bytes = self._read_zip_entry_capped(
+            epub_zip, opf_path, zip_names, decompressed_budget
+        )
+        if opf_bytes is None:
+            logger.warning("Failed to read OPF at %s", opf_path)
+            return opf_path, None
         try:
-            opf_bytes = epub_zip.read(opf_path)
             return opf_path, ET.fromstring(opf_bytes)
-        except (KeyError, ET.ParseError) as e:
-            logger.warning("Failed to read OPF at %s: %s", opf_path, e)
+        except ET.ParseError as e:
+            logger.warning("Invalid OPF at %s: %s", opf_path, e)
             return opf_path, None
 
     def _extract_opf_metadata(self, opf_root: ET.Element) -> Dict[str, str]:
@@ -213,12 +270,12 @@ class EPUBParser(BaseParser):
         self,
         manifest: Dict[str, Dict[str, str]],
         spine_ids: List[str],
-        epub_zip: zipfile.ZipFile,
+        zip_names: set[str],
     ) -> List[str]:
         documents = [
             entry
             for entry in manifest.values()
-            if self._is_html_chapter(entry) and entry["path"] in epub_zip.namelist()
+            if self._is_html_chapter(entry) and entry["path"] in zip_names
         ]
         ordered: List[str] = []
         seen: set[str] = set()
@@ -248,10 +305,10 @@ class EPUBParser(BaseParser):
         return True
 
     @staticmethod
-    def _fallback_html_paths(epub_zip: zipfile.ZipFile) -> List[str]:
+    def _fallback_html_paths(zip_names: set[str]) -> List[str]:
         html_files = [
             f
-            for f in epub_zip.namelist()
+            for f in zip_names
             if f.endswith((".html", ".xhtml", ".htm"))
         ]
 
@@ -267,12 +324,14 @@ class EPUBParser(BaseParser):
         epub_zip: zipfile.ZipFile,
         manifest: Dict[str, Dict[str, str]],
         opf_dir: str,
+        zip_names: set[str],
+        decompressed_budget: List[int],
         images: Dict[str, str],
         image_aliases: Dict[str, str],
     ) -> None:
         candidates: set[str] = {
             name
-            for name in epub_zip.namelist()
+            for name in zip_names
             if name.lower().endswith(_IMAGE_EXTENSIONS)
         }
         for entry in manifest.values():
@@ -280,13 +339,17 @@ class EPUBParser(BaseParser):
             if media_type.startswith("image/") or entry["path"].lower().endswith(
                 _IMAGE_EXTENSIONS
             ):
-                if entry["path"] in epub_zip.namelist():
+                if entry["path"] in zip_names:
                     candidates.add(entry["path"])
         for img_file in sorted(candidates):
-            if img_file not in epub_zip.namelist():
+            if img_file not in zip_names:
                 continue
             try:
-                img_data = epub_zip.read(img_file)
+                img_data = self._read_zip_entry_capped(
+                    epub_zip, img_file, zip_names, decompressed_budget
+                )
+                if img_data is None:
+                    continue
                 ext = os.path.splitext(img_file)[1]
                 img_path = f"images/{uuid.uuid4().hex}{ext}"
                 images[img_path] = base64.b64encode(img_data).decode("utf-8")
