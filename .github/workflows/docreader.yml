@@ -55,6 +55,17 @@ jobs:
       - name: Install Python dependencies
         run: uv sync --project docreader --locked --no-dev --python ${{ env.PYTHON_VERSION }}
 
+      - name: Reject blocked direct docreader dependencies
+        run: |
+          set -euo pipefail
+          blocked=(ebooklib)
+          for pkg in "${blocked[@]}"; do
+            if grep -q "\"${pkg}" docreader/pyproject.toml; then
+              echo "Blocked dependency ${pkg} listed in docreader/pyproject.toml"
+              exit 1
+            fi
+          done
+
       - name: Compile Python sources
         run: uv run --project docreader --python ${{ env.PYTHON_VERSION }} python -m compileall -q docreader
 

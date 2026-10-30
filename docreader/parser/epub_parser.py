@@ -7,20 +7,37 @@ import base64
 import logging
 import os
 import posixpath
+import re
 import tempfile
-from urllib.parse import unquote, urlsplit
 import uuid
-from typing import Dict
+import xml.etree.ElementTree as ET
+import zipfile
+from io import BytesIO
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import unquote, urlsplit
 
 from bs4 import BeautifulSoup
-import ebooklib
-from ebooklib import epub
 
 from docreader.models.document import Document
 from docreader.parser.base_parser import BaseParser
 from docreader.parser.mhtml_parser import MHTMLParser
 
 logger = logging.getLogger(__name__)
+
+_CONTAINER_NS = {"cn": "urn:oasis:names:tc:opendocument:xmlns:container"}
+_OPF_NS = "http://www.idpf.org/2007/opf"
+_DC_NS = "http://purl.org/dc/elements/1.1/"
+
+_HTML_MEDIA_TYPES = frozenset(
+    {
+        "application/xhtml+xml",
+        "application/xhtml",
+        "text/html",
+        "application/html+xml",
+    }
+)
+
+_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")
 
 
 class EPUBParser(BaseParser):
@@ -34,99 +51,54 @@ class EPUBParser(BaseParser):
         logger.info(
             "Parsing EPUB file: %s, size: %d bytes", self.file_name, len(content)
         )
-        try:
-            with tempfile.NamedTemporaryFile(
-                suffix=".epub", delete=False, mode="wb"
-            ) as epub_file:
-                epub_file.write(content)
-                epub_path = epub_file.name
-            try:
-                book = epub.read_epub(epub_path)
-                metadata = self._extract_metadata(book)
-                markdown_content, images = self._extract_content(book)
+        return self._parse_epub_zip(content)
 
-                metadata["source_format"] = "epub"
-                metadata["file_size"] = len(content)
-                metadata["chapter_count"] = len(
-                    [part for part in markdown_content.split("\n## ") if part.strip()]
-                )
-                metadata["image_count"] = len(images)
-                return Document(
-                    content=markdown_content, images=images, metadata=metadata
-                )
-            finally:
-                if os.path.exists(epub_path):
-                    os.unlink(epub_path)
-        except ImportError:
-            logger.error("ebooklib not installed")
-            raise
-        except Exception as e:
-            logger.warning(
-                "ebooklib failed to parse EPUB: %s, trying ZIP fallback", str(e)
-            )
-            return self._parse_epub_fallback(content)
-
-    def _parse_epub_fallback(self, content: bytes) -> Document:
-        """Parse EPUB directly as a ZIP when ebooklib cannot read it."""
-        import re
-        import zipfile
-        from io import BytesIO
-
-        metadata = {"source_format": "epub", "file_size": len(content)}
+    def _parse_epub_zip(self, content: bytes) -> Document:
+        """Parse EPUB as a ZIP archive (OPF spine, manifest, and embedded assets)."""
+        metadata: Dict[str, str] = {
+            "source_format": "epub",
+            "file_size": len(content),
+        }
         images: Dict[str, str] = {}
         image_aliases: Dict[str, str] = {}
-        markdown_parts = []
+        markdown_parts: List[str] = []
 
         with zipfile.ZipFile(BytesIO(content), "r") as epub_zip:
-            html_files = [
-                f
-                for f in epub_zip.namelist()
-                if f.endswith((".html", ".xhtml", ".htm"))
-            ]
-
-            def chapter_num(filename: str) -> int:
-                match = re.search(r"chapter(\d+)", filename, re.IGNORECASE)
-                return int(match.group(1)) if match else 999999
-
-            html_files.sort(key=chapter_num)
+            zip_names = set(epub_zip.namelist())
+            opf_path, opf_root = self._load_opf(epub_zip)
+            opf_dir = posixpath.dirname(opf_path) if opf_path else ""
+            if opf_root is not None:
+                metadata.update(self._extract_opf_metadata(opf_root))
+                manifest = self._parse_manifest(opf_root, opf_dir, zip_names)
+                spine_ids = self._parse_spine(opf_root)
+                html_paths = self._html_paths_in_reading_order(
+                    manifest, spine_ids, epub_zip
+                )
+            else:
+                manifest = {}
+                html_paths = self._fallback_html_paths(epub_zip)
 
             if self.extract_images:
-                img_exts = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")
-                for img_file in epub_zip.namelist():
-                    if img_file.lower().endswith(img_exts):
-                        try:
-                            img_data = epub_zip.read(img_file)
-                            ext = os.path.splitext(img_file)[1]
-                            img_path = f"images/{uuid.uuid4().hex}{ext}"
-                            images[img_path] = base64.b64encode(img_data).decode(
-                                "utf-8"
-                            )
-                            self._add_image_aliases(image_aliases, img_file, img_path)
-                        except Exception as e:
-                            logger.warning(
-                                "Failed to extract image %s: %s", img_file, e
-                            )
+                self._extract_images_from_zip(
+                    epub_zip, manifest, opf_dir, images, image_aliases
+                )
 
-            for html_file in html_files:
+            for toc_index, archive_path in enumerate(html_paths):
                 try:
-                    html_content = epub_zip.read(html_file).decode(
+                    html_content = epub_zip.read(archive_path).decode(
                         "utf-8", errors="ignore"
                     )
-                    chapter_md = self._html_to_markdown(
+                    chapter_md = self._process_chapter_html(
                         html_content,
+                        archive_path,
+                        toc_index=toc_index,
                         image_aliases=image_aliases,
-                        base_path=posixpath.dirname(html_file),
+                        opf_dir=opf_dir,
                     )
-                    base = os.path.basename(html_file)
-                    title = base.replace(".html", "").replace(".xhtml", "")
-                    title = re.sub(
-                        r"chapter[_-]?", "Chapter ", title, flags=re.IGNORECASE
-                    )
-                    title = title.replace("_", " ").replace("-", " ").title()
                     if chapter_md.strip():
-                        markdown_parts.append(f"## {title}\n\n{chapter_md}")
+                        markdown_parts.append(chapter_md)
                 except Exception as e:
-                    logger.warning("Failed to process %s: %s", html_file, e)
+                    logger.warning("Failed to process %s: %s", archive_path, e)
 
         metadata["chapter_count"] = len(markdown_parts)
         metadata["image_count"] = len(images)
@@ -134,7 +106,33 @@ class EPUBParser(BaseParser):
             content="\n\n".join(markdown_parts), images=images, metadata=metadata
         )
 
-    def _extract_metadata(self, book) -> Dict[str, str]:
+    def _load_opf(
+        self, epub_zip: zipfile.ZipFile
+    ) -> Tuple[Optional[str], Optional[ET.Element]]:
+        try:
+            container_xml = epub_zip.read("META-INF/container.xml")
+        except KeyError:
+            logger.warning("EPUB missing META-INF/container.xml")
+            return None, None
+        try:
+            container = ET.fromstring(container_xml)
+        except ET.ParseError as e:
+            logger.warning("Invalid container.xml: %s", e)
+            return None, None
+        rootfile = container.find(".//cn:rootfile", _CONTAINER_NS)
+        if rootfile is None:
+            return None, None
+        opf_path = rootfile.get("full-path")
+        if not opf_path:
+            return None, None
+        try:
+            opf_bytes = epub_zip.read(opf_path)
+            return opf_path, ET.fromstring(opf_bytes)
+        except (KeyError, ET.ParseError) as e:
+            logger.warning("Failed to read OPF at %s: %s", opf_path, e)
+            return opf_path, None
+
+    def _extract_opf_metadata(self, opf_root: ET.Element) -> Dict[str, str]:
         metadata: Dict[str, str] = {}
         mapping = {
             "title": "title",
@@ -145,93 +143,189 @@ class EPUBParser(BaseParser):
             "date": "date",
             "identifier": "isbn",
         }
+        meta_el = opf_root.find(f"{{{_OPF_NS}}}metadata")
+        if meta_el is None:
+            return metadata
         for dc_key, out_key in mapping.items():
-            try:
-                values = book.get_metadata("DC", dc_key)
-            except Exception:
-                values = None
-            if values:
-                if out_key == "author":
-                    metadata[out_key] = ", ".join(value[0] for value in values)
-                else:
-                    metadata[out_key] = values[0][0]
+            values = [
+                (el.text or "").strip()
+                for el in meta_el.findall(f"{{{_DC_NS}}}{dc_key}")
+                if (el.text or "").strip()
+            ]
+            if not values:
+                continue
+            if out_key == "author":
+                metadata[out_key] = ", ".join(values)
+            else:
+                metadata[out_key] = values[0]
         return metadata
 
-    def _extract_content(self, book) -> tuple[str, Dict[str, str]]:
-        markdown_parts = []
-        images: Dict[str, str] = {}
-        image_aliases: Dict[str, str] = {}
-
-        if self.extract_images:
-            for item in book.get_items():
-                if item.get_type() == ebooklib.ITEM_IMAGE:
-                    img_data = item.get_content()
-                    ext = os.path.splitext(item.get_name())[1]
-                    img_path = f"images/{uuid.uuid4().hex}{ext}"
-                    images[img_path] = base64.b64encode(img_data).decode("utf-8")
-                    self._add_image_aliases(image_aliases, item.get_name(), img_path)
-
-        for item in self._documents_in_reading_order(book):
-            markdown_parts.append(
-                self._process_chapter(
-                    item,
-                    toc_index=len(markdown_parts),
-                    image_aliases=image_aliases,
-                )
-            )
-
-        return "\n\n".join(part for part in markdown_parts if part.strip()), images
+    @staticmethod
+    def _parse_manifest(
+        opf_root: ET.Element, opf_dir: str, zip_names: set[str]
+    ) -> Dict[str, Dict[str, str]]:
+        manifest: Dict[str, Dict[str, str]] = {}
+        manifest_el = opf_root.find(f"{{{_OPF_NS}}}manifest")
+        if manifest_el is None:
+            return manifest
+        for item in manifest_el.findall(f"{{{_OPF_NS}}}item"):
+            item_id = item.get("id")
+            href = item.get("href")
+            if not item_id or not href:
+                continue
+            archive_path = EPUBParser._resolve_manifest_href(opf_dir, href, zip_names)
+            manifest[item_id] = {
+                "href": href,
+                "path": archive_path,
+                "media_type": item.get("media-type") or "",
+                "properties": item.get("properties") or "",
+            }
+        return manifest
 
     @staticmethod
-    def _documents_in_reading_order(book) -> list:
-        """Return the book's documents in spine order.
+    def _resolve_manifest_href(
+        opf_dir: str, href: str, zip_names: set[str]
+    ) -> str:
+        """Map an OPF manifest href to the literal ZIP entry path."""
+        candidates: List[str] = []
+        for raw_href in (href, unquote(href)):
+            joined = (
+                posixpath.join(opf_dir, raw_href) if opf_dir else raw_href
+            )
+            candidates.append(EPUBParser._normalize_epub_path(joined))
+        for path in candidates:
+            if path in zip_names:
+                return path
+        return candidates[0]
 
-        The spine is the reading order. ``get_items()`` follows the manifest,
-        which can list files in any order: Standard Ebooks puts the title page
-        after the last chapter there. Documents the spine leaves out follow, in
-        manifest order.
-        """
-        documents = [
-            item
-            for item in book.get_items()
-            if item.get_type() == ebooklib.ITEM_DOCUMENT
+    @staticmethod
+    def _parse_spine(opf_root: ET.Element) -> List[str]:
+        spine_el = opf_root.find(f"{{{_OPF_NS}}}spine")
+        if spine_el is None:
+            return []
+        return [
+            ref.get("idref")
+            for ref in spine_el.findall(f"{{{_OPF_NS}}}itemref")
+            if ref.get("idref")
         ]
-        ordered = []
-        for idref, _linear in book.spine:
-            item = book.get_item_with_id(idref)
-            if item in documents and item not in ordered:
-                ordered.append(item)
-        ordered.extend(item for item in documents if item not in ordered)
+
+    def _html_paths_in_reading_order(
+        self,
+        manifest: Dict[str, Dict[str, str]],
+        spine_ids: List[str],
+        epub_zip: zipfile.ZipFile,
+    ) -> List[str]:
+        documents = [
+            entry
+            for entry in manifest.values()
+            if self._is_html_chapter(entry) and entry["path"] in epub_zip.namelist()
+        ]
+        ordered: List[str] = []
+        seen: set[str] = set()
+        for idref in spine_ids:
+            entry = manifest.get(idref)
+            if entry is None or not self._is_html_chapter(entry):
+                continue
+            path = entry["path"]
+            if path not in seen:
+                ordered.append(path)
+                seen.add(path)
+        for entry in documents:
+            path = entry["path"]
+            if path not in seen:
+                ordered.append(path)
+                seen.add(path)
         return ordered
 
-    def _process_chapter(
+    @staticmethod
+    def _is_html_chapter(entry: Dict[str, str]) -> bool:
+        media_type = entry.get("media_type") or ""
+        if media_type not in _HTML_MEDIA_TYPES:
+            return False
+        properties = entry.get("properties") or ""
+        if "nav" in properties.split():
+            return False
+        return True
+
+    @staticmethod
+    def _fallback_html_paths(epub_zip: zipfile.ZipFile) -> List[str]:
+        html_files = [
+            f
+            for f in epub_zip.namelist()
+            if f.endswith((".html", ".xhtml", ".htm"))
+        ]
+
+        def chapter_num(filename: str) -> int:
+            match = re.search(r"chapter(\d+)", filename, re.IGNORECASE)
+            return int(match.group(1)) if match else 999999
+
+        html_files.sort(key=chapter_num)
+        return html_files
+
+    def _extract_images_from_zip(
         self,
-        html_item,
+        epub_zip: zipfile.ZipFile,
+        manifest: Dict[str, Dict[str, str]],
+        opf_dir: str,
+        images: Dict[str, str],
+        image_aliases: Dict[str, str],
+    ) -> None:
+        candidates: set[str] = {
+            name
+            for name in epub_zip.namelist()
+            if name.lower().endswith(_IMAGE_EXTENSIONS)
+        }
+        for entry in manifest.values():
+            media_type = entry.get("media_type") or ""
+            if media_type.startswith("image/") or entry["path"].lower().endswith(
+                _IMAGE_EXTENSIONS
+            ):
+                if entry["path"] in epub_zip.namelist():
+                    candidates.add(entry["path"])
+        for img_file in sorted(candidates):
+            if img_file not in epub_zip.namelist():
+                continue
+            try:
+                img_data = epub_zip.read(img_file)
+                ext = os.path.splitext(img_file)[1]
+                img_path = f"images/{uuid.uuid4().hex}{ext}"
+                images[img_path] = base64.b64encode(img_data).decode("utf-8")
+                self._add_image_aliases(
+                    image_aliases, img_file, img_path, opf_dir=opf_dir
+                )
+            except Exception as e:
+                logger.warning("Failed to extract image %s: %s", img_file, e)
+
+    def _process_chapter_html(
+        self,
+        html_content: str,
+        archive_path: str,
         toc_index: int = 0,
         image_aliases: Dict[str, str] | None = None,
+        opf_dir: str = "",
     ) -> str:
         try:
-            html_content = html_item.get_content()
             soup = BeautifulSoup(html_content, "lxml")
             title_tag = soup.find(["h1", "h2"])
             if title_tag:
                 chapter_title = title_tag.get_text().strip()
                 title_tag.decompose()
             else:
-                chapter_title = html_item.get_name().replace("/", "")
-                chapter_title = chapter_title.replace(".xhtml", "")
+                chapter_title = os.path.basename(archive_path)
+                chapter_title = chapter_title.replace(".xhtml", "").replace(".html", "")
                 chapter_title = chapter_title.replace("-", " ").title()
-            body_html = str(soup.body) if soup.body else str(html_content)
+            body_html = str(soup.body) if soup.body else html_content
+            rel_chapter = archive_path
+            if opf_dir and archive_path.startswith(f"{opf_dir}/"):
+                rel_chapter = archive_path[len(opf_dir) + 1 :]
             chapter_md = self._html_to_markdown(
                 body_html,
                 image_aliases=image_aliases,
-                base_path=posixpath.dirname(html_item.get_name()),
+                base_path=posixpath.dirname(rel_chapter),
             )
             return f"## {chapter_title}\n\n{chapter_md}"
         except Exception as e:
-            logger.error(
-                "Failed to process chapter %s: %s", html_item.get_name(), e
-            )
+            logger.error("Failed to process chapter %s: %s", archive_path, e)
             return f"## Chapter {toc_index + 1}\n\n[Error processing chapter: {e}]"
 
     def _html_to_markdown(
@@ -255,9 +349,6 @@ class EPUBParser(BaseParser):
             if image_aliases:
                 self._rewrite_image_sources(soup, image_aliases, base_path)
             markdown_text = md(str(soup), heading_style="ATX")
-            # Keep the blank lines and indentation that delimit Markdown blocks
-            # (paragraphs, quotes, lists, tables, fenced code) and only collapse
-            # runs of blank lines, as the MHTML and static HTML parsers do.
             return MHTMLParser._normalize_markdown(markdown_text)
         except ImportError:
             logger.warning("markdownify not available, using HTML as-is")
@@ -268,12 +359,7 @@ class EPUBParser(BaseParser):
 
     @staticmethod
     def _strip_internal_links(soup: BeautifulSoup) -> None:
-        """Unwrap links that don't point to an external resource.
-
-        EPUB internal links (other chapter files, ``#fragment`` anchors, TOC
-        entries) become dead links after extraction. Keep only external links
-        and replace everything else with its text.
-        """
+        """Unwrap links that don't point to an external resource."""
         external = ("http://", "https://", "mailto:", "tel:")
         for link in soup.find_all("a"):
             href = (link.get("href") or "").strip().lower()
@@ -285,16 +371,22 @@ class EPUBParser(BaseParser):
         image_aliases: Dict[str, str],
         original_path: str,
         image_path: str,
+        opf_dir: str = "",
     ) -> None:
         normalized = EPUBParser._normalize_epub_path(original_path)
         aliases = {
             original_path,
             normalized,
         }
+        if opf_dir:
+            prefix = f"{opf_dir}/"
+            if original_path.startswith(prefix):
+                rel = original_path[len(prefix) :]
+                aliases.add(rel)
+                aliases.add(EPUBParser._normalize_epub_path(rel))
         for alias in aliases:
             if alias:
                 image_aliases[alias] = image_path
-        # A basename fallback must not overwrite a real archive-root path.
         image_aliases.setdefault(posixpath.basename(normalized), image_path)
 
     @staticmethod
@@ -307,22 +399,15 @@ class EPUBParser(BaseParser):
             src = (img.get("src") or "").strip()
             if not src:
                 continue
-            # Only archive-local references may use the basename fallback.
-            # A remote image can share its filename with an unrelated ZIP entry.
             try:
                 reference = urlsplit(src)
             except ValueError:
                 continue
             if reference.scheme or reference.netloc:
                 continue
-            # Only src is a URI reference. Strip its URI suffixes before decoding
-            # once; archive paths from EbookLib and ZIP already contain literal
-            # characters, including #, ? and percent-encoded-looking names.
             raw_path = src.split("#", 1)[0].split("?", 1)[0].replace("\\", "/")
             src_path = unquote(raw_path).replace("\\", "/")
             normalized_src = EPUBParser._normalize_epub_path(src_path)
-            # Some EPUBs reference literal percent-looking names verbatim.
-            # Try the undecoded path after the decoded path at each location.
             raw_normalized = EPUBParser._normalize_epub_path(raw_path)
             candidates = [normalized_src, raw_normalized]
             if base_path:
@@ -332,7 +417,6 @@ class EPUBParser(BaseParser):
                 raw_joined = EPUBParser._normalize_epub_path(
                     posixpath.join(base_path, raw_path)
                 )
-                # Resolve relative to the chapter before trying ambiguous aliases.
                 candidates[:0] = [joined, raw_joined]
             candidates.append(posixpath.basename(normalized_src))
             for candidate in candidates:
