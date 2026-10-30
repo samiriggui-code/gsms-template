@@ -18,6 +18,11 @@ test('sidebar menu uses overlay drawer classes on narrow viewports', () => {
   assert.match(menu, /closeMobileSidebar/)
 })
 
+test('platform nav uses GSMS brand logo assets, not WeKnora defaults', () => {
+  assert.doesNotMatch(menu, /weknora\.png/)
+  assert.match(menu, /@\/assets\/brand\/logo-transparent\.svg/)
+})
+
 test('ui store tracks platform mobile and collapses on entry', () => {
   assert.match(uiStore, /platformMobile:\s*false/)
   assert.match(uiStore, /setPlatformMobile\(/)
