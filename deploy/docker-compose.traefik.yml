@@ -7,7 +7,7 @@
 #
 # Set in .env (production examples):
 #   TRAEFIK_NETWORK=traefik
-#   LANDING_HOST=global-it-ss.com
+#   LANDING_HOST=global-it-ss.com          # apex host served by `site`
 #   LANDING_WWW_HOST=www.global-it-ss.com
 #   APP_HOST_FQDN=app.global-it-ss.com
 #   TRAEFIK_ENTRYPOINT=websecure
@@ -15,31 +15,32 @@
 #   TRAEFIK_ROUTER_MIDDLEWARES=gsms-secure   # optional; Hostinger GSMS VPS (see deploy/docker-compose.traefik.gsms.yml)
 #
 # DNS A/AAAA: global-it-ss.com, www.global-it-ss.com, app.global-it-ss.com → VPS.
-# Optional CMS API (landing NEXT_PUBLIC_API_URL): api.global-it-ss.com → your Core host.
 #
-# When Traefik terminates TLS, you can avoid binding landing/frontend on public host
+# When Traefik terminates TLS, you can avoid binding site/frontend on public host
 # ports (Compose 2.24+): the `!reset []` entries below clear published ports.
 
+# Public vitrine: service `site` (Nginx, homepage + /docs/), not the removed landing/ Next app.
+
 services:
-  landing:
+  site:
     networks:
       - traefik
     ports: !reset []
     labels:
       - traefik.enable=true
       - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
-      - traefik.http.routers.gsms-landing.rule=Host(`${LANDING_WWW_HOST:-www.global-it-ss.com}`) || Host(`${LANDING_HOST:-global-it-ss.com}`)
-      - traefik.http.routers.gsms-landing.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
-      - traefik.http.routers.gsms-landing.tls=true
-      - traefik.http.routers.gsms-landing.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
-      # Comma-separated chain (e.g. gsms-secure,gsms-landing-www@docker). Only one middlewares label — do not add another below.
-      - traefik.http.routers.gsms-landing.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
-      - traefik.http.services.gsms-landing.loadbalancer.server.port=3000
+      - traefik.http.routers.gsms-site.rule=Host(`${LANDING_WWW_HOST:-www.global-it-ss.com}`) || Host(`${LANDING_HOST:-global-it-ss.com}`)
+      - traefik.http.routers.gsms-site.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.gsms-site.tls=true
+      - traefik.http.routers.gsms-site.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      # Comma-separated chain (e.g. gsms-secure,gsms-site-www@docker). Only one middlewares label — do not add another below.
+      - traefik.http.routers.gsms-site.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
+      - traefik.http.services.gsms-site.loadbalancer.server.port=80
       # Optional apex → www: uncomment the three middleware definition lines only, then extend TRAEFIK_ROUTER_MIDDLEWARES
-      # (e.g. gsms-secure,gsms-landing-www@docker). Do not uncomment a second routers.gsms-landing.middlewares label.
-      # - traefik.http.middlewares.gsms-landing-www.redirectregex.regex=^https://${LANDING_HOST:-global-it-ss.com}/(.*)
-      # - traefik.http.middlewares.gsms-landing-www.redirectregex.replacement=https://${LANDING_WWW_HOST:-www.global-it-ss.com}/$${1}
-      # - traefik.http.middlewares.gsms-landing-www.redirectregex.permanent=true
+      # (e.g. gsms-secure,gsms-site-www@docker). Do not uncomment a second routers.gsms-site.middlewares label.
+      # - traefik.http.middlewares.gsms-site-www.redirectregex.regex=^https://${LANDING_HOST:-global-it-ss.com}/(.*)
+      # - traefik.http.middlewares.gsms-site-www.redirectregex.replacement=https://${LANDING_WWW_HOST:-www.global-it-ss.com}/$${1}
+      # - traefik.http.middlewares.gsms-site-www.redirectregex.permanent=true
 
   # App UI uses gsms-weknora-ui from the root compose file (local build); never pull wechatopenai/weknora-ui.
   frontend:

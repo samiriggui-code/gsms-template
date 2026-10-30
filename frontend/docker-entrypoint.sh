@@ -16,11 +16,16 @@ if [ "$SKILL_MB" -gt 512 ] 2>/dev/null; then
   SKILL_MB=512
 fi
 
+PUBLIC_SITE_URL="${PUBLIC_SITE_URL:-https://www.global-it-ss.com}"
+DOCS_BASE_URL="${DOCS_BASE_URL:-https://www.global-it-ss.com/docs/}"
+
 cat > /usr/share/nginx/html/config.js << EOF
 window.__RUNTIME_CONFIG__ = {
   MAX_FILE_SIZE_MB: ${FILE_MB},
   MAX_SKILL_BUNDLE_SIZE_MB: ${SKILL_MB},
-  DEFAULT_LOCALE: "${RUNTIME_DEFAULT_LOCALE}"
+  DEFAULT_LOCALE: "${RUNTIME_DEFAULT_LOCALE}",
+  PUBLIC_SITE_URL: "${PUBLIC_SITE_URL}",
+  DOCS_BASE_URL: "${DOCS_BASE_URL}"
 };
 EOF
 

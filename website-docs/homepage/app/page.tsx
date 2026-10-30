@@ -2,7 +2,6 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import Image from "next/image";
 import { BrandLogo } from "./brand-logo";
-import { WeknoraLogo } from "./weknora-logo";
 import { CompanyHero, CompanyPoles, CompanyEngineIntro, CompanyTrust, CompanyBooking, CompanyContact, CompanyFooterExtras } from "./company/sections";
 import { Icon } from "./ui";
 import { homeAssets } from "../../shared/header";
@@ -141,7 +140,7 @@ export default function Home() {
         <div className={s.sectionHeading}><div><p className={s.eyebrow}>07 / INTEGRATIONS</p><h2 id="ecosystem-title">Sources de données et intégrations</h2></div><p>Synchronisez Feishu, Confluence, GitLab et d’autres sources,<br />puis interrogez via messagerie, extension navigateur, serveur MCP ou API.</p></div>
         <div className={s.ecosystem}>
           <div className={s.ecosystemColumn}><Icon name="sources" /><h3>Importer et synchroniser</h3><p>Fichiers, pages web ou connecteurs externes. Seafile et sources similaires : sync par dossier et mises à jour incrémentales.</p><div className={s.integrations}>{dataSources.map(item => <span key={item.name}><IntegrationMark item={item} /></span>)}</div><div className={s.slideLinks}><a className={s.textLink} href={guide("03-features/10-datasource")}>Connecteurs de données <Icon name="arrow" /></a><a className={s.textLink} href={guide("03-features/25-seafile")}>Connecter Seafile <Icon name="arrow" /></a></div></div>
-          <div className={s.ecosystemCore}><WeknoraLogo /><span>Base d’équipe et agents</span><div>Comprendre · Rechercher · Raisonner · Agir</div></div>
+          <div className={s.ecosystemCore}><BrandLogo /><span>Moteur WeKnora · base d’équipe et agents</span><div>Comprendre · Rechercher · Raisonner · Agir</div></div>
           <div className={s.ecosystemColumn}><Icon name="channels" /><h3>Dans vos outils habituels</h3><p>Messagerie, extension navigateur, clients MCP et intégrations dev.</p><div className={s.integrations}>{clients.map(item => <span key={item.name}><IntegrationMark item={item} /></span>)}</div><a className={s.textLink} href={guide("03-features/12-im-integration")}>Clients et canaux <Icon name="arrow" /></a><div className={s.mcpEntry}><h4>Partager les connaissances via le serveur MCP</h4><p>Connectez Claude, Cursor et autres outils IA à la base de l’équipe pour interroger et citer vos sources.</p><a className={s.textLink} href={guide("03-features/08-mcp")}>Configurer le point de terminaison MCP <Icon name="arrow" /></a></div></div>
         </div>
         <div className={s.models}><span>Modèles à votre choix · 30 fournisseurs intégrés <a className={s.textLink} href={guide("03-features/06-models")}>Voir la liste <Icon name="arrow" /></a></span>{modelProviders.map(item => <p key={item.name}><IntegrationMark item={item} /></p>)}</div>

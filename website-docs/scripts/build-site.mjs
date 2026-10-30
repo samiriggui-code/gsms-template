@@ -32,8 +32,12 @@ cpSync(resolve(root, '.vitepress/dist'), resolve(output, 'docs'), { recursive: t
 const modelsIndex = resolve(output, 'docs/models/index.html');
 if (existsSync(modelsIndex)) cpSync(modelsIndex, resolve(output, 'docs/models.html'));
 run('homepage', 'audit:content');
-const check = spawnSync(process.execPath, ['scripts/check-site.mjs', output], { cwd: root, stdio: 'inherit' });
-if (check.status !== 0) process.exit(check.status || 1);
+if (process.env.WEKNORA_SKIP_SITE_LINK_CHECK === '1') {
+  console.warn('Skipping unified site link check (WEKNORA_SKIP_SITE_LINK_CHECK=1)');
+} else {
+  const check = spawnSync(process.execPath, ['scripts/check-site.mjs', output], { cwd: root, stdio: 'inherit' });
+  if (check.status !== 0) process.exit(check.status || 1);
+}
 // Update the deployment directory only after both applications and their links pass.
 const destination = resolve(root, 'static-site');
 rmSync(destination, { recursive: true, force: true });

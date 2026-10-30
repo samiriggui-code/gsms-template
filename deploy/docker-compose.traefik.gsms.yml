@@ -18,13 +18,13 @@
 #     -f deploy/docker-compose.traefik.gsms.yml up -d
 
 services:
-  landing:
+  site:
     container_name: !reset null
     ports: !reset []
     labels:
-      - traefik.http.routers.gsms-landing.middlewares=gsms-secure
-      - traefik.http.routers.gsms-landing.service=gsms-landing
-      - traefik.http.services.gsms-landing.loadbalancer.server.port=3000
+      - traefik.http.routers.gsms-site.middlewares=gsms-secure
+      - traefik.http.routers.gsms-site.service=gsms-site
+      - traefik.http.services.gsms-site.loadbalancer.server.port=80
 
   frontend:
     container_name: !reset null

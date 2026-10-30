@@ -1,5 +1,5 @@
 "use client";
-import { BrandLockup } from "./brand-logo";
+import { BrandLockup, BrandLogo } from "./brand-logo";
 import { useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "./ui";
 import { getThemeSnapshot, subscribeToTheme, toggleTheme } from "./theme";
@@ -47,7 +47,7 @@ export function Header() {
   const menu = useRef<HTMLButtonElement>(null);
   return <header className="wk-header" onKeyDown={event => { if (event.key === "Escape" && open) { setOpen(false); menu.current?.focus(); } }}>
     <div className="wk-header-inner">
-      <a className="wk-brand" href="/" target="_self" aria-label="Accueil Global-IT-SS"><BrandLockup /></a>
+      <a className="wk-brand" href="/" target="_self" aria-label="Accueil Global-IT-SS"><BrandLogo priority /><BrandLockup /></a>
       <nav id="main-navigation" className={`wk-navigation ${open ? "is-open" : ""}`} aria-label="Navigation principale" onClick={() => setOpen(false)}>
         {siteNavigation.map(item => {
           if (item.children?.length) {

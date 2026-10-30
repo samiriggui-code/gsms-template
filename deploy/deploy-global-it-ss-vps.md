@@ -9,7 +9,7 @@
 ## What you get
 
 - Compose project **`globalitss`** (container prefix `globalitss-*`).
-- **Landing** + **WeKnora** (frontend, app, postgres, redis, docreader…) from `gsms-template`.
+- **Site** (service `site`: homepage + `/docs/` from `website-docs/`) + **WeKnora** (frontend, app, postgres, redis, docreader…) from `gsms-template`.
 - Traefik on **`gsms`**, TLS via `websecure` + `letsencrypt` + `gsms-secure`.
 - Hostnames: `www.global-it-ss.com`, `global-it-ss.com`, `app.global-it-ss.com`.
 
@@ -79,21 +79,21 @@ chmod +x ./scripts/deploy-global-it-ss.sh   # once
 
 The script validates three Compose files (base + Traefik + **`deploy/docker-compose.traefik.gsms.yml`**). The GSMS overlay clears fixed `container_name` values and **`app` host ports** so stacks stay isolated under **`COMPOSE_PROJECT_NAME=globalitss`** and the API is not exposed beside Traefik.
 
-It **`build`s `landing` and `frontend`** (local `./landing` and `./frontend` — images **`gsms-landing`** and **`gsms-weknora-ui`**), then **`up -d --no-build`**. It does **not** `pull` frontend/landing.
+It **`build`s `site` and `frontend`** (local `./website-docs` and `./frontend` — images **`gsms-site`** and **`gsms-weknora-ui`**), then **`up -d --no-build`**. It does **not** `pull` frontend/site.
 
-Force a clean frontend/landing rebuild:
+Force a clean frontend/site rebuild:
 
 ```bash
 ./scripts/deploy-global-it-ss.sh --no-cache
 ```
 
-Do **not** use bare `docker compose … up -d` without building frontend first — that can leave an old container or pull upstream **`wechatopenai/weknora-ui`** (Chinese-first Hub image). Root `docker-compose.yml` sets **`pull_policy: build`** on frontend/landing to block Hub pulls when both `image` and `build` are set.
+Do **not** use bare `docker compose … up -d` without building frontend first — that can leave an old container or pull upstream **`wechatopenai/weknora-ui`** (Chinese-first Hub image). Root `docker-compose.yml` sets **`pull_policy: build`** on frontend/site to block Hub pulls when both `image` and `build` are set.
 
 ## Manual equivalent (debug only)
 
 ```bash
 docker compose --env-file .env -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml config
-docker compose --env-file .env -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build landing frontend
+docker compose --env-file .env -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build site frontend
 docker compose --env-file .env -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d --no-build
 ```
 

@@ -1,6 +1,6 @@
 /** Contenu vitrine Global-IT-SS (FR) — migré depuis l’ancien package `landing/`. */
 
-export const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost").replace(/\/$/, "");
+export const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://app.global-it-ss.com").replace(/\/$/, "");
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 export const DEFAULT_CONTACT_EMAIL = "contact@globalitss.com";
 

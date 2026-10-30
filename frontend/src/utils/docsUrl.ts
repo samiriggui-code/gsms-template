@@ -1,5 +1,4 @@
-/** Public deployment of website-docs (VitePress, base `/docs/`). */
-export const DOCS_BASE_URL = 'https://weknora.weixin.qq.com/docs/'
+import { docsBaseUrl } from './runtimeConfig'
 
 /**
  * Doc pages linked from the UI, as website-docs paths without the `.md`
@@ -20,5 +19,5 @@ export const DOC_PAGES = {
 export type DocPage = keyof typeof DOC_PAGES
 
 export function docsUrl(page: DocPage): string {
-  return DOCS_BASE_URL + DOC_PAGES[page]
+  return docsBaseUrl() + DOC_PAGES[page]
 }

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { homeAssets } from "../../shared/header";
+import { homeAssets, siteBrand } from "../../shared/header";
 import { company } from "./company/data";
 
 /** Titres marque en en-tête (lisibles, sans crop du SVG). */
@@ -17,8 +17,8 @@ export function BrandLogo({ priority = false }: { priority?: boolean }) {
   return (
     <span className="wk-logo-gis-mark">
       <Image
-        src={`${homeAssets}/brand-gis/logo-transparent.svg`}
-        alt={`${company.brandName} — ${company.brandTagline}`}
+        src={siteBrand.logoSrc}
+        alt={`${siteBrand.name} — ${siteBrand.tagline}`}
         width={300}
         height={149}
         priority={priority}

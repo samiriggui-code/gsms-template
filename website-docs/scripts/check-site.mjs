@@ -14,7 +14,7 @@ async function walk(dir) {
   }
   return result;
 }
-for (const retired of ['/demo/', '/demo/1/', '/redesign/', '/redesign/1/', '/demo6/preview.html', '/brand/weknora.svg', '/icon.svg', '/docs/favicon.svg', '/docs/README.html', '/docs/homepage/README.html', '/docs/homepage/BRAND-ASSETS.html', '/docs/static-site/', '/docs/releases/']) {
+for (const retired of ['/demo/', '/demo/1/', '/redesign/', '/redesign/1/', '/demo6/preview.html', '/brand/weknora.svg', '/docs/_home/brand/weknora-original.png', '/icon.svg', '/docs/favicon.svg', '/docs/README.html', '/docs/homepage/README.html', '/docs/homepage/BRAND-ASSETS.html', '/docs/static-site/', '/docs/releases/']) {
   assert.equal(await resolveSiteFile(root, retired), null, `Retired demo must not be published: ${retired}`);
 }
 const failures = [];
