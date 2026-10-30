@@ -4,6 +4,7 @@ import { Engine } from "@/components/site/engine";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
 import { Hero } from "@/components/site/hero";
+import { MotionReady } from "@/components/site/motion-ready";
 import { Poles, type PoleView } from "@/components/site/poles";
 import { Trust } from "@/components/site/trust";
 import { getDictionary } from "@/lib/i18n";
@@ -24,6 +25,7 @@ export function Landing({ lang, data }: { lang: Lang; data: LandingData }) {
 
   return (
     <>
+      <MotionReady />
       <Header lang={lang} t={t.nav} />
       <main>
         <Hero t={t.hero} />
