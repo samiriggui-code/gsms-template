@@ -91,6 +91,16 @@ if [[ "${PROJECT_NAME}" != "${REQUIRED_PROJECT_NAME}" ]]; then
 fi
 echo "Using COMPOSE_PROJECT_NAME=${PROJECT_NAME} (from .env)"
 
+TRAEFIK_NETWORK=""
+if grep -qE '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env 2>/dev/null; then
+  TRAEFIK_NETWORK="$(
+    grep -E '^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=' .env | tail -1 \
+      | sed -E 's/^[[:space:]]*TRAEFIK_NETWORK[[:space:]]*=[[:space:]]*//' \
+      | sed -e 's/[[:space:]]*$//' -e "s/^['\"]//" -e "s/['\"]$//"
+  )"
+fi
+TRAEFIK_NETWORK="${TRAEFIK_NETWORK:-gsms}"
+
 echo "Validating Compose configuration…"
 docker compose "${COMPOSE_FILES[@]}" config >/dev/null
 
@@ -125,5 +135,30 @@ warn_duplicate_service_containers() {
 
 warn_duplicate_service_containers landing
 warn_duplicate_service_containers frontend
+
+# Routers gsms-landing / gsms-app are fixed Traefik names — another Compose project on the same
+# edge network registers the same routes without matching com.docker.compose.project.
+warn_traefik_router_containers() {
+  local router="$1"
+  local -a ids=()
+  local -a ps_filters=(
+    --filter "status=running"
+    --filter "network=${TRAEFIK_NETWORK}"
+    --filter "label=traefik.http.services.${router}.loadbalancer.server.port"
+  )
+  if ! ids=($(docker ps -q "${ps_filters[@]}")); then
+    echo "WARNING (minor): docker ps failed while checking Traefik router ${router} on network ${TRAEFIK_NETWORK}." >&2
+    return 0
+  fi
+  if ((${#ids[@]} > 1)); then
+    echo "" >&2
+    echo "WARNING (minor): ${#ids[@]} running containers expose Traefik router ${router} on network ${TRAEFIK_NETWORK}." >&2
+    echo "Stop legacy stacks from an old COMPOSE_PROJECT_NAME so Traefik does not load-balance mixed landing/frontend images." >&2
+    docker ps "${ps_filters[@]}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2
+  fi
+}
+
+warn_traefik_router_containers gsms-landing
+warn_traefik_router_containers gsms-app
 
 echo "Deploy finished. Verify: docker ps --filter name=${PROJECT_NAME:-globalitss}"

@@ -11,5 +11,9 @@ describe("scripts/deploy-global-it-ss.sh", () => {
     expect(script).toMatch(/label=com\.docker\.compose\.project=\$\{PROJECT_NAME\}/);
     expect(script).toMatch(/label=com\.docker\.compose\.service=\$\{service\}/);
     expect(script).toMatch(/Traefik may round-robin mismatched/);
+    expect(script).toMatch(/warn_traefik_router_containers gsms-landing/);
+    expect(script).toMatch(/warn_traefik_router_containers gsms-app/);
+    expect(script).toMatch(/label=traefik\.http\.services\.\$\{router\}\.loadbalancer\.server\.port/);
+    expect(script).toMatch(/WARNING \(minor\):.*Traefik router/);
   });
 });
