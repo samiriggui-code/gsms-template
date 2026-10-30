@@ -11,4 +11,6 @@ test('platform viewport mobile stylesheet is wired into the app bundle', () => {
   assert.match(less, /@platform-mobile-max:\s*768px/)
   assert.match(less, /\.platform-route-outlet/)
   assert.match(less, /overflow-x:\s*auto/)
+  assert.match(less, /\.settings-modal-shell \.setting-row/)
+  assert.match(less, /flex-direction:\s*column/)
 })
