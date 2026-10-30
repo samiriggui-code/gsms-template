@@ -80,11 +80,16 @@ if [[ -n "${COMPOSE_PROJECT_NAME:-}" ]]; then
   fi
 fi
 
+REQUIRED_PROJECT_NAME=globalitss
 if [[ -z "${PROJECT_NAME}" ]]; then
-  echo "Warning: COMPOSE_PROJECT_NAME is not set in .env (recommended: COMPOSE_PROJECT_NAME=globalitss)" >&2
-else
-  echo "Using COMPOSE_PROJECT_NAME=${PROJECT_NAME} (from .env)"
+  echo "COMPOSE_PROJECT_NAME must be set in .env (required: ${REQUIRED_PROJECT_NAME})." >&2
+  exit 1
 fi
+if [[ "${PROJECT_NAME}" != "${REQUIRED_PROJECT_NAME}" ]]; then
+  echo "COMPOSE_PROJECT_NAME in .env is '${PROJECT_NAME}'; this deploy requires '${REQUIRED_PROJECT_NAME}'." >&2
+  exit 1
+fi
+echo "Using COMPOSE_PROJECT_NAME=${PROJECT_NAME} (from .env)"
 
 echo "Validating Compose configuration…"
 docker compose "${COMPOSE_FILES[@]}" config >/dev/null

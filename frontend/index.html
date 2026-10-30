@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="__GSMS_HTML_LANG__">
 <head>
     <title>Global-IT-SS — Moteur IA</title>
     <meta charset="utf-8">
@@ -62,8 +62,9 @@
   try {
     var stored = localStorage.getItem('locale');
     var runtime = window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.DEFAULT_LOCALE;
+    var buildDefault = '__GSMS_VITE_DEFAULT_LOCALE__';
     var locale = (stored === 'fr-FR' || stored === 'en-US') ? stored
-      : (runtime === 'en-US' ? 'en-US' : 'fr-FR');
+      : ((runtime === 'fr-FR' || runtime === 'en-US') ? runtime : buildDefault);
     var primary = locale.split('-')[0];
     if (primary) document.documentElement.lang = primary.toLowerCase();
   } catch (_) {}

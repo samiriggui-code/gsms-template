@@ -40,3 +40,9 @@ services:
 
   docreader:
     container_name: !reset null
+
+  sandbox:
+    container_name: !reset null
+
+  odl-hybrid:
+    container_name: !reset null
