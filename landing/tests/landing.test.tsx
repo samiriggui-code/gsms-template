@@ -1,5 +1,10 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { JSDOM } from "jsdom";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { Landing, type LandingData } from "@/components/site/landing";
@@ -85,7 +90,62 @@ describe("Landing", () => {
     }
     expect(document.querySelector(".gsms-motion-hero-copy")).toBeTruthy();
   });
+});
 
+describe("Landing SSR / premier paint", () => {
+  it("expose hero et pôles dans le HTML statique (sans hydratation)", () => {
+    const markup = renderToStaticMarkup(<Landing lang="fr" data={data()} />);
+    const { document } = new JSDOM(markup).window;
+
+    expect(document.querySelector("h1")?.textContent).toContain("L'informatique, orchestrée avec exigence.");
+    const poles = document.getElementById("poles");
+    expect(poles?.querySelectorAll("article")).toHaveLength(9);
+    const poleTitles = [...(poles?.querySelectorAll("h3") ?? [])].map((el) => el.textContent);
+    expect(poleTitles).toContain("Cybersécurité");
+  });
+
+  it("avec globals.css, hero et pôles ne sont pas masqués avant hydratation", async () => {
+    await import("@/app/globals.css");
+    const markup = renderToStaticMarkup(<Landing lang="fr" data={data()} />);
+    const root = document.createElement("div");
+    root.className = "theme-dark";
+    root.innerHTML = markup;
+    document.body.appendChild(root);
+
+    try {
+      const h1 = root.querySelector("h1");
+      expect(h1).toBeTruthy();
+      const h1Style = window.getComputedStyle(h1!);
+      expect(h1Style.visibility).not.toBe("hidden");
+      expect(h1Style.display).not.toBe("none");
+      if (h1Style.opacity !== "") {
+        expect(Number.parseFloat(h1Style.opacity)).toBeGreaterThan(0);
+      }
+
+      const poles = root.querySelector("#poles")!;
+      expect(within(poles as HTMLElement).getByRole("heading", { name: /Neuf expertises/ })).toBeInTheDocument();
+      for (const article of poles.querySelectorAll("article")) {
+        const style = window.getComputedStyle(article);
+        expect(style.visibility).not.toBe("hidden");
+        expect(style.display).not.toBe("none");
+        if (style.opacity !== "") {
+          expect(Number.parseFloat(style.opacity)).toBeGreaterThan(0);
+        }
+      }
+    } finally {
+      root.remove();
+    }
+  });
+
+  it("globals.css ne masque pas les blocs motion au premier paint", () => {
+    const globalsCss = readFileSync(path.join(__dirname, "../src/app/globals.css"), "utf8");
+    expect(globalsCss).not.toMatch(/\.gsms-motion-reveal[\s\S]{0,200}opacity:\s*0[^!]/);
+    expect(globalsCss).not.toMatch(/\.gsms-motion-hero-copy[\s\S]{0,200}opacity:\s*0[^!]/);
+    expect(globalsCss).not.toMatch(/\.gsms-motion-hero-copy[\s\S]{0,200}visibility:\s*hidden/);
+  });
+});
+
+describe("Landing (suite)", () => {
   it("utilise le logo de la marque en en-tête (transparent) et en pied de page (niveaux de gris)", () => {
     render(<Landing lang="fr" data={data()} />);
     const srcs = screen.getAllByRole("img").map((i) => decodeURIComponent(i.getAttribute("src") ?? ""));
