@@ -16,11 +16,10 @@
             :aria-label="t('menu.expandSidebar')"
             @click="uiStore.openMobileSidebar()"
         >
-            <svg viewBox="0 0 20 20" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <rect x="1.5" y="1.5" width="17" height="17" rx="3" stroke="currentColor" stroke-width="1.5" />
-                <line x1="7.5" y1="1.5" x2="7.5" y2="18.5" stroke="currentColor" stroke-width="1.5" />
-                <line x1="5" y1="10" x2="3" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                <line x1="5" y1="10" x2="3" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            <svg viewBox="0 0 20 20" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <line x1="3" y1="5.5" x2="17" y2="5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                <line x1="3" y1="14.5" x2="17" y2="14.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
             </svg>
         </button>
         <div
@@ -340,6 +339,11 @@ onUnmounted(() => {
         min-width: 0;
     }
 
+    .main--platform-mobile .platform-route-outlet {
+        padding-top: calc(52px + env(safe-area-inset-top, 0px));
+        box-sizing: border-box;
+    }
+
     .main--mobile-sidebar-open .platform-route-outlet {
         overflow: hidden;
     }
@@ -347,7 +351,7 @@ onUnmounted(() => {
 
 .platform-mobile-nav-open {
     position: fixed;
-    z-index: 1005;
+    z-index: 1205;
     top: max(12px, env(safe-area-inset-top));
     left: max(12px, env(safe-area-inset-left));
     display: flex;
