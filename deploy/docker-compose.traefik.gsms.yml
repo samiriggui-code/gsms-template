@@ -20,13 +20,19 @@
 services:
   landing:
     container_name: !reset null
+    ports: !reset []
     labels:
       - traefik.http.routers.gsms-landing.middlewares=gsms-secure
+      - traefik.http.routers.gsms-landing.service=gsms-landing
+      - traefik.http.services.gsms-landing.loadbalancer.server.port=3000
 
   frontend:
     container_name: !reset null
+    ports: !reset []
     labels:
       - traefik.http.routers.gsms-app.middlewares=gsms-secure
+      - traefik.http.routers.gsms-app.service=gsms-app
+      - traefik.http.services.gsms-app.loadbalancer.server.port=80
 
   app:
     container_name: !reset null

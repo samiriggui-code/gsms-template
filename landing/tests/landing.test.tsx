@@ -1,6 +1,6 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Landing, type LandingData } from "@/components/site/landing";
 import { FALLBACK_POLES } from "@/lib/i18n";
@@ -24,10 +24,6 @@ function mockMatchMedia(match: (query: string) => boolean) {
 }
 
 describe("Landing", () => {
-  afterEach(() => {
-    delete document.documentElement.dataset.instantMotion;
-    delete document.documentElement.dataset.motionReady;
-  });
   it("rend toutes les sections en français", () => {
     render(<Landing lang="fr" data={data()} />);
 
@@ -78,19 +74,15 @@ describe("Landing", () => {
     expect(screen.getByRole("link", { name: /Langue: EN/i })).toHaveAttribute("href", "/en");
   });
 
-  it("sur viewport mobile, le contenu est visible sans reveal au scroll", async () => {
+  it("sur viewport mobile, le contenu hero et les pôles restent visibles (pas de reveal JS)", () => {
     mockMatchMedia((q) => q.includes("max-width: 768px"));
     render(<Landing lang="fr" data={data()} />);
 
-    await waitFor(() => {
-      expect(document.documentElement.dataset.instantMotion).toBe("true");
-    });
-
+    expect(screen.getByRole("heading", { level: 1 })).toBeVisible();
     const poles = document.getElementById("poles")!;
     for (const article of within(poles).getAllByRole("article")) {
       expect(article).toBeVisible();
     }
-    expect(document.querySelector(".gsms-motion-reveal")).toBeTruthy();
     expect(document.querySelector(".gsms-motion-hero-copy")).toBeTruthy();
   });
 
