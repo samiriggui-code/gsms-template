@@ -206,6 +206,9 @@ def epub_with_colliding_image_names(
             "</body></html>"
         )
 
+    spine_refs = "".join(
+        f'<itemref idref="{item_id}"/>' for item_id in spine_ids
+    )
     package = (
         '<package xmlns="http://www.idpf.org/2007/opf" version="3.0"'
         ' unique-identifier="book-id"><metadata'
@@ -214,7 +217,7 @@ def epub_with_colliding_image_names(
         '<dc:title>Images in separate directories</dc:title>'
         '<dc:language>en</dc:language></metadata><manifest>'
         f'{"".join(manifest_items)}</manifest><spine>'
-        f'{"".join(f"<itemref idref=\"{item_id}\"/>" for item_id in spine_ids)}'
+        f"{spine_refs}"
         "</spine></package>"
     )
     output = BytesIO()
