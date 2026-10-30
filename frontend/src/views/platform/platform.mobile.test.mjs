@@ -8,7 +8,8 @@ const uiStore = readFileSync(new URL('../../stores/ui.ts', import.meta.url), 'ut
 
 test('platform shell drops desktop min-width and exposes a mobile nav opener', () => {
   assert.match(platformIndex, /@media \(max-width: 768px\)[\s\S]*?\.main[\s\S]*?min-width:\s*0;/)
-  assert.match(platformIndex, /platform-mobile-nav-open/)
+  assert.match(platformIndex, /platform-mobile-header/)
+  assert.match(platformIndex, /platform-mobile-header__menu/)
   assert.match(platformIndex, /usePlatformMobile/)
   assert.match(platformIndex, /handleMobileSidebarKeyDown/)
   assert.match(platformIndex, /Escape/)
@@ -28,7 +29,8 @@ test('platform nav uses GSMS brand logo assets, not WeKnora defaults', () => {
 })
 
 test('ui store tracks platform mobile and collapses on entry', () => {
-  assert.match(uiStore, /platformMobile:\s*false/)
+  assert.match(uiStore, /createSidebarState/)
+  assert.match(uiStore, /initialPlatformMobile/)
   assert.match(uiStore, /setPlatformMobile\(/)
   assert.match(uiStore, /openMobileSidebar\(/)
 })
