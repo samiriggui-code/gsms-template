@@ -1,8 +1,9 @@
 # Traefik edge routing for gsms-template (VPS with an external Traefik stack).
 #
 # Post-merge check (PR #7 on main): `docker compose -f docker-compose.yml
-# -f deploy/docker-compose.traefik.yml config` must succeed; landing `npm ci` +
-# lint/typecheck/test/build matches `.github/workflows/landing.yml`.
+# -f deploy/docker-compose.traefik.yml config` must succeed; in `landing/`
+# with Node 24: `npm ci --no-audit --no-fund`, `npm run lint`,
+# `npm run typecheck`, `npm test`, and `npm run build` must pass.
 #
 # Assumes Traefik runs elsewhere on the same Docker host and exposes an external
 # network (default name: traefik). Attach this stack with:
