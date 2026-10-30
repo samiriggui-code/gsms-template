@@ -89,37 +89,6 @@
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
-    /* Motion / Framer : ne pas laisser le contenu invisible sans JS */
-    .gsms-motion-reveal,
-    .gsms-motion-hero-symbol {
-      opacity: 1 !important;
-      transform: none !important;
-      filter: none !important;
-    }
-  }
-}
-
-/* Secours SSR / hydratation lente : le HTML reste lisible avant que motion ne prenne la main */
-@layer base {
-  @media (prefers-reduced-motion: no-preference) {
-    html:not([data-motion-ready="true"]) .gsms-motion-reveal {
-      opacity: 1 !important;
-      transform: none !important;
-    }
-  }
-  @media (max-width: 768px) {
-    .gsms-motion-reveal,
-    .gsms-motion-hero-copy > * {
-      opacity: 1 !important;
-      transform: none !important;
-      filter: none !important;
-    }
-  }
-  html[data-instant-motion="true"] .gsms-motion-reveal,
-  html[data-instant-motion="true"] .gsms-motion-hero-copy > * {
-    opacity: 1 !important;
-    transform: none !important;
-    filter: none !important;
   }
 }
 
