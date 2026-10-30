@@ -434,6 +434,18 @@ onMounted(reload)
   -webkit-overflow-scrolling: touch;
 }
 
+@media (max-width: 768px) {
+  .keys-section {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .api-key-table th,
+  .api-key-table td {
+    padding: 10px 14px;
+  }
+}
+
 .api-key-table {
   width: 100%;
   min-width: 760px;

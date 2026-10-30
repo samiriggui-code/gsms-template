@@ -964,6 +964,11 @@ onMounted(load)
 
   :deep(.t-table__content > table) { min-width: 840px; }
 
+  @media (max-width: 768px) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
   &:deep(.t-table tbody tr) {
     cursor: pointer;
   }
