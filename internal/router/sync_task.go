@@ -224,8 +224,9 @@ type SyncTaskParams struct {
 	KnowledgeService     interfaces.KnowledgeService
 	KnowledgeBaseService interfaces.KnowledgeBaseService
 	TagService           interfaces.KnowledgeTagService
-	DataSourceService    interfaces.DataSourceService
-	SpanTracker          service.SpanTracker
+	DataSourceService     interfaces.DataSourceService
+	TencentMeetingService interfaces.TencentMeetingService
+	SpanTracker           service.SpanTracker
 	ChunkExtractor       interfaces.TaskHandler `name:"chunkExtractor"`
 	DataTableSummary     interfaces.TaskHandler `name:"dataTableSummary"`
 	ImageMultimodal      interfaces.TaskHandler `name:"imageMultimodal"`
@@ -263,6 +264,7 @@ func RegisterSyncHandlers(params SyncTaskParams) {
 	params.Executor.RegisterHandler(types.TypeKnowledgeAutoTag, params.KnowledgeAutoTag.Handle)
 	params.Executor.RegisterHandler(types.TypeKnowledgeBaseProfile, params.KnowledgeBaseProfile.Handle)
 	params.Executor.RegisterHandler(types.TypeDataSourceSync, params.DataSourceService.ProcessSync)
+	params.Executor.RegisterHandler(types.TypeTencentMeetingSync, params.TencentMeetingService.ProcessSync)
 	params.Executor.RegisterHandler(types.TypeWikiIngest, params.WikiIngest.Handle)
 	params.Executor.RegisterHandler(types.TypeWikiFinalize, params.WikiIngest.Handle)
 	params.Executor.RegisterHandler(types.TypeMemoryExtract, params.MemoryService.Handle)

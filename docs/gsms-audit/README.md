@@ -34,5 +34,7 @@ Les clones sont conservés séparément et intacts (aucun `git status` modifié)
 | [09-migration-roadmap.md](09-migration-roadmap.md) | Feuille de route par phases et estimation |
 | [10-test-plan.md](10-test-plan.md) | Plan de tests et non-régression |
 | [11-file-level-integration-map.md](11-file-level-integration-map.md) | Cartographie fichier par fichier |
+| [12-integration-plan-tencent-extensions.md](12-integration-plan-tencent-extensions.md) | Plan WeKnora × 4 repos Tencent (sans métier GIS) |
 | [diagrams/architecture-actuelle.md](diagrams/architecture-actuelle.md) | Diagrammes Mermaid des deux projets |
-| [diagrams/architecture-cible.md](diagrams/architecture-cible.md) | Diagramme Mermaid de la cible |
+| [diagrams/architecture-cible.md](diagrams/architecture-cible.md) | Diagramme Mermaid de la cible long terme |
+| [diagrams/architecture-weknora-tencent-extensions.md](diagrams/architecture-weknora-tencent-extensions.md) | Diagramme Mermaid périmètre actuel + Tencent |

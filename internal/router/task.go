@@ -38,8 +38,9 @@ type AsynqTaskParams struct {
 	KnowledgeService     interfaces.KnowledgeService
 	KnowledgeBaseService interfaces.KnowledgeBaseService
 	TagService           interfaces.KnowledgeTagService
-	DataSourceService    interfaces.DataSourceService
-	ChunkExtractor       interfaces.TaskHandler `name:"chunkExtractor"`
+	DataSourceService      interfaces.DataSourceService
+	TencentMeetingService  interfaces.TencentMeetingService
+	ChunkExtractor         interfaces.TaskHandler `name:"chunkExtractor"`
 	DataTableSummary     interfaces.TaskHandler `name:"dataTableSummary"`
 	ImageMultimodal      interfaces.TaskHandler `name:"imageMultimodal"`
 	KnowledgePostProcess interfaces.TaskHandler `name:"knowledgePostProcess"`
@@ -310,6 +311,7 @@ func RunAsynqServer(params AsynqTaskParams) *asynq.ServeMux {
 
 	// Register data source sync handler
 	mux.HandleFunc(types.TypeDataSourceSync, params.DataSourceService.ProcessSync)
+	mux.HandleFunc(types.TypeTencentMeetingSync, params.TencentMeetingService.ProcessSync)
 
 	// Register wiki ingest handler + the debounced KB-global finalize handler.
 	// Both route to the same dispatch (WikiIngest.Handle switches on task type)
