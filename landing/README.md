@@ -26,6 +26,8 @@ npm run dev   # http://localhost:3000 → redirige vers /fr ou /en
 | `NEXT_PUBLIC_SITE_URL` | URL publique du site (balises canoniques, sitemap) | `http://localhost:3000` |
 | `NEXT_PUBLIC_APP_URL` | Application gsms, cible du lien « Espace pro » | `http://localhost` |
 
+Exemple production : [`env.production.example`](env.production.example). Avec Docker Compose, les mêmes clés se passent en build args (service `landing`, voir racine `.env.example`).
+
 Sans Core joignable, la page reste complète : les 9 pôles viennent du repli statique de `src/lib/i18n.ts`, et seul le formulaire de rendez-vous renvoie une erreur.
 
 ## Contenu
@@ -33,6 +35,16 @@ Sans Core joignable, la page reste complète : les 9 pôles viennent du repli st
 - Textes : `src/lib/i18n.ts` (dictionnaires `fr` et `en`, même structure, vérifiée par `tests/i18n.test.ts`).
 - Sections : `src/components/site/` (en-tête, accroche, pôles, moteur IA, confiance, rendez-vous, contact, pied de page).
 - Marque : `public/brand/`.
+
+## Docker (Compose)
+
+```bash
+# depuis la racine du dépôt, après avoir défini NEXT_PUBLIC_* dans .env
+docker compose build landing
+docker compose up -d landing
+```
+
+Image : [`Dockerfile`](Dockerfile) (`output: "standalone"`). Traefik VPS : [`deploy/docker-compose.traefik.yml`](../deploy/docker-compose.traefik.yml).
 
 ## Vérifications
 
