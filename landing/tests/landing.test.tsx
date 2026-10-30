@@ -17,6 +17,8 @@ describe("Landing", () => {
   it("rend toutes les sections en français", () => {
     render(<Landing lang="fr" data={data()} />);
 
+    expect(screen.getByRole("heading", { level: 1 })).toBeVisible();
+    expect(document.querySelector(".gsms-motion-reveal")).toBeTruthy();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("L'informatique, orchestrée avec exigence.");
     expect(screen.getByRole("heading", { name: /Neuf expertises, un interlocuteur/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Une méthode, des engagements/ })).toBeInTheDocument();

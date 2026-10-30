@@ -29,7 +29,8 @@ export function Hero({ t }: { t: Dictionary["hero"] }) {
       </div>
 
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-5 sm:px-8 lg:grid-cols-[1.25fr_0.75fr]">
-        <motion.div variants={container} initial="hidden" animate="show">
+        {/* initial={false} : contenu visible au SSR / avant hydratation (évite opacity:0 bloquée). */}
+        <motion.div variants={container} initial={false} animate="show">
           <motion.p variants={item} className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/50 px-4 py-1.5 text-xs uppercase tracking-[0.22em] text-brand-cyan backdrop-blur">
             <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan" />
             {t.eyebrow}
@@ -65,10 +66,10 @@ export function Hero({ t }: { t: Dictionary["hero"] }) {
         {/* Symbole de la marque, en suspension */}
         <motion.div
           aria-hidden
-          initial={{ opacity: 0, scale: 0.85 }}
+          initial={false}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mx-auto hidden aspect-square w-full max-w-md lg:block"
+          className="gsms-motion-hero-symbol relative mx-auto hidden aspect-square w-full max-w-md lg:block"
         >
           <div className="absolute inset-6 rounded-full bg-brand-gradient opacity-25 blur-3xl" />
           <div className="border-gradient absolute inset-0 rounded-[2.5rem] bg-card/40 backdrop-blur-xl" />
