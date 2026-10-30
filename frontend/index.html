@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="__GSMS_HTML_LANG__">
 <head>
-    <title>WeKnora</title>
+    <title>Global-IT-SS — Moteur IA</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -9,8 +9,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="keywords" content="知识问答、微信对话开放平台、对话开放平台、对话平台、人工智能定制、人机对话、智能问答、人机交互、自然语言处理、自然语言理解、NLP、人工智能产品、人工智能开源、人工智能算法、语音助手"/>
-    <meta name="description" content="WeKnora是一款基于大语言模型的文档理解与语义检索框架，专为结构复杂、内容异构的文档场景而打造。"/>
+    <meta name="keywords" content="Global-IT-SS, GSMS, base de connaissances, RAG, IA, recherche sémantique, agents, WeKnora"/>
+    <meta name="description" content="Interface Global-IT-SS (GSMS) : moteur de connaissances et agents IA — français et anglais."/>
     <link rel="shortcut icon" type="image/png" href="./public/favicon.ico"/>
     <link rel="apple-touch-icon" sizes="120x120" type="image/png" href="./public/favicon.ico"/>
 </head>
@@ -57,6 +57,19 @@
 })();
 </script>
 <script src="/config.js"></script>
+<script>
+(function(){
+  try {
+    var stored = localStorage.getItem('locale');
+    var runtime = window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.DEFAULT_LOCALE;
+    var buildDefault = '__GSMS_VITE_DEFAULT_LOCALE__';
+    var locale = (stored === 'fr-FR' || stored === 'en-US') ? stored
+      : ((runtime === 'fr-FR' || runtime === 'en-US') ? runtime : buildDefault);
+    var primary = locale.split('-')[0];
+    if (primary) document.documentElement.lang = primary.toLowerCase();
+  } catch (_) {}
+})();
+</script>
 <!--
   离线部署兼容：提前本地加载 tdesign-icons SVG sprite，避免 tdesign-vue-next 的
   <t-icon> 运行时向 https://tdesign.gtimg.com 发起请求（见 issue #867 / #897）。

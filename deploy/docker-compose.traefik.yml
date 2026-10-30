@@ -41,6 +41,7 @@ services:
       # - traefik.http.middlewares.gsms-landing-www.redirectregex.replacement=https://${LANDING_WWW_HOST:-www.global-it-ss.com}/$${1}
       # - traefik.http.middlewares.gsms-landing-www.redirectregex.permanent=true
 
+  # App UI uses gsms-weknora-ui from the root compose file (local build); never pull wechatopenai/weknora-ui.
   frontend:
     networks:
       - traefik

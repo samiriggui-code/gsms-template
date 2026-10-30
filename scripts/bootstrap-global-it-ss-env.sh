@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 # Create .env on the VPS with generated secrets (Hostinger GSMS / Traefik gsms).
 # Usage: ./scripts/bootstrap-global-it-ss-env.sh admin@example.com
+#
+# Fresh installs set COMPOSE_PROJECT_NAME=globalitss (isolated volumes globalitss_postgres-data, …).
+# If you already ran the stack under another project name (e.g. directory default global-it-ss),
+# see deploy/deploy-global-it-ss-vps.md § Migrating to COMPOSE_PROJECT_NAME=globalitss — do not
+# re-run this script on a live server (it overwrites secrets and would desync encrypted settings).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 ADMIN_EMAIL="${1:-admin@gsms-security.com}"
 umask 077
 JWT_SECRET="$(openssl rand -hex 32)"
-SYSTEM_AES_KEY="$(openssl rand -hex 32)"
+# 32-byte AES-256 key as 32 ASCII chars (see internal/utils/crypto.go GetAESKey).
+SYSTEM_AES_KEY="$(openssl rand -hex 16)"
 DB_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)"
 REDIS_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)"
 cat > .env <<EOF
+COMPOSE_PROJECT_NAME=globalitss
 TRAEFIK_NETWORK=gsms
 TRAEFIK_ENTRYPOINT=websecure
 TRAEFIK_CERT_RESOLVER=letsencrypt
@@ -35,6 +42,7 @@ REDIS_ADDR=redis:6379
 REDIS_PASSWORD=${REDIS_PASSWORD}
 GIN_MODE=release
 TZ=Europe/Paris
+DEFAULT_LOCALE=fr-FR
 WEKNORA_VERSION=latest
 AUTO_MIGRATE=true
 DOCREADER_ADDR=docreader:50051

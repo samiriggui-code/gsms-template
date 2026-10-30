@@ -18,3 +18,15 @@ export function resolveDefaultLocale(
   const candidate = typeof raw === 'string' ? raw.trim() : BUILT_IN_DEFAULT
   return isSupportedLocale(candidate) ? candidate : BUILT_IN_DEFAULT
 }
+
+/** BCP 47 primary language subtag for `<html lang="…">` (e.g. fr-FR → fr). */
+export function localeToHtmlLang(locale: string): string {
+  const tag = typeof locale === 'string' ? locale.trim() : BUILT_IN_DEFAULT
+  const primary = tag.split('-')[0]?.toLowerCase()
+  return primary || 'fr'
+}
+
+export function syncDocumentHtmlLang(locale: string): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.lang = localeToHtmlLang(locale)
+}
