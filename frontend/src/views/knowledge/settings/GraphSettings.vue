@@ -781,6 +781,21 @@ onMounted(async () => {
     flex-direction: column;
     align-items: stretch;
   }
+
+  .relation-item {
+    flex-direction: column;
+    align-items: stretch;
+
+    .relation-select {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .relation-arrow {
+      align-self: center;
+      transform: rotate(90deg);
+    }
+  }
 }
 
 .text-control-group {

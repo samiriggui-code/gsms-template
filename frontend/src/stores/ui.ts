@@ -29,6 +29,8 @@ export const useUIStore = defineStore('ui', {
     sidebarBrowserStatus: localStorage.getItem('sidebar_browser_status') !== 'false',
     /** Narrow viewport: sidebar becomes an overlay drawer. */
     platformMobile: false,
+    /** Saved desktop collapsed state while `platformMobile` is true (not persisted). */
+    desktopSidebarBeforeMobile: null as boolean | null,
   }),
 
   getters: {
@@ -146,24 +148,31 @@ export const useUIStore = defineStore('ui', {
 
     setPlatformMobile(isMobile: boolean) {
       if (this.platformMobile === isMobile) return
-      const enteringMobile = isMobile && !this.platformMobile
-      this.platformMobile = isMobile
-      if (enteringMobile) {
-        this.collapseSidebar()
+      if (isMobile) {
+        this.desktopSidebarBeforeMobile = this.sidebarCollapsed
+        this.platformMobile = true
+        this.sidebarCollapsed = true
+        return
       }
+      this.platformMobile = false
+      const restoreCollapsed = this.desktopSidebarBeforeMobile
+      this.desktopSidebarBeforeMobile = null
+      if (restoreCollapsed === null) return
+      this.sidebarCollapsed = restoreCollapsed
+      localStorage.setItem('sidebar_collapsed', String(restoreCollapsed))
     },
 
     openMobileSidebar() {
       if (this.platformMobile) {
-        this.expandSidebar()
+        this.sidebarCollapsed = false
         return
       }
       this.toggleSidebar()
     },
 
     closeMobileSidebar() {
-      if (this.platformMobile && !this.sidebarCollapsed) {
-        this.collapseSidebar()
+      if (this.platformMobile) {
+        this.sidebarCollapsed = true
       }
     },
 

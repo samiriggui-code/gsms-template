@@ -10,6 +10,7 @@
     >
         <button
             v-if="uiStore.platformMobile && uiStore.sidebarCollapsed"
+            ref="mobileNavOpenBtn"
             type="button"
             class="platform-mobile-nav-open"
             :aria-label="t('menu.expandSidebar')"
@@ -26,7 +27,7 @@
             v-if="uiStore.platformMobile && !uiStore.sidebarCollapsed"
             class="platform-mobile-sidebar-backdrop"
             aria-hidden="true"
-            @click="uiStore.closeMobileSidebar()"
+            @click="onMobileSidebarBackdropClick"
         />
         <Menu></Menu>
         <div v-if="isRouterAlive" class="platform-route-outlet">
@@ -77,6 +78,7 @@ const route = useRoute();
 const router = useRouter();
 const commandPaletteStore = useCommandPaletteStore();
 const uiStore = useUIStore();
+const mobileNavOpenBtn = ref<HTMLButtonElement | null>(null)
 let ismask = ref(false)
 const { t } = useI18n();
 
@@ -103,6 +105,44 @@ const handleGlobalKeyDown = (e: KeyboardEvent) => {
         reloadApp()
     }
 }
+
+const focusMobileNavOpen = () => {
+    nextTick(() => mobileNavOpenBtn.value?.focus())
+}
+
+const onMobileSidebarBackdropClick = () => {
+    uiStore.closeMobileSidebar()
+    focusMobileNavOpen()
+}
+
+watch(
+    () => uiStore.sidebarCollapsed,
+    (collapsed, wasCollapsed) => {
+        if (uiStore.platformMobile && collapsed && wasCollapsed === false) {
+            focusMobileNavOpen()
+        }
+    },
+)
+
+const handleMobileSidebarKeyDown = (e: KeyboardEvent) => {
+    if (!uiStore.platformMobile || uiStore.sidebarCollapsed) return
+    if (e.key !== 'Escape') return
+    e.preventDefault()
+    uiStore.closeMobileSidebar()
+    focusMobileNavOpen()
+}
+
+watch(
+    () => uiStore.platformMobile && !uiStore.sidebarCollapsed,
+    (open) => {
+        if (open) {
+            document.addEventListener('keydown', handleMobileSidebarKeyDown)
+        } else {
+            document.removeEventListener('keydown', handleMobileSidebarKeyDown)
+        }
+    },
+    { flush: 'post' },
+)
 
 // 用于跟踪拖拽进入/离开的计数器，解决子元素触发 dragleave 的问题
 let dragCounter = 0;
@@ -266,6 +306,7 @@ function maybeOpenCmdkFromRoute() {
 
 // 组件卸载时移除全局事件监听器
 onUnmounted(() => {
+    document.removeEventListener('keydown', handleMobileSidebarKeyDown);
     document.removeEventListener('dragenter', handleGlobalDragEnter, true);
     document.removeEventListener('dragover', handleGlobalDragOver, true);
     document.removeEventListener('dragleave', handleGlobalDragLeave, true);

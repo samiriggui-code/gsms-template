@@ -31,14 +31,20 @@
                         <img class="header-icon-img" :src="getImgSrc('search.svg')" alt="">
                     </div>
                 </t-tooltip>
-                <div class="sidebar-toggle" @click="uiStore.toggleSidebar" :title="t('menu.collapseSidebar')">
+                <button
+                    type="button"
+                    class="sidebar-toggle"
+                    :title="uiStore.platformMobile ? t('common.close') : t('menu.collapseSidebar')"
+                    :aria-label="uiStore.platformMobile ? t('common.close') : t('menu.collapseSidebar')"
+                    @click="uiStore.platformMobile ? uiStore.closeMobileSidebar() : uiStore.toggleSidebar()"
+                >
                     <svg viewBox="0 0 20 20" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="1.5" y="1.5" width="17" height="17" rx="3" stroke="currentColor" stroke-width="1.5" />
                         <line x1="7.5" y1="1.5" x2="7.5" y2="18.5" stroke="currentColor" stroke-width="1.5" />
                         <line x1="4" y1="7.5" x2="4" y2="12.5" stroke="currentColor" stroke-width="1.5"
                             stroke-linecap="round" />
                     </svg>
-                </div>
+                </button>
             </div>
         </div>
         <!-- 折叠时：展开按钮 -->

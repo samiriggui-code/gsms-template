@@ -431,6 +431,23 @@ function showBadge(item: SettingsModalNavItem): boolean {
     width: 44px;
     height: 44px;
   }
+
+  .settings-modal-shell .settings-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .settings-modal-shell .settings-footer-note {
+    margin-right: 0;
+  }
+
+  .settings-modal-shell .settings-footer-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    width: 100%;
+  }
 }
 
 .settings-modal-shell-leave-active {

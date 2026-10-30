@@ -10,6 +10,8 @@ test('platform shell drops desktop min-width and exposes a mobile nav opener', (
   assert.match(platformIndex, /@media \(max-width: 768px\)[\s\S]*?\.main[\s\S]*?min-width:\s*0;/)
   assert.match(platformIndex, /platform-mobile-nav-open/)
   assert.match(platformIndex, /usePlatformMobile/)
+  assert.match(platformIndex, /handleMobileSidebarKeyDown/)
+  assert.match(platformIndex, /Escape/)
 })
 
 test('sidebar menu uses overlay drawer classes on narrow viewports', () => {
