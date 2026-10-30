@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Create .env on the VPS with generated secrets (Hostinger GSMS / Traefik gsms).
 # Usage: ./scripts/bootstrap-global-it-ss-env.sh admin@example.com
+#
+# Fresh installs set COMPOSE_PROJECT_NAME=globalitss (isolated volumes globalitss_postgres-data, …).
+# If you already ran the stack under another project name (e.g. directory default global-it-ss),
+# see deploy/deploy-global-it-ss-vps.md § Migrating to COMPOSE_PROJECT_NAME=globalitss — do not
+# re-run this script on a live server (it overwrites secrets and would desync encrypted settings).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

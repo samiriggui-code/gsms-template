@@ -55,7 +55,30 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-PROJECT_NAME="$(grep -E '^COMPOSE_PROJECT_NAME=' .env 2>/dev/null | tail -1 | cut -d= -f2- | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e "s/^['\"]//" -e "s/['\"]$//")"
+# Parse COMPOSE_PROJECT_NAME from .env (last assignment wins). Avoid bare `grep … | …` under pipefail.
+PROJECT_NAME=""
+if grep -qE '^[[:space:]]*COMPOSE_PROJECT_NAME[[:space:]]*=' .env 2>/dev/null; then
+  PROJECT_NAME="$(
+    grep -E '^[[:space:]]*COMPOSE_PROJECT_NAME[[:space:]]*=' .env | tail -1 \
+      | sed -E 's/^[[:space:]]*COMPOSE_PROJECT_NAME[[:space:]]*=[[:space:]]*//' \
+      | sed -e 's/[[:space:]]*$//' -e "s/^['\"]//" -e "s/['\"]$//"
+  )"
+fi
+
+if [[ -n "${COMPOSE_PROJECT_NAME:-}" ]]; then
+  if [[ -z "${PROJECT_NAME}" ]]; then
+    echo "COMPOSE_PROJECT_NAME is set in the shell (${COMPOSE_PROJECT_NAME}) but missing in .env." >&2
+    echo "Unset it (unset COMPOSE_PROJECT_NAME) or add COMPOSE_PROJECT_NAME=… to .env." >&2
+    exit 1
+  fi
+  if [[ "${COMPOSE_PROJECT_NAME}" != "${PROJECT_NAME}" ]]; then
+    echo "COMPOSE_PROJECT_NAME mismatch: shell=${COMPOSE_PROJECT_NAME} .env=${PROJECT_NAME}." >&2
+    echo "Compose reads .env in this directory; an exported name would override it and attach the wrong volumes." >&2
+    echo "Run: unset COMPOSE_PROJECT_NAME   (or export the same value as in .env)" >&2
+    exit 1
+  fi
+fi
+
 if [[ -z "${PROJECT_NAME}" ]]; then
   echo "Warning: COMPOSE_PROJECT_NAME is not set in .env (recommended: COMPOSE_PROJECT_NAME=globalitss)" >&2
 else

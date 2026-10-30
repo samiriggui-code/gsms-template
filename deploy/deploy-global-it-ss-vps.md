@@ -39,6 +39,23 @@ Edit `.env` — minimum:
 - `DEFAULT_LOCALE=fr-FR` (optional if using bootstrap script; enables French auth UI via runtime config)
 - `JWT_SECRET=` and `SYSTEM_AES_KEY=` (unique secrets)
 
+## Migrating to `COMPOSE_PROJECT_NAME=globalitss`
+
+Use this when `/opt/global-it-ss` already has data under an **older Compose project name** (common: the folder name `global-it-ss`, or no explicit name) and you are adopting **`COMPOSE_PROJECT_NAME=globalitss`** as in `.env.example` / the bootstrap script.
+
+1. **Keep the existing `.env` secrets** — `JWT_SECRET`, `SYSTEM_AES_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, and any provider keys. Do **not** run `bootstrap-global-it-ss-env.sh` again (it regenerates secrets and breaks decryption of stored credentials).
+2. Add or set `COMPOSE_PROJECT_NAME=globalitss` in `.env`. Ensure nothing in your shell overrides it (`unset COMPOSE_PROJECT_NAME` before deploy).
+3. **Stop the old project** from the repo root (replace `OLD` with the name from `docker ps --format '{{.Label "com.docker.compose.project"}}' | sort -u` for global-it-ss containers):
+
+   ```bash
+   docker compose -p OLD -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml down
+   ```
+
+   Do not pass `-v` unless you intend to delete databases and uploads.
+
+4. **Volumes** — named volumes are prefixed by project name. Old data lives in volumes such as `OLD_postgres-data` and `OLD_data-files`; the new stack expects `globalitss_postgres-data`, etc. If you must keep Postgres/MinIO data, stop the old stack, then copy or rename volumes (or restore from backup) before the first `globalitss` deploy. A brand-new `globalitss` deploy with empty volumes runs migrations on a fresh DB (`DB_NAME=WeKnora_globalitss` in bootstrap).
+5. Deploy with `./scripts/deploy-global-it-ss.sh` (it refuses a shell vs `.env` `COMPOSE_PROJECT_NAME` mismatch).
+
 ## Deploy (primary)
 
 From the repo root on the VPS:
