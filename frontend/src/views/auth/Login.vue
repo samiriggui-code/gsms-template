@@ -1673,7 +1673,13 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .login-layout {
     flex-direction: column;
-    padding-top: 64px;
+    min-height: 100dvh;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: max(64px, calc(env(safe-area-inset-top, 0px) + 48px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     box-sizing: border-box;
   }
 
@@ -1696,11 +1702,12 @@ onMounted(async () => {
   }
 
   .header-logo {
-    top: 22px;
-    left: 30px;
+    top: max(22px, env(safe-area-inset-top, 0px));
+    left: max(30px, env(safe-area-inset-left, 0px));
 
     .logo-image {
-      width: 80px;
+      width: auto;
+      max-width: min(140px, 42vw);
     }
   }
 
@@ -1724,16 +1731,17 @@ onMounted(async () => {
   }
 
   .header-links {
-    top: 18px;
-    right: 18px;
+    top: max(18px, env(safe-area-inset-top, 0px));
+    right: max(18px, env(safe-area-inset-right, 0px));
     gap: 8px;
+    max-width: calc(100vw - 180px);
 
     .link-text {
-      display: inline;
+      display: none;
     }
 
     .header-link {
-      padding: 8px 12px;
+      padding: 8px 10px;
       font-size: var(--app-text-sm);
     }
   }
@@ -1757,11 +1765,11 @@ onMounted(async () => {
   }
 
   .header-logo {
-    top: 18px;
-    left: 20px;
+    top: max(18px, env(safe-area-inset-top, 0px));
+    left: max(20px, env(safe-area-inset-left, 0px));
 
     .logo-image {
-      width: 70px;
+      max-width: min(120px, 38vw);
     }
   }
 
@@ -1779,10 +1787,11 @@ onMounted(async () => {
   }
 
   .header-links {
-    top: 14px;
-    right: 14px;
+    top: max(14px, env(safe-area-inset-top, 0px));
+    right: max(14px, env(safe-area-inset-right, 0px));
     gap: 6px;
     flex-wrap: wrap;
+    max-width: calc(100vw - 150px);
 
     .link-text {
       display: none;

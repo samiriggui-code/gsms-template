@@ -272,6 +272,12 @@ onUnmounted(() => {
     overflow: hidden;
 }
 
+@media (max-width: 768px) {
+    .main {
+        min-width: 0;
+    }
+}
+
 .upload-mask {
     background-color: rgba(255, 255, 255, 0.8);
     position: fixed;

@@ -63,11 +63,16 @@ export function credentialLabelForModelType(
   return labels.find((label) => !!label?.label && extraFieldAppliesTo(label, modelType)) || null
 }
 
+/** Secondary locales when the UI locale has no catalog entry (GSMS: fr-FR → en-US). */
+const LOCALE_SECONDARY: Record<string, readonly string[]> = {
+  'fr-FR': ['en-US'],
+}
+
 /**
  * Pick a localized string from a `labels`-style map.
  *
- * Order: exact locale (`zh-CN`) → same language with any region (`zh-*`) →
- * the plain fallback. Empty strings never win.
+ * Order: exact locale → configured secondary locales (e.g. fr-FR → en-US) →
+ * same language with any region (`zh-*`) → the plain fallback. Empty strings never win.
  */
 export function pickLocalized(
   localized: Record<string, string> | null | undefined,
@@ -77,6 +82,10 @@ export function pickLocalized(
   if (localized && locale) {
     const exact = localized[locale]
     if (typeof exact === 'string' && exact.trim()) return exact
+    for (const alt of LOCALE_SECONDARY[locale] ?? []) {
+      const secondary = localized[alt]
+      if (typeof secondary === 'string' && secondary.trim()) return secondary
+    }
     const language = locale.split(/[-_]/)[0]?.toLowerCase()
     if (language) {
       for (const [key, value] of Object.entries(localized)) {

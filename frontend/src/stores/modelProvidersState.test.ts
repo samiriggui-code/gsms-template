@@ -66,6 +66,11 @@ test('pickLocalized ignores empty localized strings', () => {
   assert.equal(pickLocalized({ 'zh-CN': 'x' }, undefined, 'fallback'), 'fallback')
 })
 
+test('pickLocalized prefers en-US for fr-FR UI before vendor fallback label', () => {
+  const labels = { 'zh-CN': '腾讯云', 'en-US': 'Tencent Cloud' }
+  assert.equal(pickLocalized(labels, 'fr-FR', '腾讯云'), 'Tencent Cloud')
+})
+
 test('providerDescription mirrors the label lookup', () => {
   const p = provider({ value: 'x', description: 'gpt-4o, o3', descriptions: { 'zh-CN': 'gpt-4o、o3 等' } })
   assert.equal(providerDescription(p, 'zh-CN'), 'gpt-4o、o3 等')
