@@ -100,4 +100,23 @@ docker compose "${COMPOSE_FILES[@]}" build "${NO_CACHE[@]}" landing frontend
 echo "Starting stack (up -d --no-build; no pull for frontend/landing)…"
 docker compose "${COMPOSE_FILES[@]}" up -d --no-build
 
+# Traefik load-balances every matching running container. Orphan replicas (old landing/frontend
+# still up) can serve HTML with different _next/static chunk hashes → broken CSS/JS.
+warn_duplicate_service_containers() {
+  local service="$1"
+  local filter_name="${PROJECT_NAME}-${service}"
+  local -a ids=()
+  mapfile -t ids < <(docker ps -q --filter "status=running" --filter "name=${filter_name}")
+  if ((${#ids[@]} > 1)); then
+    echo "" >&2
+    echo "WARNING: ${#ids[@]} running containers match docker ps --filter name=${filter_name}." >&2
+    echo "Traefik may round-robin mismatched landing/frontend images (stale HTML vs missing .next/static)." >&2
+    echo "Stop orphans: docker ps --filter name=${filter_name} --format '{{.ID}} {{.Names}} {{.Image}}'" >&2
+    docker ps --filter "status=running" --filter "name=${filter_name}" --format 'table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' >&2
+  fi
+}
+
+warn_duplicate_service_containers landing
+warn_duplicate_service_containers frontend
+
 echo "Deploy finished. Verify: docker ps --filter name=${PROJECT_NAME:-globalitss}"

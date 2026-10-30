@@ -38,6 +38,8 @@ RUN addgroup --system --gid 1001 nodejs \
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+# Standalone output excludes hashed chunks; this layer must exist or /_next/static/* 404s
+# and Traefik replicas can serve HTML referencing CSS hashes missing from one image.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs

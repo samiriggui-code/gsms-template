@@ -14,6 +14,7 @@ describe("Next.js standalone Docker image", () => {
     const dockerfile = readFileSync(join(import.meta.dirname, "../Dockerfile"), "utf8");
     expect(dockerfile).toMatch(/COPY --from=builder.*\/app\/\.next\/standalone/);
     expect(dockerfile).toMatch(/COPY --from=builder.*\/app\/\.next\/static \.\/\.next\/static/);
+    expect(dockerfile).toMatch(/Standalone output excludes hashed chunks/);
     expect(dockerfile).toMatch(/CMD \["node", "server\.js"\]/);
   });
 });
