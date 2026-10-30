@@ -47,17 +47,18 @@ docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f dep
 
 ## Build: landing **and** frontend (required)
 
-The `frontend` service defaults to `wechatopenai/weknora-ui:latest` when you do not build from `./frontend`. That upstream UI is Chinese by default and exposes all WeKnora languages. **This repo’s UI is French + English only.**
+Compose tags the GSMS UI as **`gsms-weknora-ui:${WEKNORA_VERSION:-latest}`** (not `wechatopenai/weknora-ui`), so `docker compose pull` cannot silently replace it with the official Chinese multi-language image. You still **must** build from `./frontend` at least once on the VPS — there is no public registry for `gsms-weknora-ui`.
 
 ```bash
 docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build landing frontend
 docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d
 ```
 
-**Already deployed with only `build landing`?** Rebuild and recreate the frontend service (same compose files):
+**Still seeing Chinese / zh-CN on `app.global-it-ss.com`?** The running container is almost certainly still `wechatopenai/weknora-ui`. After `git pull` (this PR merged), rebuild and recreate frontend:
 
 ```bash
-docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build frontend && docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d frontend
+docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml build --no-cache frontend && docker compose -f docker-compose.yml -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml up -d --force-recreate frontend
+docker inspect globalitss-WeKnora-frontend-1 2>/dev/null | grep -E '"Image"|gsms-weknora-ui' || docker ps --filter name=frontend --format '{{.Names}} {{.Image}}'
 ```
 
 Add `DEFAULT_LOCALE=fr-FR` to `.env` if missing, then `docker compose … up -d frontend` again so `config.js` picks it up.

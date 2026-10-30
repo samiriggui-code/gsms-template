@@ -7,4 +7,4 @@
 | [deploy-global-it-ss-vps.md](deploy-global-it-ss-vps.md) | **global-it-ss** VPS procedure (build `landing` **and** `frontend`) |
 | [weknora-lite.service](weknora-lite.service) | systemd unit reference |
 
-For Global-IT-SS on the shared GSMS VPS, follow [deploy-global-it-ss-vps.md](deploy-global-it-ss-vps.md). Building only `landing` leaves the auth UI on upstream `weknora-ui:latest`.
+For Global-IT-SS on the shared GSMS VPS, follow [deploy-global-it-ss-vps.md](deploy-global-it-ss-vps.md). The frontend image is **`gsms-weknora-ui`** (local build from `./frontend`); never rely on Docker Hub `wechatopenai/weknora-ui`.

@@ -1,6 +1,7 @@
 services:
   frontend:
-    image: wechatopenai/weknora-ui:${WEKNORA_VERSION:-latest}
+    # Local-only name: avoids `docker compose pull` replacing GSMS FR/EN UI with Docker Hub weknora-ui.
+    image: gsms-weknora-ui:${WEKNORA_VERSION:-latest}
     # Multi-stage Dockerfile builds dist inside the image (no host npm required).
     # Optional: NPM_REGISTRY=https://registry.npmmirror.com docker compose build frontend
     # VITE_FRONTEND_COMMIT: start_all.sh / make docker-build-frontend inject git;
