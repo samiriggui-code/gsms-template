@@ -95,7 +95,7 @@
               creatable
               filterable
               @change="handleTagsChange"
-              style="flex: 1; min-width: 400px;"
+              class="graph-tags-select"
             />
           </div>
           <div v-if="!modelStatus.llm.available" class="control-tip">
@@ -752,6 +752,35 @@ onMounted(async () => {
   gap: 12px;
   width: 100%;
   align-items: flex-start;
+}
+
+.graph-tags-select {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .setting-row:not(.vertical) {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .setting-info,
+  .setting-control {
+    flex: 1 1 auto;
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .setting-control {
+    justify-content: flex-start;
+  }
+
+  .tags-control-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .text-control-group {

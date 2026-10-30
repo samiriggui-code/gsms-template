@@ -430,6 +430,8 @@ onMounted(reload)
 
 .api-key-table-wrap {
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .api-key-table {

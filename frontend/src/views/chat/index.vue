@@ -2025,6 +2025,14 @@ onBeforeRouteUpdate((to, from, next) => {
     max-width: 100%;
     min-width: 400px;
 
+    @media (max-width: 768px) {
+        min-width: 0;
+        width: 100%;
+        --chat-content-inset: 12px;
+        padding-top: max(52px, calc(env(safe-area-inset-top) + 44px));
+        box-sizing: border-box;
+    }
+
     &.is-embedded {
         max-width: 100%;
         min-width: 100%;

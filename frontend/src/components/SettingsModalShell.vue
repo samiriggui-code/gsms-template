@@ -395,6 +395,44 @@ function showBadge(item: SettingsModalNavItem): boolean {
   }
 }
 
+@media (max-width: 768px) {
+  .settings-modal-shell.settings-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .settings-modal-shell .settings-modal {
+    max-width: none;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .settings-modal-shell .settings-container {
+    flex-direction: column;
+  }
+
+  .settings-modal-shell .settings-sidebar {
+    width: 100%;
+    max-height: 38vh;
+    border-right: none;
+    border-bottom: 1px solid var(--td-component-stroke);
+  }
+
+  .settings-modal-shell .settings-content {
+    min-height: 0;
+    flex: 1;
+  }
+
+  .settings-modal-shell .close-btn {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .settings-modal-shell-leave-active {
   transition: opacity var(--app-motion-base) ease;
 

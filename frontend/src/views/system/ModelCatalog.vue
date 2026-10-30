@@ -959,6 +959,9 @@ onMounted(load)
 }
 
 .catalog-table-shell {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
   :deep(.t-table__content > table) { min-width: 840px; }
 
   &:deep(.t-table tbody tr) {

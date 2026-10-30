@@ -27,6 +27,8 @@ export const useUIStore = defineStore('ui', {
     sidebarWidth: clampSidebarWidth(Number(localStorage.getItem('sidebar_width'))),
     sidebarResizing: false,
     sidebarBrowserStatus: localStorage.getItem('sidebar_browser_status') !== 'false',
+    /** Narrow viewport: sidebar becomes an overlay drawer. */
+    platformMobile: false,
   }),
 
   getters: {
@@ -140,6 +142,29 @@ export const useUIStore = defineStore('ui', {
     setSidebarBrowserStatus(visible: boolean) {
       this.sidebarBrowserStatus = visible
       localStorage.setItem('sidebar_browser_status', String(visible))
+    },
+
+    setPlatformMobile(isMobile: boolean) {
+      if (this.platformMobile === isMobile) return
+      const enteringMobile = isMobile && !this.platformMobile
+      this.platformMobile = isMobile
+      if (enteringMobile) {
+        this.collapseSidebar()
+      }
+    },
+
+    openMobileSidebar() {
+      if (this.platformMobile) {
+        this.expandSidebar()
+        return
+      }
+      this.toggleSidebar()
+    },
+
+    closeMobileSidebar() {
+      if (this.platformMobile && !this.sidebarCollapsed) {
+        this.collapseSidebar()
+      }
     },
 
     toggleSidebar() {

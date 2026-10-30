@@ -1,5 +1,13 @@
 <template>
-    <div class="aside_box" :class="{ 'aside_box--collapsed': uiStore.sidebarCollapsed, 'aside_box--resizing': uiStore.sidebarResizing }">
+    <div
+        class="aside_box"
+        :class="{
+            'aside_box--collapsed': uiStore.sidebarCollapsed,
+            'aside_box--resizing': uiStore.sidebarResizing && !uiStore.platformMobile,
+            'aside_box--platform-mobile': uiStore.platformMobile,
+            'aside_box--mobile-open': uiStore.platformMobile && !uiStore.sidebarCollapsed,
+        }"
+    >
         <!-- 展开时：Logo + 搜索/折叠按钮同行 -->
         <div class="logo_row" v-if="!uiStore.sidebarCollapsed">
             <div class="logo_box" @click="router.push('/platform/knowledge-bases')" style="cursor: pointer;">
@@ -57,9 +65,17 @@
         <TenantSelector v-if="canAccessAllTenants && !uiStore.sidebarCollapsed" />
 
         <!-- 侧栏边缘拖拽调宽，拖窄时自动收缩 -->
-        <PanelResizeHandle edge="right" :label="t('knowledgeStages.resizeDrawer')"
-            :value="uiStore.sidebarDisplayWidth" :min="SIDEBAR_COLLAPSED_WIDTH" :max="SIDEBAR_MAX_WIDTH"
-            @start="startSidebarResize" @resize="resizeSidebar" @end="uiStore.sidebarResizing = false" />
+        <PanelResizeHandle
+            v-if="!uiStore.platformMobile"
+            edge="right"
+            :label="t('knowledgeStages.resizeDrawer')"
+            :value="uiStore.sidebarDisplayWidth"
+            :min="SIDEBAR_COLLAPSED_WIDTH"
+            :max="SIDEBAR_MAX_WIDTH"
+            @start="startSidebarResize"
+            @resize="resizeSidebar"
+            @end="uiStore.sidebarResizing = false"
+        />
 
         <!-- 上半部分：新对话吸顶 + 知识库/智能体/共享空间/历史会话随滚动一起滚走 -->
         <div class="menu_top" ref="scrollContainer" @scroll="handleScroll">
@@ -353,6 +369,9 @@ const isMacLike = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.tes
 const cmdModKeyLabel = isMacLike ? '⌘' : 'Ctrl';
 const route = useRoute();
 const router = useRouter();
+watch(() => route.fullPath, () => {
+    uiStore.closeMobileSidebar();
+});
 const currentpath = ref('');
 const total = ref(0);
 const sessionBuckets = ref<Record<string, SidebarSessionBucket>>({});
@@ -1345,6 +1364,36 @@ const resizeSidebar = (delta: number, keyboard: boolean) => {
         .menu_top {
             margin-right: 0;
             padding-right: 0;
+        }
+    }
+
+    &.aside_box--platform-mobile {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1100;
+        height: 100%;
+        max-width: min(320px, 88vw);
+        width: min(320px, 88vw) !important;
+        min-width: 0 !important;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease, visibility 0.25s;
+        box-shadow: var(--td-shadow-3);
+
+        &.aside_box--mobile-open {
+            transform: translateX(0);
+        }
+
+        &.aside_box--collapsed {
+            width: 0 !important;
+            max-width: 0 !important;
+            padding: 0;
+            border: none;
+            overflow: hidden;
+            visibility: hidden;
+            transform: translateX(-100%);
+            box-shadow: none;
         }
     }
 
