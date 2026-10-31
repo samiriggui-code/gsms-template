@@ -17,7 +17,7 @@ Cursor a fusionné lui-même les PR #6 à #22 dans main sans relecture humaine.
 | --- | --- | --- |
 | #6 | Retrait d'ebooklib du parseur EPUB | ebooklib reste dans `docreader/uv.lock` comme dépendance de `textract` : retrait incomplet |
 | #7, #9 | Landing dans Compose + middleware Traefik `gsms-secure` | OK |
-| #11 | Build local du frontend FR/EN sur le VPS (`gsms-weknora-ui`) | Seul le frontend est construit localement. `app`, `docreader` et `sandbox` restent `wechatopenai/weknora-*:latest`, donc **le serveur en prod n'aura ni le français ni le retrait d'ebooklib** tant qu'on ne les construit pas depuis ce repo |
+| #11 | Build local du frontend FR/EN sur le VPS (`gsms-weknora-ui`) | Seuls `frontend` et `landing` sont construits localement. `app`, `docreader` et `sandbox` restent `wechatopenai/weknora-*:latest`, donc **le serveur en prod n'aura ni le français ni le retrait d'ebooklib** tant qu'on ne les construit pas depuis ce repo |
 | #9 / bootstrap | Script qui génère le `.env` du VPS | Il écrase le `.env`, invente `admin@gsms-security.com` et ignore la clé OpenRouter, les LLM, le SMTP et le compte admin déjà en place pour Qualiopi. **Ne pas l'utiliser tel quel** |
 | #12 | Branding auth Global-IT-SS | OK |
 | #14, #15, #17 | Landing visible sans JS, alignée sur Qualiopi | OK |
