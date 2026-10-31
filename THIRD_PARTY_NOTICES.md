@@ -141,3 +141,4 @@ than in `licenses/sources/modules.tsv`, which records Go modules only
 - Modifications by WeKnora: none.
 - Corresponding source: [PyPI](https://pypi.org/project/numpy/2.3.4/) and
   [upstream repository](https://github.com/numpy/numpy).
+

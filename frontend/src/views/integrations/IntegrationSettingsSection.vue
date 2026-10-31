@@ -44,6 +44,14 @@
         <McpServerIntegrationSettings />
       </div>
 
+      <div v-if="tab === 'meetings'" class="section">
+        <div class="section-header">
+          <h2>{{ $t('integrations.meetings.title') }}</h2>
+          <p class="section-description">{{ $t('integrations.meetings.subtitle') }}</p>
+        </div>
+        <MeetingsIntegrationSettings />
+      </div>
+
       <ChromeExtensionLanding v-if="tab === 'chrome'" />
       <ClawSkillLanding v-if="tab === 'claw'" />
       <CliIntegrationLanding v-if="tab === 'cli'" />
@@ -58,6 +66,7 @@ import IMChannelPanel from '@/components/IMChannelPanel.vue'
 import AgentEmbedChannelPanel from '@/components/AgentEmbedChannelPanel.vue'
 import ApiIntegrationSettings from '@/views/integrations/ApiIntegrationSettings.vue'
 import McpServerIntegrationSettings from '@/views/integrations/McpServerIntegrationSettings.vue'
+import MeetingsIntegrationSettings from '@/views/integrations/MeetingsIntegrationSettings.vue'
 import ChromeExtensionLanding from '@/views/integrations/ChromeExtensionLanding.vue'
 import ClawSkillLanding from '@/views/integrations/ClawSkillLanding.vue'
 import CliIntegrationLanding from '@/views/integrations/CliIntegrationLanding.vue'

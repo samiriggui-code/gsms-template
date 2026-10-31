@@ -33,7 +33,10 @@ async function bootstrap() {
 
   // 全局错误处理：捕获未处理的组件错误，防止白屏
   app.config.errorHandler = (err, instance, info) => {
-    console.error("[WeKnora] Unhandled Vue error:", err, "\nComponent:", instance, "\nInfo:", info);
+    // Log the component name, not the proxy: console overrides from browser
+    // extensions throw when stringifying a component instance and hide err.
+    const component = instance?.$options?.name || instance?.$options?.__name || "anonymous";
+    console.error("[WeKnora] Unhandled Vue error:", err, "\nComponent:", component, "\nInfo:", info);
   };
 
   app.use(TDesign);

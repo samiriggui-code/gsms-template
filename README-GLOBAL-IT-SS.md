@@ -23,7 +23,7 @@ Détails, table de correspondance `research/` → `internal/` : **[research/READ
 | Branche | Contenu |
 | --- | --- |
 | `feat/site-homepage-i18n` | Site `website-docs/`, deploy VPS, branding GIS |
-| `feat/tencent-meeting-connector` | Connecteur Meeting (`internal/tencentmeeting/`, ADR, plan doc 12) |
+| `feat/meetings-connectors` | Connecteurs Réunions Teams / Zoom / Google Meet (`internal/meetings/`, ADR 002) |
 
 ## Site vitrine en local
 

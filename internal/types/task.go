@@ -81,7 +81,7 @@ var queueDefinitions = []QueueDefinition{
 	{Name: QueueMemory, Pool: WorkerPoolEnrichment, Weight: 1, SharedWeight: 1, TaskTypes: []string{TypeMemoryExtract}},
 	{
 		Name: QueueSync, Pool: WorkerPoolMaintenance, Weight: 2,
-		TaskTypes: []string{TypeDataSourceSync, TypeTencentMeetingSync},
+		TaskTypes: []string{TypeDataSourceSync, TypeMeetingsPull},
 	},
 	{Name: QueueMaintenance, Pool: WorkerPoolMaintenance, Weight: 1, TaskTypes: []string{
 		TypeFAQImport, TypeKBClone, TypeIndexDelete, TypeKBDelete,
@@ -253,7 +253,7 @@ const (
 	TypeKnowledgeBaseProfile     = "kb:profile"                 // 知识库描述（画像）生成任务
 	TypeManualProcess            = "manual:process"             // 手工知识更新任务（cleanup + 重新索引）
 	TypeDataSourceSync           = "datasource:sync"            // 数据源同步任务
-	TypeTencentMeetingSync       = "tencentmeeting:sync"        // Tencent Meeting transcript ingest
+	TypeMeetingsPull             = "meetings:pull"              // Teams / Zoom / Google Meet transcript import
 	TypeWikiIngest               = "wiki:ingest"                // Wiki 页面同步任务
 	TypeWikiFinalize             = "wiki:finalize"              // Wiki KB 级收尾任务（防抖：索引重建/死链清理/交叉链接）
 	TypeTemporaryDocumentProcess = "temporary_document:process" // 会话临时文档解析任务

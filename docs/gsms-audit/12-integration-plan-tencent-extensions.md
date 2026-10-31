@@ -9,6 +9,24 @@
 
 ---
 
+## 0. Priorités révisées (31 oct. 2026)
+
+Ordre décidé par samir : **connecteurs de réunions, puis le cœur Agent Memory**. Le SDK cloud, la voix et TIM passent après.
+
+**Révision du 31 oct. 2026 (soir)** : Tencent Meeting est retiré. C'est un service chinois que ni samir ni ses clients n'utilisent. Il est remplacé par Microsoft Teams, Zoom et Google Meet, les outils de visio des entreprises clientes ([ADR 002](../adr/002-meetings-connectors.md), `internal/meetings/`). Le reste de ce document décrit le plan Tencent d'origine.
+
+| Rang | Chantier | Pourquoi ce rang | Référence |
+|------|----------|------------------|-----------|
+| 1 | **Réunions : Teams, Zoom, Google Meet** (OAuth, import horaire, écran de réglages, doc FR/EN) | Outils réellement utilisés par les clients ; remplace Tencent Meeting | ADR 002 |
+| 2 | **Cœur Agent Memory** (phases 1 à 4 de la [feuille de route](./09-migration-roadmap.md) : portées, L2/L3, Skills, UI) | C'est la valeur principale du projet selon la [synthèse](./01-executive-summary.md) | 09 |
+| 3 | **Speech** (ASR Tencent comme fournisseur, TTS ensuite) | Petit, indépendant, utile à Meeting si un enregistrement n'a pas de transcript | §3.3 |
+| — | **tencentcloud-sdk-go** | Pas un chantier : on ajoute un module seulement quand un rang ci-dessus en a besoin | §3.2 |
+| 4 | **TIM** (canal Tencent Chat) | Le plus gros, seulement si un besoin métier est validé. Dépôt sans licence : client écrit depuis la doc de l'API REST, sans copier de code | §3.4 |
+
+Transverse, à faire au fil de l'eau : scan de licences + SBOM en CI, entrées `THIRD_PARTY_NOTICES.md` pour chaque code Tencent porté, workflow Docker Hub (secrets manquants).
+
+---
+
 ## 1. Objectifs
 
 | Objectif | Mesure de succès |
@@ -26,8 +44,8 @@
 1. **Additif** — routes `/api/v1` et UI existantes intactes ; feature flags `TENCENT_*` / réglages tenant.
 2. **Pas de copie de repo** — `go get` modules SDK ; Meeting = client Go inspiré de `research/tencentmeeting-cli`, pas npm `tmeet` en prod.
 3. **Tenant-first** — OAuth Meeting et clés cloud = credentials chiffrés (comme IM / datasources).
-4. **Ordre** — Meeting → SDK ciblé → Speech → TIM (TIM = plus gros).
-5. **Hors scope immédiat** — MemoryProxy Node, TIM UIKit dans Vue, portage L2/L3 Agent Memory (chantier séparé).
+4. **Ordre** — voir §0 (priorités révisées le 31 oct. 2026).
+5. **Hors scope immédiat** — MemoryProxy Node, TIM UIKit dans Vue.
 
 ---
 
@@ -131,7 +149,7 @@
 |-------|--------|--------|
 | **0 — Spec & flags** | **Fait (MVP)** | [ADR Meeting](../adr/001-tencent-meeting-connector.md), `WEKNORA_TENCENT_MEETING_ENABLED`, [CODE_REVIEW.md](../CODE_REVIEW.md), `.coderabbit.yaml` |
 | **1 — Meeting → KB** | **Backend P1 câblé** | `internal/tencentmeeting/`, routes `GET/POST /api/v1/integrations/tencent-meeting/…`, tâche `tencentmeeting:sync`, capability `integrations.tencent_meeting` |
-| **1 — reste** | À faire | UI settings, OAuth P2, tests d’intégration tenant, doc utilisateur FR |
+| **1 — reste / P2** | En cours (`feat/tencent-meeting-p2`) | Client API Go (sans CLI), identifiants chiffrés par tenant, synchro automatique, écran de réglages FR/EN, doc utilisateur FR |
 
 **API P1 (flag activé)** :
 

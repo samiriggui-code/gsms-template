@@ -15,10 +15,8 @@ func deploymentCapabilitiesFromRouter(params RouterParams) handler.DeploymentCap
 		Embed: params.EmbedChannelHandler != nil,
 		// Match RegisterMCPEndpointRoutes / RegisterMCPServerRoutes.
 		MCPServer: params.MCPEndpointHandler != nil && params.MCPServer != nil && params.MCPEndpointService != nil,
-		TencentMeeting: params.TencentMeetingHandler != nil &&
-			params.TencentMeetingService != nil &&
-			params.TencentMeetingService.Enabled(),
-		API: params.TenantHandler != nil && params.TenantAPIKeyService != nil,
+		Meetings:  params.MeetingsHandler != nil && params.MeetingsService != nil,
+		API:       params.TenantHandler != nil && params.TenantAPIKeyService != nil,
 		MCP: params.MCPServiceHandler != nil &&
 			params.MCPCredentialsHandler != nil &&
 			params.MCPOAuthHandler != nil,

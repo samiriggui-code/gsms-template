@@ -220,22 +220,22 @@ func (e *SyncTaskExecutor) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asy
 type SyncTaskParams struct {
 	dig.In
 
-	Executor              *SyncTaskExecutor
-	KnowledgeService      interfaces.KnowledgeService
-	KnowledgeBaseService  interfaces.KnowledgeBaseService
-	TagService            interfaces.KnowledgeTagService
-	DataSourceService     interfaces.DataSourceService
-	TencentMeetingService interfaces.TencentMeetingService
-	SpanTracker           service.SpanTracker
-	ChunkExtractor        interfaces.TaskHandler `name:"chunkExtractor"`
-	DataTableSummary      interfaces.TaskHandler `name:"dataTableSummary"`
-	ImageMultimodal       interfaces.TaskHandler `name:"imageMultimodal"`
-	KnowledgePostProcess  interfaces.TaskHandler `name:"knowledgePostProcess"`
-	KnowledgeAutoTag      interfaces.TaskHandler `name:"knowledgeAutoTag"`
-	KnowledgeBaseProfile  interfaces.TaskHandler `name:"knowledgeBaseProfile"`
-	WikiIngest            interfaces.TaskHandler `name:"wikiIngest"`
-	TemporaryDocument     interfaces.TemporaryDocumentService
-	MemoryService         interfaces.MemoryService
+	Executor             *SyncTaskExecutor
+	KnowledgeService     interfaces.KnowledgeService
+	KnowledgeBaseService interfaces.KnowledgeBaseService
+	TagService           interfaces.KnowledgeTagService
+	DataSourceService    interfaces.DataSourceService
+	MeetingsService      interfaces.MeetingsService
+	SpanTracker          service.SpanTracker
+	ChunkExtractor       interfaces.TaskHandler `name:"chunkExtractor"`
+	DataTableSummary     interfaces.TaskHandler `name:"dataTableSummary"`
+	ImageMultimodal      interfaces.TaskHandler `name:"imageMultimodal"`
+	KnowledgePostProcess interfaces.TaskHandler `name:"knowledgePostProcess"`
+	KnowledgeAutoTag     interfaces.TaskHandler `name:"knowledgeAutoTag"`
+	KnowledgeBaseProfile interfaces.TaskHandler `name:"knowledgeBaseProfile"`
+	WikiIngest           interfaces.TaskHandler `name:"wikiIngest"`
+	TemporaryDocument    interfaces.TemporaryDocumentService
+	MemoryService        interfaces.MemoryService
 }
 
 // RegisterSyncHandlers registers all task handlers on the SyncTaskExecutor.
@@ -264,7 +264,7 @@ func RegisterSyncHandlers(params SyncTaskParams) {
 	params.Executor.RegisterHandler(types.TypeKnowledgeAutoTag, params.KnowledgeAutoTag.Handle)
 	params.Executor.RegisterHandler(types.TypeKnowledgeBaseProfile, params.KnowledgeBaseProfile.Handle)
 	params.Executor.RegisterHandler(types.TypeDataSourceSync, params.DataSourceService.ProcessSync)
-	params.Executor.RegisterHandler(types.TypeTencentMeetingSync, params.TencentMeetingService.ProcessSync)
+	params.Executor.RegisterHandler(types.TypeMeetingsPull, params.MeetingsService.ProcessPull)
 	params.Executor.RegisterHandler(types.TypeWikiIngest, params.WikiIngest.Handle)
 	params.Executor.RegisterHandler(types.TypeWikiFinalize, params.WikiIngest.Handle)
 	params.Executor.RegisterHandler(types.TypeMemoryExtract, params.MemoryService.Handle)
