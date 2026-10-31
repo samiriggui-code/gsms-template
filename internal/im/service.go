@@ -37,9 +37,9 @@ import (
 )
 
 const (
-	imNoAnswerFallback  = "抱歉，我暂时无法回答这个问题。"
-	imErrorFallback     = "抱歉，处理您的问题时出现了异常，请稍后再试。"
-	imCancelledFallback = "抱歉，回答已被取消。"
+	imNoAnswerFallback  = "Désolé, je ne peux pas répondre à cette question pour le moment."
+	imErrorFallback     = "Désolé, une erreur est survenue pendant le traitement de votre question ; réessayez plus tard."
+	imCancelledFallback = "Désolé, la réponse a été annulée."
 
 	// dedupTTL is how long processed message IDs are retained.
 	dedupTTL = 5 * time.Minute
@@ -385,12 +385,12 @@ func makeUserKey(channelID, userID, chatID, threadID string) string {
 	return fmt.Sprintf("%s:%s:%s", channelID, userID, chatID)
 }
 
-// nonTextTypeLabel maps a message type to a Chinese label for LLM instructions.
+// nonTextTypeLabel maps a message type to a French label for LLM instructions.
 var nonTextTypeLabel = map[string]string{
-	"image": "图片",
-	"file":  "文件",
-	"video": "视频",
-	"voice": "语音",
+	"image": "image",
+	"file":  "fichier",
+	"video": "vidéo",
+	"voice": "message vocal",
 }
 
 // formatQuotedContext formats a QuotedMessage into a labeled string for LLM context.
@@ -403,11 +403,11 @@ func formatQuotedContext(quote *QuotedMessage) string {
 	}
 	// Non-text quote: generate instruction, not content placeholder.
 	if quote.NonTextType != "" {
-		label := nonTextTypeLabel[quote.NonTextType]
-		if label == "" {
-			label = "该类型的"
+		kind := "ce type de message"
+		if label := nonTextTypeLabel[quote.NonTextType]; label != "" {
+			kind = "ce type de contenu (" + label + ")"
 		}
-		return "用户引用了一条" + label + "消息，但你无法查看该内容。请直接告知用户你目前无法处理" + label + "消息，建议用户用文字描述问题。不要猜测该消息的内容。"
+		return "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux pas encore traiter " + kind + " et suggère-lui de décrire sa question par écrit. N'essaie pas de deviner le contenu de ce message."
 	}
 	if quote.Content == "" {
 		return ""
@@ -419,9 +419,9 @@ func formatQuotedContext(quote *QuotedMessage) string {
 	}
 	// Prevent quoted content from escaping the XML tag boundary.
 	content = strings.ReplaceAll(content, "</quoted_message>", "")
-	label := "以下是用户引用的一条历史消息，仅作为上下文参考："
+	label := "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement :"
 	if quote.IsBotMessage {
-		label = "以下是用户引用的你（机器人）之前的回复，仅作为上下文参考："
+		label = "Voici une de tes réponses précédentes (en tant que bot) citée par l'utilisateur, à titre de contexte uniquement :"
 	}
 	return label + "\n<quoted_message>\n" + content + "\n</quoted_message>"
 }
@@ -524,13 +524,13 @@ func (s *Service) buildIMMCPAuthNotice(ctx context.Context, services []imMCPAuth
 			}
 		}
 		if authURL != "" {
-			lines = append(lines, fmt.Sprintf("• %s：%s", name, authURL))
+			lines = append(lines, fmt.Sprintf("• %s : %s", name, authURL))
 		} else {
-			lines = append(lines, fmt.Sprintf("• %s（请在 WeKnora 管理后台完成 OAuth 授权）", name))
+			lines = append(lines, fmt.Sprintf("• %s (terminez l'autorisation OAuth dans l'administration WeKnora)", name))
 		}
 	}
 
-	return "⚠️ 以下 MCP 服务需要授权后才能使用，请点击链接完成授权，然后重新发送你的消息：\n" +
+	return "⚠️ Les services MCP suivants doivent être autorisés avant usage. Cliquez sur le lien pour les autoriser, puis renvoyez votre message :\n" +
 		strings.Join(lines, "\n")
 }
 
@@ -1747,7 +1747,7 @@ func (s *Service) HandleMessage(ctx context.Context, msg *IncomingMessage, chann
 		if !s.rateLimiter.Allow(ctx, rateLimitKey, s.rateLimitMax) {
 			logger.Warnf(ctx, "[IM] Rate limited: channel=%s user=%s chat=%s", channelID, msg.UserID, msg.ChatID)
 			_ = adapter.SendReply(ctx, msg, &ReplyMessage{
-				Content: "您的消息发送过于频繁，请稍后再试。",
+				Content: "Vous envoyez des messages trop souvent ; réessayez plus tard.",
 				IsFinal: true,
 			})
 			return nil
@@ -1820,7 +1820,7 @@ func (s *Service) HandleMessage(ctx context.Context, msg *IncomingMessage, chann
 	// Unrecognised slash-word: show help hint instead of sending to QA.
 	if LooksLikeCommand(msg.Content) {
 		_ = adapter.SendReply(ctx, msg, &ReplyMessage{
-			Content: "未知指令，发送 `/help` 查看所有可用指令。",
+			Content: "Commande inconnue ; envoyez `/help` pour voir toutes les commandes disponibles.",
 			IsFinal: true,
 		})
 		return nil
@@ -1892,7 +1892,7 @@ func (s *Service) HandleMessage(ctx context.Context, msg *IncomingMessage, chann
 		qaCancel()
 		logger.Warnf(ctx, "[IM] Queue rejected: user=%s reason=%v", msg.UserID, enqueueErr)
 		_ = adapter.SendReply(ctx, msg, &ReplyMessage{
-			Content: "当前排队人数较多，请稍后再试。",
+			Content: "Beaucoup de demandes sont en attente ; réessayez plus tard.",
 			IsFinal: true,
 		})
 		return nil
@@ -1902,9 +1902,9 @@ func (s *Service) HandleMessage(ctx context.Context, msg *IncomingMessage, chann
 		logger.Infof(ctx, "[IM] Enqueued: user=%s pos=%d depth=%d", msg.UserID, pos, s.qaQueue.Metrics().Depth)
 		// In multi-instance mode the local queue position does not reflect global
 		// depth, so use a generic "queued" hint instead of an exact number.
-		queueMsg := fmt.Sprintf("收到，前面还有 %d 条消息在处理，请稍候 ⏳", pos)
+		queueMsg := fmt.Sprintf("Bien reçu, %d message(s) avant le vôtre en cours de traitement, merci de patienter ⏳", pos)
 		if s.redis != nil {
-			queueMsg = "收到，当前排队中，请稍候 ⏳"
+			queueMsg = "Bien reçu, votre message est en file d'attente, merci de patienter ⏳"
 		}
 		_ = adapter.SendReply(ctx, msg, &ReplyMessage{
 			Content: queueMsg,
@@ -1936,11 +1936,11 @@ func emptyIncomingMessageReply(msg *IncomingMessage) (string, bool) {
 	}
 	switch rawType {
 	case "audio":
-		return "未能识别这条语音中的文字内容。请改用纯文本发送，或再说一遍。", true
+		return "Impossible de reconnaître le texte de ce message vocal. Envoyez-le en texte, ou répétez.", true
 	case "video":
-		return "暂不支持视频消息。请改用纯文本发送；图片或文件请单独发送。", true
+		return "Les messages vidéo ne sont pas encore pris en charge. Envoyez du texte ; envoyez les images ou fichiers séparément.", true
 	default:
-		return "未能识别这条消息中的文字内容。请改用纯文本发送；图片或文件请单独发送。", true
+		return "Impossible de reconnaître le texte de ce message. Envoyez du texte ; envoyez les images ou fichiers séparément.", true
 	}
 }
 
@@ -1977,7 +1977,7 @@ func (s *Service) executeQARequest(req *qaRequest) {
 	attachments, imageURLs, downloaded, err := s.prepareIMAttachments(ctx, req.msg, req.adapter)
 	if err != nil {
 		logger.Warnf(ctx, "[IM] attachment preparation failed: %v", err)
-		if sendErr := req.adapter.SendReply(ctx, req.msg, &ReplyMessage{Content: "❌ 无法读取此附件，请重试或改用文字描述。", IsFinal: true}); sendErr != nil {
+		if sendErr := req.adapter.SendReply(ctx, req.msg, &ReplyMessage{Content: "❌ Impossible de lire cette pièce jointe ; réessayez ou décrivez-la par écrit.", IsFinal: true}); sendErr != nil {
 			logger.Warnf(ctx, "[IM] Failed to send attachment error reply: %v", sendErr)
 		}
 		return
@@ -2136,7 +2136,7 @@ func (s *Service) handleCommand(
 	if err != nil {
 		logger.Errorf(ctx, "[IM] Command /%s error: %v", cmd.Name(), err)
 		_ = adapter.SendReply(ctx, msg, &ReplyMessage{
-			Content: "抱歉，执行指令时出现了异常，请稍后再试。",
+			Content: "Désolé, une erreur est survenue pendant l'exécution de la commande ; réessayez plus tard.",
 			IsFinal: true,
 		})
 		return err
@@ -3442,9 +3442,9 @@ func fileMessageQAContent(msg *IncomingMessage) string {
 	}
 	fileName := strings.TrimSpace(msg.FileName)
 	if fileName == "" {
-		fileName = "未命名文件"
+		fileName = "fichier sans nom"
 	}
-	return fmt.Sprintf("我上传了文件「%s」。请确认已收到，并告知我接下来可以如何协助。", fileName)
+	return fmt.Sprintf("J'ai envoyé le fichier « %s ». Confirme que tu l'as bien reçu et dis-moi comment tu peux m'aider ensuite.", fileName)
 }
 
 // processDownloadedFileToKnowledgeBase stores bytes already downloaded for QA.

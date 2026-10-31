@@ -146,7 +146,7 @@ func TestRetrievalProgressReportsNoResultsWhenPipelineFellBack(t *testing.T) {
 	assert.Equal(t, 0, resultData.Data["doc_count"])
 	assert.Equal(t, 0, resultData.Data["web_count"])
 	assert.Equal(t, 3, resultData.Data["candidate_count"])
-	assert.Equal(t, "命中 3 条候选，相关性不足，未用于回答", resultData.Output)
+	assert.Equal(t, "3 candidat(s) trouvé(s), mais pas assez pertinent(s) pour répondre", resultData.Output)
 }
 
 func TestRetrievalProgressReportsNothingFoundWhenThereWereNoCandidates(t *testing.T) {
@@ -164,7 +164,7 @@ func TestRetrievalProgressReportsNothingFoundWhenThereWereNoCandidates(t *testin
 	require.True(t, ok)
 	assert.Equal(t, 0, resultData.Data["count"])
 	assert.Equal(t, 0, resultData.Data["candidate_count"])
-	assert.Equal(t, "未检索到相关内容", resultData.Output)
+	assert.Equal(t, "Aucun contenu pertinent trouvé", resultData.Output)
 }
 
 func TestRetrievalProgressWebOnlySearchSource(t *testing.T) {

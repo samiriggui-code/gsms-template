@@ -51,7 +51,7 @@ func TestBlocksToMarkdown_EmbeddedSheetAndFile(t *testing.T) {
 	if !strings.Contains(string(md), "| 名称 | 数量 |") || !strings.Contains(string(md), "| 苹果 | 3 |") {
 		t.Errorf("sheet not inlined:\n%s", md)
 	}
-	if !strings.Contains(string(md), fmt.Sprintf("![图片](weknora-img://1-%s)", imageMarkerNonce(""))) {
+	if !strings.Contains(string(md), fmt.Sprintf("![image](weknora-img://1-%s)", imageMarkerNonce(""))) {
 		t.Errorf("numbered image marker missing:\n%s", md)
 	}
 	if len(imgs) != 1 || imgs[0].N != 1 || imgs[0].Kind != "image" || imgs[0].Token != "img_t" {
@@ -134,7 +134,7 @@ func TestBlocksToMarkdown_SheetTruncatedNote(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if !strings.Contains(string(md), "表格已截断") {
+	if !strings.Contains(string(md), "Tableau tronqué") {
 		t.Errorf("want truncation note, got:\n%s", md)
 	}
 }
@@ -149,7 +149,7 @@ func TestBlocksToMarkdown_SheetPermissionDegrades(t *testing.T) {
 	if err != nil {
 		t.Fatalf("should not fail on permission error, got %v", err)
 	}
-	if !strings.Contains(string(md), "无法读取内嵌电子表格") {
+	if !strings.Contains(string(md), "Impossible de lire : Feuille de calcul intégrée") {
 		t.Errorf("want degraded placeholder, got:\n%s", md)
 	}
 }
@@ -167,13 +167,13 @@ func TestBlocksToMarkdown_BitableInlinedAndDegrades(t *testing.T) {
 		return string(md)
 	}
 
-	inlined := mk(fakeReader{bitable: [][]string{{"任务", "状态"}, {"写文档", "进行中"}}})
-	if !strings.Contains(inlined, "| 任务 | 状态 |") || !strings.Contains(inlined, "| 写文档 | 进行中 |") {
+	inlined := mk(fakeReader{bitable: [][]string{{"Tâche", "Statut"}, {"Rédiger", "En cours"}}})
+	if !strings.Contains(inlined, "| Tâche | Statut |") || !strings.Contains(inlined, "| Rédiger | En cours |") {
 		t.Errorf("bitable not inlined:\n%s", inlined)
 	}
 
 	degraded := mk(fakeReader{bitableErr: fmt.Errorf("code=99991672 permission denied")})
-	if !strings.Contains(degraded, "无法读取内嵌多维表格") {
+	if !strings.Contains(degraded, "Impossible de lire : Base multidimensionnelle intégrée") {
 		t.Errorf("want bitable degradation note, got:\n%s", degraded)
 	}
 }
@@ -461,7 +461,7 @@ func TestBlocksToMarkdown_IframeLink(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if !strings.Contains(string(md), "[内嵌网页](https://example.com/embed)") {
+	if !strings.Contains(string(md), "[Page web intégrée](https://example.com/embed)") {
 		t.Errorf("iframe not rendered as link:\n%s", md)
 	}
 }
@@ -484,21 +484,21 @@ func TestBlocksToMarkdown_UnsupportedBlocksPlaceholdersNoTokenLeak(t *testing.T)
 	}
 	s := string(md)
 	for _, want := range []string{
-		"> [飞书块: 思维笔记]", "> [飞书块: 流程图&UML]",
-		"> [飞书块: 会话卡片]", "> [飞书块: Jira问题]", "> [飞书块: 未知类型(999)]",
+		"> [Bloc Feishu : Carte mentale]", "> [Bloc Feishu : Diagramme & UML]",
+		"> [Bloc Feishu : Carte de conversation]", "> [Bloc Feishu : Ticket Jira]", "> [Bloc Feishu : type inconnu (999)]",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("missing placeholder %q, got:\n%s", want, s)
 		}
 	}
 	// Removed from the placeholder set: view renders its children (none here).
-	if strings.Contains(s, "飞书块: 视图") {
+	if strings.Contains(s, "Bloc Feishu : Vue") {
 		t.Errorf("empty view must not emit a placeholder:\n%s", s)
 	}
 	// Board (43) now rides the image pipeline: a token-bearing board renders a
 	// numbered weknora-img:// marker and records a pendingImage for the
 	// connector's whiteboard download.
-	if !strings.Contains(s, fmt.Sprintf("![图片](weknora-img://1-%s)", imageMarkerNonce(""))) {
+	if !strings.Contains(s, fmt.Sprintf("![image](weknora-img://1-%s)", imageMarkerNonce(""))) {
 		t.Errorf("board marker missing:\n%s", s)
 	}
 	if len(imgs) != 1 || imgs[0].Kind != "board" || imgs[0].Token != "brdSECRET" {
@@ -531,7 +531,7 @@ func TestBlocksToMarkdown_ViewContainerRendersChildren(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 	s := string(md)
-	if strings.Contains(s, "飞书块: 视图") {
+	if strings.Contains(s, "Bloc Feishu : Vue") {
 		t.Errorf("view must not render a placeholder:\n%s", s)
 	}
 	// Raw render emits unique per-token marker lines; FetchDocxWithBlocks
@@ -573,7 +573,7 @@ func TestBlocksToMarkdown_RichTextElements(t *testing.T) {
 	s := string(md)
 	for _, want := range []string{
 		"**加粗**", "`code`", "~~*删除*~~", "[链接](https://x.cn)",
-		"[https://x.cn/doc](https://x.cn/doc)", "@成员", "$E=mc^2$",
+		"[https://x.cn/doc](https://x.cn/doc)", "@membre", "$E=mc^2$",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("missing rich text %q, got:\n%s", want, s)
@@ -754,7 +754,7 @@ func TestBlocksToMarkdown_DocumentTruncationNote(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if !strings.Contains(string(md), "文档已截断") {
+	if !strings.Contains(string(md), "Document tronqué") {
 		t.Errorf("missing document truncation note:\n...%s", md[len(md)-200:])
 	}
 }
@@ -778,9 +778,9 @@ func TestBlocksToMarkdown_ImageNumberingStableOrder(t *testing.T) {
 	s := string(md)
 	nonce := imageMarkerNonce("")
 	for _, want := range []string{
-		fmt.Sprintf("![图片](weknora-img://1-%s)", nonce),
-		fmt.Sprintf("![图片](weknora-img://2-%s)", nonce),
-		fmt.Sprintf("![图片](weknora-img://3-%s)", nonce),
+		fmt.Sprintf("![image](weknora-img://1-%s)", nonce),
+		fmt.Sprintf("![image](weknora-img://2-%s)", nonce),
+		fmt.Sprintf("![image](weknora-img://3-%s)", nonce),
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("marker %q missing:\n%s", want, s)
@@ -806,7 +806,7 @@ func TestBlocksToMarkdown_LinkURLWithSpacesAndParens(t *testing.T) {
 		{BlockID: "root", BlockType: BlockTypePage},
 		{BlockID: "p", BlockType: BlockTypeText, Text: &BlockText{
 			Elements: []TextElement{
-				{TextRun: &TextRun{Content: "文档", TextElementStyle: &TextElementStyle{
+				{TextRun: &TextRun{Content: "Document", TextElementStyle: &TextElementStyle{
 					Link: &TextElementLink{URL: "https://example.com/a (1).pdf"},
 				}}},
 			},
@@ -897,15 +897,15 @@ func TestBlocksToMarkdown_TimelineAddOn(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 	for _, want := range []string{
-		"- **2026-09-19 · 昨天**：1",
-		"- **2026-09-20 · 今天**：2",
-		"- **2026-09-21 · 明天**：3",
+		"- **2026-09-19 · 昨天** : 1",
+		"- **2026-09-20 · 今天** : 2",
+		"- **2026-09-21 · 明天** : 3",
 	} {
 		if !strings.Contains(string(md), want) {
 			t.Errorf("missing timeline line %q, got:\n%s", want, md)
 		}
 	}
-	if strings.Contains(string(md), "文档小组件") {
+	if strings.Contains(string(md), "Widget de document") {
 		t.Errorf("timeline must not fall back to the placeholder, got:\n%s", md)
 	}
 }
@@ -943,7 +943,7 @@ func TestBlocksToMarkdown_TimelineAddOnHiddenAndUnknown(t *testing.T) {
 		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
-		if !strings.Contains(string(md), "文档小组件") {
+		if !strings.Contains(string(md), "Widget de document") {
 			t.Errorf("malformed record must keep the placeholder, got:\n%s", md)
 		}
 	}
@@ -957,7 +957,7 @@ func TestBlocksToMarkdown_TimelineAddOnHiddenAndUnknown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if !strings.Contains(string(md), "文档小组件") {
+	if !strings.Contains(string(md), "Widget de document") {
 		t.Errorf("unknown component type must keep the placeholder, got:\n%s", md)
 	}
 }

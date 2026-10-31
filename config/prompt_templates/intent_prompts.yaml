@@ -7,9 +7,9 @@ templates:
     name: "Greeting Response"
     description: "System prompt for greeting intents"
     i18n:
-      zh-CN:
-        name: "问候回复"
-        description: "针对问候意图的系统提示词"
+      fr-FR:
+        name: "Réponse aux salutations"
+        description: "Prompt système pour l'intention de salutation"
       en-US:
         name: "Greeting Response"
         description: "System prompt for greeting intents"
@@ -31,9 +31,9 @@ templates:
     name: "Chitchat Response"
     description: "System prompt for casual conversation"
     i18n:
-      zh-CN:
-        name: "闲聊回复"
-        description: "针对闲聊意图的系统提示词"
+      fr-FR:
+        name: "Réponse à la discussion libre"
+        description: "Prompt système pour l'intention de discussion libre"
       en-US:
         name: "Chitchat Response"
         description: "System prompt for casual conversation"
@@ -57,9 +57,9 @@ templates:
     name: "Follow-up Response"
     description: "System prompt for follow-up questions referencing conversation history"
     i18n:
-      zh-CN:
-        name: "追问回复"
-        description: "针对上下文追问意图的系统提示词"
+      fr-FR:
+        name: "Réponse aux questions de suivi"
+        description: "Prompt système pour les questions de suivi qui s'appuient sur la conversation"
       en-US:
         name: "Follow-up Response"
         description: "System prompt for follow-up questions referencing conversation history"
@@ -83,9 +83,9 @@ templates:
     name: "Image Analysis Response"
     description: "System prompt for pure image understanding"
     i18n:
-      zh-CN:
-        name: "图片分析回复"
-        description: "针对纯图片理解意图的系统提示词"
+      fr-FR:
+        name: "Réponse à l'analyse d'image"
+        description: "Prompt système pour la compréhension d'une image seule"
       en-US:
         name: "Image Analysis Response"
         description: "System prompt for pure image understanding"
@@ -108,9 +108,9 @@ templates:
     name: "Summarize Response"
     description: "System prompt for conversation summarization"
     i18n:
-      zh-CN:
-        name: "总结回复"
-        description: "针对对话总结意图的系统提示词"
+      fr-FR:
+        name: "Réponse de synthèse"
+        description: "Prompt système pour l'intention de résumer la conversation"
       en-US:
         name: "Summarize Response"
         description: "System prompt for conversation summarization"
@@ -133,9 +133,9 @@ templates:
     name: "Web Search Unavailable Response"
     description: "System prompt when web search intent is detected but web search is not enabled"
     i18n:
-      zh-CN:
-        name: "网络搜索不可用回复"
-        description: "当检测到网络搜索意图但未开启网络搜索时的系统提示词"
+      fr-FR:
+        name: "Réponse quand la recherche web est indisponible"
+        description: "Prompt système quand une recherche web est demandée mais que la recherche web n'est pas activée"
       en-US:
         name: "Web Search Unavailable Response"
         description: "System prompt when web search intent is detected but web search is not enabled"
@@ -161,9 +161,9 @@ templates:
     name: "Document Analysis Response"
     description: "System prompt for pure document understanding"
     i18n:
-      zh-CN:
-        name: "文档分析回复"
-        description: "针对纯文档/文件理解意图的系统提示词"
+      fr-FR:
+        name: "Réponse à l'analyse de document"
+        description: "Prompt système pour la compréhension d'un document ou fichier seul"
       en-US:
         name: "Document Analysis Response"
         description: "System prompt for pure document understanding"

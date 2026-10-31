@@ -512,9 +512,9 @@ func (s *knowledgeService) processChunks(ctx context.Context,
 	logger.Infof(ctx, "Cleanup completed, starting to process new chunks")
 
 	// ========== DocReader 解析结果日志 ==========
-	logger.Infof(ctx, "[DocReader] ========== 解析结果概览 ==========")
-	logger.Infof(ctx, "[DocReader] 知识ID: %s, 知识库ID: %s", knowledge.ID, knowledge.KnowledgeBaseID)
-	logger.Infof(ctx, "[DocReader] 总Chunk数量: %d", len(chunks))
+	logger.Infof(ctx, "[DocReader] ========== Aperçu du résultat d'analyse ==========")
+	logger.Infof(ctx, "[DocReader] ID de connaissance : %s, ID de base : %s", knowledge.ID, knowledge.KnowledgeBaseID)
+	logger.Infof(ctx, "[DocReader] Nombre total de chunks : %d", len(chunks))
 
 	// 统计图片信息
 	totalImages := 0
@@ -525,7 +525,7 @@ func (s *knowledgeService) processChunks(ctx context.Context,
 			totalImages += len(chunkData.Images)
 		}
 	}
-	logger.Infof(ctx, "[DocReader] 包含图片的Chunk数: %d, 总图片数: %d", chunksWithImages, totalImages)
+	logger.Infof(ctx, "[DocReader] Chunks contenant des images : %d, total d'images : %d", chunksWithImages, totalImages)
 
 	// 打印每个Chunk的详细信息
 	for idx, chunkData := range chunks {
@@ -533,32 +533,32 @@ func (s *knowledgeService) processChunks(ctx context.Context,
 		if len(contentPreview) > 200 {
 			contentPreview = contentPreview[:200] + "..."
 		}
-		logger.Infof(ctx, "[DocReader] Chunk #%d (seq=%d): 内容长度=%d, 图片数=%d, 范围=[%d-%d]",
+		logger.Infof(ctx, "[DocReader] Chunk #%d (seq=%d) : longueur=%d, images=%d, plage=[%d-%d]",
 			idx, chunkData.Seq, len(chunkData.Content), len(chunkData.Images), chunkData.Start, chunkData.End)
-		logger.Debugf(ctx, "[DocReader] Chunk #%d 内容预览: %s", idx, contentPreview)
+		logger.Debugf(ctx, "[DocReader] Chunk #%d aperçu du contenu : %s", idx, contentPreview)
 
 		// 打印图片详细信息
 		for imgIdx, img := range chunkData.Images {
-			logger.Infof(ctx, "[DocReader]   图片 #%d: URL=%s", imgIdx, img.URL)
-			logger.Infof(ctx, "[DocReader]   图片 #%d: OriginalURL=%s", imgIdx, img.OriginalURL)
+			logger.Infof(ctx, "[DocReader]   Image #%d : URL=%s", imgIdx, img.URL)
+			logger.Infof(ctx, "[DocReader]   Image #%d : OriginalURL=%s", imgIdx, img.OriginalURL)
 			if img.Caption != "" {
 				captionPreview := img.Caption
 				if len(captionPreview) > 100 {
 					captionPreview = captionPreview[:100] + "..."
 				}
-				logger.Infof(ctx, "[DocReader]   图片 #%d: Caption=%s", imgIdx, captionPreview)
+				logger.Infof(ctx, "[DocReader]   Image #%d : Caption=%s", imgIdx, captionPreview)
 			}
 			if img.OCRText != "" {
 				ocrPreview := img.OCRText
 				if len(ocrPreview) > 100 {
 					ocrPreview = ocrPreview[:100] + "..."
 				}
-				logger.Infof(ctx, "[DocReader]   图片 #%d: OCRText=%s", imgIdx, ocrPreview)
+				logger.Infof(ctx, "[DocReader]   Image #%d : OCRText=%s", imgIdx, ocrPreview)
 			}
-			logger.Infof(ctx, "[DocReader]   图片 #%d: 位置=[%d-%d]", imgIdx, img.Start, img.End)
+			logger.Infof(ctx, "[DocReader]   Image #%d : position=[%d-%d]", imgIdx, img.Start, img.End)
 		}
 	}
-	logger.Infof(ctx, "[DocReader] ========== 解析结果概览结束 ==========")
+	logger.Infof(ctx, "[DocReader] ========== Fin de l'aperçu du résultat d'analyse ==========")
 
 	// Create chunk objects from proto chunks
 	maxSeq := 0
@@ -758,7 +758,7 @@ func (s *knowledgeService) processChunks(ctx context.Context,
 			// Check if there's enough storage quota available
 			if tenantInfo.StorageUsed+totalStorageSize > tenantInfo.StorageQuota {
 				knowledge.ParseStatus = types.ParseStatusFailed
-				knowledge.ErrorMessage = "存储空间不足"
+				knowledge.ErrorMessage = "Espace de stockage insuffisant"
 				knowledge.UpdatedAt = time.Now()
 				s.repo.UpdateKnowledge(ctx, knowledge)
 				s.deleteUnindexedChunks(ctx, knowledge)
@@ -2961,7 +2961,7 @@ func (s *knowledgeService) reparseKnowledge(
 		meta, metaErr := existing.ManualMetadata()
 		if metaErr != nil || meta == nil {
 			logger.Errorf(ctx, "Failed to get manual metadata for reparse: %v", metaErr)
-			return nil, werrors.NewBadRequestError("无法获取手工知识内容")
+			return nil, werrors.NewBadRequestError("Impossible de lire le contenu de la connaissance manuelle")
 		}
 		manualContent = meta.Content
 	} else {
@@ -3273,9 +3273,9 @@ func (s *knowledgeService) CancelKnowledgeParse(
 		s.dequeueKnowledgeTasks(ctx, knowledgeID)
 		return existing, nil
 	case types.ParseStatusCompleted, types.ParseStatusFailed:
-		return nil, werrors.NewBadRequestError("解析已结束，无法取消")
+		return nil, werrors.NewBadRequestError("L'analyse est terminée et ne peut plus être annulée")
 	case types.ParseStatusDeleting:
-		return nil, werrors.NewBadRequestError("知识正在删除中，无法取消解析")
+		return nil, werrors.NewBadRequestError("La connaissance est en cours de suppression ; impossible d'annuler l'analyse")
 	case types.ParseStatusPending, types.ParseStatusProcessing, types.ParseStatusFinalizing:
 		// Cancellable. `finalizing` is the post-process fan-out window
 		// where graph-extract / summary / question subtasks are still
@@ -3294,7 +3294,7 @@ func (s *knowledgeService) CancelKnowledgeParse(
 	now := time.Now()
 	if err := s.repo.UpdateKnowledgeColumns(ctx, existing.ID, map[string]interface{}{
 		"parse_status":           types.ParseStatusCancelled,
-		"error_message":          "用户已取消解析",
+		"error_message":          "Analyse annulée par l'utilisateur",
 		"pending_subtasks_count": 0,
 		// The summary task is dequeued (or will bail) with the rest.
 		"summary_status": summaryStatusClosedExpr(types.SummaryStatusNone),
@@ -3304,7 +3304,7 @@ func (s *knowledgeService) CancelKnowledgeParse(
 		return nil, err
 	}
 	existing.ParseStatus = types.ParseStatusCancelled
-	existing.ErrorMessage = "用户已取消解析"
+	existing.ErrorMessage = "Analyse annulée par l'utilisateur"
 	existing.PendingSubtasksCount = 0
 	if existing.SummaryStatus == types.SummaryStatusPending || existing.SummaryStatus == types.SummaryStatusProcessing {
 		existing.SummaryStatus = types.SummaryStatusNone
@@ -3322,7 +3322,7 @@ func (s *knowledgeService) CancelKnowledgeParse(
 	// attempt no-ops.
 	if attempt := s.tracker().LatestAttempt(ctx, knowledgeID); attempt > 0 {
 		s.tracker().AbortAttempt(ctx, knowledgeID, attempt,
-			"USER_CANCELLED", "用户已取消解析", "用户已取消解析")
+			"USER_CANCELLED", "Analyse annulée par l'utilisateur", "Analyse annulée par l'utilisateur")
 	}
 
 	// Best-effort dequeue. Failures here don't block the cancel — the
@@ -3927,7 +3927,7 @@ func (s *knowledgeService) ProcessDocument(ctx context.Context, t *asynq.Task) e
 		logger.GetLogger(ctx).WithField("knowledge_id", knowledge.ID).
 			Errorf("processDocument audio without ASR model configured")
 		knowledge.ParseStatus = "failed"
-		knowledge.ErrorMessage = "上传音频文件需要设置ASR语音识别模型"
+		knowledge.ErrorMessage = "L'envoi de fichiers audio nécessite un modèle de reconnaissance vocale (ASR)"
 		knowledge.UpdatedAt = time.Now()
 		s.repo.UpdateKnowledge(ctx, knowledge)
 		return nil
@@ -3938,7 +3938,7 @@ func (s *knowledgeService) ProcessDocument(ctx context.Context, t *asynq.Task) e
 		logger.GetLogger(ctx).WithField("knowledge_id", knowledge.ID).
 			Errorf("processDocument video not supported")
 		knowledge.ParseStatus = "failed"
-		knowledge.ErrorMessage = "暂不支持视频文件"
+		knowledge.ErrorMessage = "Les fichiers vidéo ne sont pas encore pris en charge"
 		knowledge.UpdatedAt = time.Now()
 		s.repo.UpdateKnowledge(ctx, knowledge)
 		return nil

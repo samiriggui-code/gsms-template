@@ -124,16 +124,16 @@ var registry = map[string]settingSpec{
 		EnvName:  "SSRF_WHITELIST",
 		Default:  []string{},
 		Category: "security",
-		Description: "SSRF 防护白名单。可填入 example.com / *.foo.com / 10.0.0.0/8 / 2001:db8::1。" +
-			"修改后立即生效。SSRF_WHITELIST_EXTRA 环境变量仍由部署方维护，不在此处覆盖。",
+		Description: "Liste blanche de protection SSRF. Exemples : example.com / *.foo.com / 10.0.0.0/8 / 2001:db8::1." +
+			"Prend effet immédiatement. La variable d'environnement SSRF_WHITELIST_EXTRA reste gérée par l'exploitant et n'est pas remplacée ici.",
 	},
 	"sandbox.docker_enabled": {
 		Type:     "bool",
 		EnvName:  sandbox.DockerBackendEnabledEnv,
 		Default:  false,
 		Category: "security",
-		Description: "是否允许 Docker 沙箱后端。本机 docker.sock 等同宿主机 root，默认关闭。" +
-			"仅系统管理员可打开；打开后立即生效，无需重启。私有化单机且已挂载 daemon socket，或配置了带 TLS 的远程 tcp:// 时再启用。",
+		Description: "Autorise ou non le bac à sable Docker. L'accès au docker.sock local équivaut à root sur l'hôte ; désactivé par défaut." +
+			"Activable uniquement par un administrateur système ; prend effet immédiatement, sans redémarrage. À activer seulement sur une installation privée mono-machine avec le socket du daemon monté, ou avec un tcp:// distant protégé par TLS.",
 	},
 	"auth.registration_mode": {
 		Type:     "string",
@@ -141,8 +141,8 @@ var registry = map[string]settingSpec{
 		Default:  "self_serve",
 		Enum:     []string{"self_serve", "invite_register", "invite_only"},
 		Category: "auth",
-		Description: "注册模式。self_serve = 开放注册；invite_register = 仅持有效邀请链接的新用户可注册；" +
-			"invite_only = 禁止注册，邀请仅供已有账号加入空间。保存后立即生效。",
+		Description: "Mode d'inscription. self_serve = inscription ouverte ; invite_register = seuls les nouveaux utilisateurs avec un lien d'invitation valide peuvent s'inscrire ; " +
+			"invite_only = inscription fermée, les invitations servent uniquement à faire rejoindre un espace à des comptes existants. Prend effet dès l'enregistrement.",
 	},
 	"auth.default_tenant_mode": {
 		Type:     "string",
@@ -150,16 +150,16 @@ var registry = map[string]settingSpec{
 		Default:  "create_personal",
 		Enum:     []string{"create_personal", "tenantless"},
 		Category: "auth",
-		Description: "公开注册成功后的默认空间策略。create_personal = 自动创建个人空间并设为 Owner；" +
-			"tenantless = 仅创建用户，等待接受邀请或主动创建空间。修改后只影响新注册用户。",
+		Description: "Stratégie d'espace par défaut après une inscription publique. create_personal = crée automatiquement un espace personnel dont l'utilisateur est Owner ; " +
+			"tenantless = crée seulement l'utilisateur, qui attend une invitation ou crée lui-même un espace. Ne concerne que les nouveaux inscrits.",
 	},
 	"auth.complex_password_enabled": {
 		Type:     "bool",
 		EnvName:  "WEKNORA_AUTH_COMPLEX_PASSWORD_ENABLED",
 		Default:  false,
 		Category: "auth",
-		Description: "是否启用复杂密码。开启后密码必须包含大小写字母、数字和特殊字符。" +
-			"修改后立即生效，只影响新注册用户或新密码修改/重置操作。特殊字符包含：!@#$%^&*()_+-=[]{}|;:,.<>?",
+		Description: "Active ou non les mots de passe complexes. Une fois activé, le mot de passe doit contenir majuscules, minuscules, chiffres et caractères spéciaux." +
+			"Prend effet immédiatement et ne concerne que les nouvelles inscriptions et les changements ou réinitialisations de mot de passe. Caractères spéciaux : !@#$%^&*()_+-=[]{}|;:,.<>?",
 	},
 	// gallery.policy is the platform-wide image-gallery attribute policy:
 	// a JSON document (types.GalleryPolicyTier) that can toggle attribute
@@ -174,10 +174,10 @@ var registry = map[string]settingSpec{
 		EnvName:  "",
 		Default:  "",
 		Category: "gallery",
-		Description: "图库属性策略（JSON，可选）。可启停属性来源（sources）或按属性 ID 覆盖用法" +
+		Description: "Stratégie des attributs de la galerie (JSON, facultatif). Permet d'activer ou désactiver des sources d'attributs (sources) ou d'en redéfinir l'usage par ID d'attribut" +
 			"（overrides，字段级：in_filter / in_searchfield / in_sortfield），例如：" +
 			"{\"overrides\":{\"system:contain.text\":{\"in_searchfield\":true}}}。" +
-			"留空 = 完全使用来源端声明。修改后立即生效，刷新图库页可见。",
+			"Vide = utilise entièrement ce que déclarent les sources. Prend effet immédiatement ; rechargez la page de la galerie pour le voir.",
 	},
 	// tenant.max_owned_per_user caps how many tenants a single non-superuser
 	// can create (and Own) via self-service POST /tenants. Read on every
@@ -191,16 +191,16 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_MAX_OWNED_PER_USER",
 		Default:  int64(10),
 		Category: "tenant",
-		Description: "每个非超管用户通过自助创建可拥有的最大空间数。每次创建空间时实时读取，" +
-			"修改后立即生效。0 表示使用内置默认值 10；负数表示完全关闭限制（不建议在公开部署使用）。",
+		Description: "Nombre maximal d'espaces qu'un utilisateur non super-admin peut créer lui-même. Lu à chaque création d'espace, " +
+			"prend effet immédiatement. 0 = valeur intégrée par défaut (10) ; une valeur négative supprime toute limite (déconseillé pour un déploiement public).",
 	},
 	"tenant.self_service_creation_enabled": {
 		Type:     "bool",
 		EnvName:  "WEKNORA_TENANT_SELF_SERVICE_CREATION_ENABLED",
 		Default:  true,
 		Category: "tenant",
-		Description: "是否允许非超管用户主动创建空间。关闭后，普通用户只能通过邀请加入已有空间；" +
-			"跨空间超管仍可创建。修改后立即生效。",
+		Description: "Autorise ou non les utilisateurs non super-admin à créer des espaces. Si désactivé, les utilisateurs ordinaires ne peuvent rejoindre un espace que sur invitation ; " +
+			"les super-admins multi-espaces peuvent toujours en créer. Prend effet immédiatement.",
 	},
 	// tenant.default_storage_quota_gb is the default storage quota (in GB)
 	// applied to a newly-created tenant when the caller doesn't specify
@@ -214,17 +214,17 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_DEFAULT_STORAGE_QUOTA_GB",
 		Default:  int64(10),
 		Category: "tenant",
-		Description: "新建空间时默认分配的存储配额（GB），包含向量、原文、文本、索引等。" +
-			"仅在创建时读取，修改后只对之后新建的空间生效，不会回写已存在的空间。" +
-			"0 或负数表示使用内置默认值 10GB。",
+		Description: "Quota de stockage attribué par défaut à un nouvel espace (Go), vecteurs, originaux, textes et index compris." +
+			"Lu uniquement à la création ; une modification ne s'applique qu'aux espaces créés ensuite, sans toucher aux espaces existants." +
+			"0 ou une valeur négative = valeur intégrée par défaut (10 Go).",
 	},
 	"tenant.default_storage_quota_mb": {
 		Type:     "int",
 		EnvName:  "WEKNORA_TENANT_DEFAULT_STORAGE_QUOTA_MB",
 		Default:  int64(0),
 		Category: "tenant",
-		Description: "新空间默认存储配额（MB），包括注册自动创建的个人空间。" +
-			"正数优先于 GB 配额；0 或负数沿用 GB 设置。仅新建空间时读取，不自动修改现有空间。",
+		Description: "Quota de stockage par défaut d'un nouvel espace (Mo), y compris l'espace personnel créé à l'inscription." +
+			"Une valeur positive l'emporte sur le quota en Go ; 0 ou une valeur négative reprend le réglage en Go. Lu uniquement à la création, sans modifier les espaces existants.",
 	},
 	// tenant.auto_create_api_key restores the legacy behaviour where creating
 	// a tenant also minted a full-access API key and returned its plaintext
@@ -239,9 +239,9 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_AUTO_CREATE_API_KEY",
 		Default:  false,
 		Category: "tenant",
-		Description: "创建空间时是否自动生成一个全量权限（full_access）的 API Key，并在创建接口的响应中返回其明文 token。" +
-			"用于兼容旧版本「创建空间即下发默认 API Key」的行为（属于破坏性变更的回退开关）。" +
-			"每次创建空间时实时读取，修改后立即生效。默认 false（不自动创建，需通过 API Key 管理显式创建）。",
+		Description: "Crée ou non automatiquement une clé API avec tous les droits (full_access) à la création d'un espace, et renvoie son jeton en clair dans la réponse." +
+			"Sert à garder l'ancien comportement « créer un espace fournit une clé API par défaut » (option de retour arrière après un changement incompatible)." +
+			"Lu à chaque création d'espace, prend effet immédiatement. false par défaut (aucune création automatique ; créez les clés explicitement dans la gestion des clés API).",
 	},
 	// tenant.auto_accept_invitation: invite = auto-join switch (default false).
 	"tenant.auto_accept_invitation": {
@@ -249,9 +249,9 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_AUTO_ACCEPT_INVITATION",
 		Default:  false,
 		Category: "tenant",
-		Description: "全局开关：开启后，空间管理员通过邮箱邀请已注册用户加入空间时，" +
-			"被邀请人将被立即自动加入（直接写入成员关系），无需在收件箱手动接受，也不再生成待接受的邀请记录。" +
-			"关闭时保持原有「发出邀请 → 被邀请人收件箱确认」流程。每次邀请时实时读取，修改后立即生效。默认 false。",
+		Description: "Option globale : une fois activée, quand un administrateur d'espace invite par e-mail un utilisateur déjà inscrit, " +
+			"la personne invitée est ajoutée immédiatement (membre créé directement), sans accepter dans sa boîte de réception et sans invitation en attente." +
+			"Désactivée, le circuit habituel « envoi de l'invitation → acceptation par la personne invitée » est conservé. Lu à chaque invitation, prend effet immédiatement. false par défaut.",
 	},
 	"asynq.core_concurrency": {
 		Type:            "int",
@@ -259,7 +259,7 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultCoreWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "文档解析、手工重解析等核心任务的每实例保底并发。可额外使用共享弹性池；修改后需重启。",
+		Description:     "Concurrence minimale par instance pour les tâches principales (analyse de documents, réanalyse manuelle, etc.). Peut emprunter au pool élastique partagé ; redémarrage nécessaire après modification.",
 	},
 	"asynq.postprocess_concurrency": {
 		Type:            "int",
@@ -267,7 +267,7 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultPostProcessWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "解析完成后的轻量编排与富化扇出专用并发，避免被长时间文档解析阻塞；修改后需重启。",
+		Description:     "Concurrence dédiée à l'orchestration légère et à l'enrichissement après analyse, pour ne pas être bloquée par les longues analyses de documents ; redémarrage nécessaire après modification.",
 	},
 	"asynq.enrichment_concurrency": {
 		Type:            "int",
@@ -275,7 +275,7 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultEnrichmentWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "摘要、图片、图谱和问题生成的每实例保底并发。可额外使用共享弹性池；修改后需重启。",
+		Description:     "Concurrence minimale par instance pour la génération de résumés, d'images, de graphes et de questions. Peut emprunter au pool élastique partagé ; redémarrage nécessaire après modification.",
 	},
 	"asynq.maintenance_concurrency": {
 		Type:            "int",
@@ -283,7 +283,7 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultMaintenanceWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "数据源同步、批处理、移动和删除清理的每实例保底并发，与用户面流水线硬隔离；修改后需重启。",
+		Description:     "Concurrence minimale par instance pour la synchronisation des sources de données, les traitements par lots, les déplacements et le nettoyage des suppressions, totalement isolée du pipeline utilisateur ; redémarrage nécessaire après modification.",
 	},
 	"asynq.shared_concurrency": {
 		Type:            "int",
@@ -291,7 +291,7 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultSharedWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "核心解析与内容富化共用的每实例弹性并发。空闲容量由有积压的一侧借用；修改后需重启。",
+		Description:     "Concurrence élastique par instance partagée entre l'analyse principale et l'enrichissement. La capacité libre est empruntée par le côté qui a du retard ; redémarrage nécessaire après modification.",
 	},
 	// asynq.wiki_concurrency is the size of the DEDICATED wiki worker pool,
 	// separate from the upstream pools. Read once when the wiki asynq server
@@ -303,9 +303,9 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultWikiWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description: "Wiki 生成专用池的 worker 并发数（与文档解析池相互隔离）。" +
-			"Wiki 生成以合成大模型调用为主，独立并发预算可避免上传高峰期被解析任务饿死，" +
-			"同时不会因 Wiki 洪峰拖慢用户面解析。修改后需重启服务进程方可生效。",
+		Description: "Nombre de workers du pool dédié à la génération du wiki (isolé du pool d'analyse de documents)." +
+			"La génération du wiki repose surtout sur des appels au grand modèle ; un budget de concurrence séparé évite qu'elle soit affamée par les analyses lors des pics d'envoi, " +
+			"et qu'un pic de wiki ralentisse l'analyse côté utilisateur. Redémarrez le service pour appliquer une modification.",
 	},
 	// model.max_concurrency is the DEFAULT per-model cap on concurrent
 	// background (ingestion/enrichment) LLM/embedding/VLM calls, keyed by
@@ -320,9 +320,9 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_MODEL_MAX_CONCURRENCY",
 		Default:  int64(32),
 		Category: "worker",
-		Description: "后台任务（文档入库/富化）对单个模型的默认并发上限，按模型 ID 全副本共享。" +
-			"每次调用实时读取，修改后立即生效、无需重启。0 或负数表示关闭默认限制" +
-			"（各模型仍会尊重自身在模型管理里配置的上限）。仅影响后台任务，不影响交互式对话。",
+		Description: "Limite de concurrence par défaut des tâches de fond (ingestion et enrichissement de documents) pour un même modèle, partagée entre toutes les répliques par ID de modèle." +
+			"Lue à chaque appel ; prend effet immédiatement, sans redémarrage. 0 ou une valeur négative désactive la limite par défaut" +
+			"(chaque modèle respecte toujours sa propre limite configurée dans la gestion des modèles). Ne concerne que les tâches de fond, pas les conversations interactives.",
 	},
 }
 

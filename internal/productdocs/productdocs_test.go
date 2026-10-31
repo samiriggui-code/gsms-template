@@ -57,7 +57,7 @@ const samplePage = "# Wiki 能力（Wiki）\n" +
 
 func parseSample(t *testing.T) *Doc {
 	t.Helper()
-	doc, err := parseDoc("03-features/14-wiki.md", "功能模块", samplePage)
+	doc, err := parseDoc("03-features/14-wiki.md", "Fonctionnalités", samplePage)
 	require.NoError(t, err)
 	return doc
 }
@@ -95,7 +95,7 @@ func TestParseDocCleansSiteMarkup(t *testing.T) {
 	enable := doc.Sections[1].Content
 	assert.Contains(t, enable, "[配置]("+PublicBaseURL+"01-getting-started/04-configuration#模型与推理)")
 	assert.NotContains(t, enable, "graph TD", "Mermaid diagrams are dropped")
-	assert.Contains(t, enable, "（此处为流程图，略）")
+	assert.Contains(t, enable, "(diagramme omis ici)")
 	assert.Contains(t, enable, "# 不是标题", "a # line inside a code fence is not a heading")
 	assert.Contains(t, enable, "export WIKI_ENABLED=true")
 
@@ -183,7 +183,7 @@ func TestLoadAndSearch(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Len(t, lib.Docs(""), 3, "only category directories are loaded")
-	assert.Len(t, lib.Docs("功能模块"), 2)
+	assert.Len(t, lib.Docs("Fonctionnalités"), 2)
 	assert.Len(t, lib.Docs("03-features"), 2)
 
 	hits := lib.Search("Wiki 抽取粒度", "", 3)

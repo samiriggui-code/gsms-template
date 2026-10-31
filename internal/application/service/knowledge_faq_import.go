@@ -31,13 +31,13 @@ func (s *knowledgeService) UpsertFAQEntries(ctx context.Context,
 	kbID string, payload *types.FAQBatchUpsertPayload,
 ) (string, error) {
 	if payload == nil || len(payload.Entries) == 0 {
-		return "", werrors.NewBadRequestError("FAQ 条目不能为空")
+		return "", werrors.NewBadRequestError("Les entrées FAQ sont obligatoires")
 	}
 	if payload.Mode == "" {
 		payload.Mode = types.FAQBatchModeAppend
 	}
 	if payload.Mode != types.FAQBatchModeAppend && payload.Mode != types.FAQBatchModeReplace {
-		return "", werrors.NewBadRequestError("模式仅支持 append 或 replace")
+		return "", werrors.NewBadRequestError("Le mode doit être append ou replace")
 	}
 
 	// 验证知识库是否存在且有效
@@ -57,7 +57,7 @@ func (s *knowledgeService) UpsertFAQEntries(ctx context.Context,
 	if taskID == "" {
 		taskID = secutils.GenerateTaskID("faq_import", tenantID, kbID)
 	} else if err := secutils.ValidateTaskID(taskID); err != nil {
-		return "", werrors.NewBadRequestError("task_id 格式不合法")
+		return "", werrors.NewBadRequestError("Le format de task_id n'est pas valide")
 	}
 
 	var knowledgeID string
@@ -69,7 +69,7 @@ func (s *knowledgeService) UpsertFAQEntries(ctx context.Context,
 		// 检查失败不影响导入，继续执行
 	} else if runningTaskID != "" {
 		logger.Warnf(ctx, "Import task already running for KB %s: %s", kbID, runningTaskID)
-		return "", werrors.NewBadRequestError(fmt.Sprintf("该知识库已有导入任务正在进行中（任务ID: %s），请等待完成后再试", runningTaskID))
+		return "", werrors.NewBadRequestError(fmt.Sprintf("Un import est déjà en cours pour cette base de connaissances (ID de tâche : %s) ; réessayez une fois qu'il est terminé", runningTaskID))
 	}
 
 	// 确保 FAQ knowledge 存在
@@ -117,7 +117,7 @@ func (s *knowledgeService) UpsertFAQEntries(ctx context.Context,
 		SuccessCount:  0,
 		FailedCount:   0,
 		FailedEntries: make([]types.FAQFailedEntry, 0),
-		Message:       "任务已创建，等待处理",
+		Message:       "Tâche créée, en attente de traitement",
 		CreatedAt:     time.Now().Unix(),
 		UpdatedAt:     time.Now().Unix(),
 		DryRun:        payload.DryRun,
@@ -264,7 +264,7 @@ func (s *knowledgeService) generateFailedEntriesCSV(ctx context.Context,
 	buf.WriteString("\xEF\xBB\xBF")
 
 	// 写入表头
-	buf.WriteString("错误原因,分类(必填),问题(必填),相似问题(选填-多个用##分隔),反例问题(选填-多个用##分隔),机器人回答(必填-多个用##分隔),是否全部回复(选填-默认FALSE),是否停用(选填-默认FALSE)\n")
+	buf.WriteString("Motif de l'erreur,Catégorie(obligatoire),Question(obligatoire),Questions similaires(facultatif - séparer par ##),Questions exclues(facultatif - séparer par ##),Réponses(obligatoire - séparer par ##),Toutes les réponses(facultatif - FALSE par défaut),Désactivé(facultatif - FALSE par défaut)\n")
 
 	// 写入数据行
 	for _, entry := range failedEntries {
@@ -418,15 +418,15 @@ func buildFAQPartialFailedEntry(idx int, entry *types.FAQEntryPayload,
 	// 构建失败原因描述：汇总信息 + 详细信息
 	var summary []string
 	if len(removedSimilarQuestions) > 0 {
-		summary = append(summary, fmt.Sprintf("%d条相似问被移除", len(removedSimilarQuestions)))
+		summary = append(summary, fmt.Sprintf("%d question(s) similaire(s) retirée(s)", len(removedSimilarQuestions)))
 	}
 	if len(removedNegativeQuestions) > 0 {
-		summary = append(summary, fmt.Sprintf("%d条反例被移除", len(removedNegativeQuestions)))
+		summary = append(summary, fmt.Sprintf("%d question(s) exclue(s) retirée(s)", len(removedNegativeQuestions)))
 	}
 
 	// 完整的 reason：汇总 | 相似问详情 | 反例详情
 	var reasonParts []string
-	reasonParts = append(reasonParts, "部分成功："+strings.Join(summary, "，"))
+	reasonParts = append(reasonParts, "Réussite partielle : "+strings.Join(summary, ", "))
 	if len(removedSimilarQuestions) > 0 {
 		reasonParts = append(reasonParts, strings.Join(removedSimilarQuestions, "; "))
 	}
@@ -544,7 +544,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 		// 文件内标准问去重
 		if firstIdx, exists := batchStandardQuestions[standardQ]; exists {
 			progress.FailedCount++
-			fe := buildFAQFailedEntry(i, fmt.Sprintf("标准问冲突：与批次内第 %d 条标准问重复", firstIdx+1), &entry)
+			fe := buildFAQFailedEntry(i, fmt.Sprintf("Conflit de question principale : identique à la question principale de la ligne %d du lot", firstIdx+1), &entry)
 			fe.FailureType = "pre_validation"
 			progress.FailedEntries = append(progress.FailedEntries, fe)
 			continue
@@ -561,7 +561,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 			conflictStdQ := existingChunkIDToStdQ[conflictChunkID]
 			progress.FailedCount++
 			fe := buildFAQFailedEntry(i,
-				fmt.Sprintf(`标准问冲突：与知识库中标准问"%s"的相似问"%s"重复`, conflictStdQ, standardQ),
+				fmt.Sprintf(`Conflit de question principale : identique à la question similaire « %[2]s » de la question principale « %[1]s » de la base`, conflictStdQ, standardQ),
 				&entry)
 			fe.FailureType = "pre_validation"
 			progress.FailedEntries = append(progress.FailedEntries, fe)
@@ -575,7 +575,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 		validIndicesAfterStdQ = append(validIndicesAfterStdQ, i)
 
 		if (i+1)%100 == 0 {
-			progress.Message = fmt.Sprintf("正在验证标准问 %d/%d...", i+1, totalEntries)
+			progress.Message = fmt.Sprintf("Vérification des questions principales %d/%d...", i+1, totalEntries)
 			progress.UpdatedAt = time.Now().Unix()
 			if err := s.saveFAQImportProgress(ctx, progress); err != nil {
 				logger.Warnf(ctx, "Failed to update FAQ dry run progress: %v", err)
@@ -621,7 +621,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 			}
 			// 相似问不能与自己的标准问相同
 			if q == standardQ {
-				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`「相似问冲突」："%s"与本条"标准问"冲突`, q))
+				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`[Conflit de question similaire] : « %s » entre en conflit avec la question principale de cette entrée`, q))
 				continue
 			}
 			// 相似问校验：对比知识库已有标准问 + 相似问
@@ -631,12 +631,12 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 					validSimilarQuestions = append(validSimilarQuestions, q)
 					continue
 				}
-				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`「相似问冲突」："%s"与知识库已有"标准问/相似问"冲突`, q))
+				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`[Conflit de question similaire] : « %s » entre en conflit avec une question principale ou similaire existante de la base`, q))
 				continue
 			}
 			// 相似问校验：对比批次内标准问 + 相似问
 			if firstIdx, exists := batchAllQuestions[q]; exists && firstIdx != i {
-				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`「相似问冲突」："%s"与第 %d 行"标准问/相似问"冲突`, q, firstIdx+1))
+				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`[Conflit de question similaire] : « %s » entre en conflit avec une question principale ou similaire de la ligne %d`, q, firstIdx+1))
 				continue
 			}
 			validSimilarQuestions = append(validSimilarQuestions, q)
@@ -648,7 +648,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 		}
 
 		if (idx+1)%100 == 0 {
-			progress.Message = fmt.Sprintf("正在验证相似问 %d/%d...", idx+1, len(validIndicesAfterStdQ))
+			progress.Message = fmt.Sprintf("Vérification des questions similaires %d/%d...", idx+1, len(validIndicesAfterStdQ))
 			progress.UpdatedAt = time.Now().Unix()
 			if err := s.saveFAQImportProgress(ctx, progress); err != nil {
 				logger.Warnf(ctx, "Failed to update FAQ dry run progress: %v", err)
@@ -675,7 +675,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 				continue
 			}
 			if currentQAQuestions[q] {
-				removedNegativeQuestions = append(removedNegativeQuestions, fmt.Sprintf(`「反例冲突」："%s"与本条"标准问/相似问"冲突`, q))
+				removedNegativeQuestions = append(removedNegativeQuestions, fmt.Sprintf(`[Conflit de question exclue] : « %s » entre en conflit avec la question principale ou une question similaire de cette entrée`, q))
 				continue
 			}
 			validNegativeQuestions = append(validNegativeQuestions, q)
@@ -687,7 +687,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 		}
 
 		if (idx+1)%100 == 0 {
-			progress.Message = fmt.Sprintf("正在验证反例 %d/%d...", idx+1, len(validIndicesAfterStdQ))
+			progress.Message = fmt.Sprintf("Vérification des questions exclues %d/%d...", idx+1, len(validIndicesAfterStdQ))
 			progress.UpdatedAt = time.Now().Unix()
 			if err := s.saveFAQImportProgress(ctx, progress); err != nil {
 				logger.Warnf(ctx, "Failed to update FAQ dry run progress: %v", err)
@@ -737,7 +737,7 @@ func (s *knowledgeService) validateEntriesForAppendModeWithProgress(ctx context.
 			postValidationFailed[i] = true
 			delete(mergeChunkMap, i)
 			progress.FailedCount++
-			reason := fmt.Sprintf("后校验失败：合并后反例「%s」与相似问冲突", strings.Join(conflictingNegatives, "、"))
+			reason := fmt.Sprintf("Échec de la vérification finale : après fusion, la question exclue « %s » entre en conflit avec une question similaire", strings.Join(conflictingNegatives, "、"))
 			fe := buildFAQFailedEntry(i, reason, entry)
 			fe.FailureType = "post_validation"
 			progress.FailedEntries = append(progress.FailedEntries, fe)
@@ -813,7 +813,7 @@ func (s *knowledgeService) validateEntriesForReplaceModeWithProgress(ctx context
 		// 标准问校验：对比所有标准问 → 整条QA失败「标准问冲突」
 		if firstIdx, exists := batchStandardQuestions[standardQ]; exists {
 			progress.FailedCount++
-			progress.FailedEntries = append(progress.FailedEntries, buildFAQFailedEntry(i, fmt.Sprintf("标准问冲突：与批次内第 %d 条标准问重复", firstIdx+1), &entry))
+			progress.FailedEntries = append(progress.FailedEntries, buildFAQFailedEntry(i, fmt.Sprintf("Conflit de question principale : identique à la question principale de la ligne %d du lot", firstIdx+1), &entry))
 			continue
 		}
 
@@ -823,7 +823,7 @@ func (s *knowledgeService) validateEntriesForReplaceModeWithProgress(ctx context
 
 		// 定期更新进度消息
 		if (i+1)%100 == 0 {
-			progress.Message = fmt.Sprintf("正在验证标准问 %d/%d...", i+1, totalEntries)
+			progress.Message = fmt.Sprintf("Vérification des questions principales %d/%d...", i+1, totalEntries)
 			progress.UpdatedAt = time.Now().Unix()
 			if err := s.saveFAQImportProgress(ctx, progress); err != nil {
 				logger.Warnf(ctx, "Failed to update FAQ dry run progress: %v", err)
@@ -869,13 +869,13 @@ func (s *knowledgeService) validateEntriesForReplaceModeWithProgress(ctx context
 			// 如果该相似问与其他条目的标准问或相似问冲突（且不是自己的标准问），则移除
 			if firstIdx, exists := batchAllQuestions[q]; exists && firstIdx != i {
 				logger.Infof(ctx, "FAQ entry %d: similar question '%s' conflicts with entry %d, removing", i, q, firstIdx+1)
-				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`「相似问冲突」："%s"与第 %d 行"标准问/相似问"冲突`, q, firstIdx+1))
+				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`[Conflit de question similaire] : « %s » entre en conflit avec une question principale ou similaire de la ligne %d`, q, firstIdx+1))
 				continue
 			}
 			// 相似问不能与自己的标准问相同
 			if q == standardQ {
 				logger.Infof(ctx, "FAQ entry %d: similar question '%s' same as standard question, removing", i, q)
-				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`「相似问冲突」："%s"与本条"标准问"冲突`, q))
+				removedSimilarQuestions = append(removedSimilarQuestions, fmt.Sprintf(`[Conflit de question similaire] : « %s » entre en conflit avec la question principale de cette entrée`, q))
 				continue
 			}
 			validSimilarQuestions = append(validSimilarQuestions, q)
@@ -889,7 +889,7 @@ func (s *knowledgeService) validateEntriesForReplaceModeWithProgress(ctx context
 
 		// 定期更新进度消息
 		if (idx+1)%100 == 0 {
-			progress.Message = fmt.Sprintf("正在验证相似问 %d/%d...", idx+1, len(validIndicesAfterStdQ))
+			progress.Message = fmt.Sprintf("Vérification des questions similaires %d/%d...", idx+1, len(validIndicesAfterStdQ))
 			progress.UpdatedAt = time.Now().Unix()
 			if err := s.saveFAQImportProgress(ctx, progress); err != nil {
 				logger.Warnf(ctx, "Failed to update FAQ dry run progress: %v", err)
@@ -920,7 +920,7 @@ func (s *knowledgeService) validateEntriesForReplaceModeWithProgress(ctx context
 			// 反例校验：对比当前QA下所有标准问+相似问 → 单条问法失败「反例冲突」
 			if currentQAQuestions[q] {
 				logger.Infof(ctx, "FAQ entry %d: negative question '%s' conflicts with current QA's questions, removing", i, q)
-				removedNegativeQuestions = append(removedNegativeQuestions, fmt.Sprintf(`「反例冲突」："%s"与本条"标准问/相似问"冲突`, q))
+				removedNegativeQuestions = append(removedNegativeQuestions, fmt.Sprintf(`[Conflit de question exclue] : « %s » entre en conflit avec la question principale ou une question similaire de cette entrée`, q))
 				continue
 			}
 			validNegativeQuestions = append(validNegativeQuestions, q)
@@ -934,7 +934,7 @@ func (s *knowledgeService) validateEntriesForReplaceModeWithProgress(ctx context
 
 		// 定期更新进度消息
 		if (idx+1)%100 == 0 {
-			progress.Message = fmt.Sprintf("正在验证反例 %d/%d...", idx+1, len(validIndicesAfterStdQ))
+			progress.Message = fmt.Sprintf("Vérification des questions exclues %d/%d...", idx+1, len(validIndicesAfterStdQ))
 			progress.UpdatedAt = time.Now().Unix()
 			if err := s.saveFAQImportProgress(ctx, progress); err != nil {
 				logger.Warnf(ctx, "Failed to update FAQ dry run progress: %v", err)
@@ -980,14 +980,14 @@ func unionStrings(a, b []string) []string {
 // validateFAQEntryPayloadBasic 验证 FAQ 条目的基本格式
 func validateFAQEntryPayloadBasic(entry *types.FAQEntryPayload) error {
 	if entry == nil {
-		return fmt.Errorf("条目不能为空")
+		return fmt.Errorf("l'entrée est obligatoire")
 	}
 	standardQ := strings.TrimSpace(entry.StandardQuestion)
 	if standardQ == "" {
-		return fmt.Errorf("标准问不能为空")
+		return fmt.Errorf("La question principale est obligatoire")
 	}
 	if len(entry.Answers) == 0 {
-		return fmt.Errorf("答案不能为空")
+		return fmt.Errorf("la réponse est obligatoire")
 	}
 	hasValidAnswer := false
 	for _, a := range entry.Answers {
@@ -997,7 +997,7 @@ func validateFAQEntryPayloadBasic(entry *types.FAQEntryPayload) error {
 		}
 	}
 	if !hasValidAnswer {
-		return fmt.Errorf("答案不能全为空")
+		return fmt.Errorf("les réponses ne peuvent pas être toutes vides")
 	}
 	return nil
 }
@@ -1626,7 +1626,7 @@ func (s *knowledgeService) executeFAQImport(ctx context.Context, taskID string, 
 		actualProcessed += len(batch)
 		// 更新任务进度
 		progress := int(float64(actualProcessed) / float64(totalEntries) * 100)
-		if err := s.updateFAQImportProgressStatus(ctx, taskID, "", 0, types.FAQImportStatusProcessing, progress, totalEntries, actualProcessed, fmt.Sprintf("正在处理第 %d/%d 条", actualProcessed, totalEntries), ""); err != nil {
+		if err := s.updateFAQImportProgressStatus(ctx, taskID, "", 0, types.FAQImportStatusProcessing, progress, totalEntries, actualProcessed, fmt.Sprintf("Traitement de l'entrée %d/%d", actualProcessed, totalEntries), ""); err != nil {
 			logger.Errorf(ctx, "Failed to update task progress: %v", err)
 		}
 
@@ -2337,7 +2337,7 @@ func (s *knowledgeService) ProcessFAQImport(ctx context.Context, t *asynq.Task) 
 		FailedCount:    0,
 		FailedEntries:  make([]types.FAQFailedEntry, 0),
 		SuccessEntries: make([]types.FAQSuccessEntry, 0),
-		Message:        "正在验证条目...",
+		Message:        "Vérification des entrées...",
 		CreatedAt:      time.Now().Unix(),
 		UpdatedAt:      time.Now().Unix(),
 		DryRun:         payload.DryRun,
@@ -2384,7 +2384,7 @@ func (s *knowledgeService) ProcessFAQImport(ctx context.Context, t *asynq.Task) 
 	}
 
 	// 更新进度消息
-	progress.Message = fmt.Sprintf("验证完成，开始导入 %d 条有效数据...", len(validEntries))
+	progress.Message = fmt.Sprintf("Vérification terminée, import de %d entrée(s) valide(s)...", len(validEntries))
 	progress.UpdatedAt = time.Now().Unix()
 	if err := s.saveFAQImportProgress(ctx, progress); err != nil {
 		logger.Warnf(ctx, "Failed to update FAQ import progress: %v", err)
@@ -2414,7 +2414,7 @@ func (s *knowledgeService) ProcessFAQImport(ctx context.Context, t *asynq.Task) 
 		logger.Errorf(ctx, "Failed to delete unindexed chunks: %v", err)
 		// 如果是最后一次重试，更新状态为失败
 		if isLastRetry {
-			if updateErr := s.updateFAQImportProgressStatus(ctx, payload.TaskID, payload.InstanceID, payload.EnqueuedAt, types.FAQImportStatusFailed, 0, originalTotalEntries, 0, "清理未索引数据失败", err.Error()); updateErr != nil {
+			if updateErr := s.updateFAQImportProgressStatus(ctx, payload.TaskID, payload.InstanceID, payload.EnqueuedAt, types.FAQImportStatusFailed, 0, originalTotalEntries, 0, "Échec du nettoyage des données non indexées", err.Error()); updateErr != nil {
 				logger.Errorf(ctx, "Failed to update task status to failed: %v", updateErr)
 			}
 			s.recordFAQImportKBActivity(ctx, &payload, progress, originalTotalEntries, types.AuditActionFAQImportFailed, types.AuditOutcomeFailed)
@@ -2471,7 +2471,7 @@ func (s *knowledgeService) ProcessFAQImport(ctx context.Context, t *asynq.Task) 
 		logger.Errorf(ctx, "FAQ import task failed: %s, error: %v", payload.TaskID, err)
 		// 如果是最后一次重试，更新状态为失败
 		if isLastRetry {
-			if updateErr := s.updateFAQImportProgressStatus(ctx, payload.TaskID, payload.InstanceID, payload.EnqueuedAt, types.FAQImportStatusFailed, 0, originalTotalEntries, len(validEntries), "导入失败", err.Error()); updateErr != nil {
+			if updateErr := s.updateFAQImportProgressStatus(ctx, payload.TaskID, payload.InstanceID, payload.EnqueuedAt, types.FAQImportStatusFailed, 0, originalTotalEntries, len(validEntries), "Échec de l'import", err.Error()); updateErr != nil {
 				logger.Errorf(ctx, "Failed to update task status to failed: %v", updateErr)
 			}
 			s.recordFAQImportKBActivity(ctx, &payload, progress, originalTotalEntries, types.AuditActionFAQImportFailed, types.AuditOutcomeFailed)
@@ -2510,7 +2510,7 @@ func (s *knowledgeService) finalizeFAQValidation(ctx context.Context, payload *t
 		} else {
 			progress.FailedEntriesURL = csvURL
 			progress.FailedEntries = nil // 清空内联数据，使用 URL
-			progress.Message += " (失败记录已导出为CSV)"
+			progress.Message += " (entrées en échec exportées en CSV)"
 		}
 	}
 
@@ -2546,9 +2546,9 @@ func (s *knowledgeService) finalizeFAQValidation(ctx context.Context, payload *t
 	progress.SkippedCount = skippedCount
 
 	if payload.DryRun {
-		progress.Message = s.buildFAQImportResultMessage("验证完成", progress)
+		progress.Message = s.buildFAQImportResultMessage("Vérification terminée", progress)
 	} else {
-		progress.Message = s.buildFAQImportResultMessage("导入完成", progress)
+		progress.Message = s.buildFAQImportResultMessage("Import terminé", progress)
 	}
 
 	// 如果不是 dry run 模式，保存导入结果统计到数据库
@@ -2764,20 +2764,20 @@ func faqTagInfo(tagsByID map[string]*types.KnowledgeTag, tagID string) (int64, s
 // 内部 master 原始实现；HEAD 版本之前没有，所有完成消息只有 "正在处理第 N/M 条"。
 func (s *knowledgeService) buildFAQImportResultMessage(prefix string, progress *types.FAQImportProgress) string {
 	parts := []string{prefix}
-	parts = append(parts, fmt.Sprintf("上传 %d 条", progress.Total))
+	parts = append(parts, fmt.Sprintf("%d envoyée(s)", progress.Total))
 
 	if progress.MergedCount > 0 {
-		parts = append(parts, fmt.Sprintf("新增 %d 条", progress.AddedCount))
-		parts = append(parts, fmt.Sprintf("合并更新 %d 条", progress.MergedCount))
+		parts = append(parts, fmt.Sprintf("%d ajoutée(s)", progress.AddedCount))
+		parts = append(parts, fmt.Sprintf("%d fusionnée(s)", progress.MergedCount))
 	} else {
-		parts = append(parts, fmt.Sprintf("成功 %d 条", progress.SuccessCount))
+		parts = append(parts, fmt.Sprintf("%d réussie(s)", progress.SuccessCount))
 	}
 
 	if progress.FailedCount > 0 {
-		parts = append(parts, fmt.Sprintf("失败 %d 条", progress.FailedCount))
+		parts = append(parts, fmt.Sprintf("%d en échec", progress.FailedCount))
 	}
 	if progress.PartialFailedCount > 0 {
-		parts = append(parts, fmt.Sprintf("部分失败 %d 条", progress.PartialFailedCount))
+		parts = append(parts, fmt.Sprintf("%d en échec partiel", progress.PartialFailedCount))
 	}
 
 	return strings.Join(parts, " / ")

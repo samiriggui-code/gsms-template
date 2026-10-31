@@ -388,7 +388,7 @@ func (s *sessionService) AgentQA(
 		)
 		if agentModelSupportsVision && len(agentImageURLs) > 0 {
 			logger.Infof(ctx, "Agent model supports vision, passing %d image(s) directly", len(agentImageURLs))
-		} else if len(req.ImageURLs) > 0 && strings.Contains(agentQuery, "[用户上传图片内容]") {
+		} else if len(req.ImageURLs) > 0 && strings.Contains(agentQuery, "[Contenu de l'image envoyée par l'utilisateur]") {
 			logger.Infof(ctx, "Agent model does not support vision, appending image description")
 		} else if len(req.ImageURLs) > 0 {
 			logger.Warnf(ctx, "Agent model cannot view %d image(s) and no description was produced", len(req.ImageURLs))
@@ -478,7 +478,7 @@ func composeAgentImageQuery(
 		text = strings.Join(kept, "\n")
 	}
 	if text != "" {
-		return query + "\n\n[用户上传图片内容]\n" + text, nil
+		return query + "\n\n[Contenu de l'image envoyée par l'utilisateur]\n" + text, nil
 	}
 	return query, nil
 }

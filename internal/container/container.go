@@ -976,7 +976,7 @@ func initRedisClient() (*redis.Client, error) {
 
 	_, err = client.Ping(context.Background()).Result()
 	if err != nil {
-		return nil, fmt.Errorf("连接Redis失败: %w", err)
+		return nil, fmt.Errorf("Échec de connexion à Redis : %w", err)
 	}
 
 	return client, nil

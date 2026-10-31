@@ -562,7 +562,7 @@ func TestCollaborationAbandonedParentClosesTranscriptWithoutModelReplay(t *testi
 		select {
 		case e := <-streams.events:
 			require.Equal(t, want, e.Type)
-			require.Contains(t, e.Content, "没有可安全恢复的检查点")
+			require.Contains(t, e.Content, "aucun point de reprise sûr")
 			require.Equal(t, e.Content, e.Data["final_content"])
 			require.True(t, e.Done)
 		case <-time.After(3 * time.Second):
@@ -572,7 +572,7 @@ func TestCollaborationAbandonedParentClosesTranscriptWithoutModelReplay(t *testi
 	m, err := messages.GetMessage(ctx, scope.SessionID, scope.ID)
 	require.NoError(t, err)
 	require.True(t, m.IsCompleted)
-	require.Contains(t, m.Content, "没有可安全恢复的检查点")
+	require.Contains(t, m.Content, "aucun point de reprise sûr")
 	require.Zero(t, calls.Load())
 	// Terminal stream delivery precedes the durable acknowledgement.
 	require.Eventually(t, func() bool {

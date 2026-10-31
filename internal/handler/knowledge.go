@@ -345,7 +345,7 @@ func (h *KnowledgeHandler) CreateKnowledgeFromFile(c *gin.Context) {
 	if err != nil {
 		if isRequestBodyTooLarge(err) {
 			logger.Error(ctx, "File size too large")
-			c.Error(errors.NewBadRequestError(fmt.Sprintf("文件大小不能超过%dMB", maxSizeMB)))
+			c.Error(errors.NewBadRequestError(fmt.Sprintf("Le fichier ne doit pas dépasser %d Mo", maxSizeMB)))
 			return
 		}
 		logger.Error(ctx, "File upload failed", err)
@@ -354,7 +354,7 @@ func (h *KnowledgeHandler) CreateKnowledgeFromFile(c *gin.Context) {
 	}
 	if file.Size > maxSize {
 		logger.Error(ctx, "File size too large")
-		c.Error(errors.NewBadRequestError(fmt.Sprintf("文件大小不能超过%dMB", maxSizeMB)))
+		c.Error(errors.NewBadRequestError(fmt.Sprintf("Le fichier ne doit pas dépasser %d Mo", maxSizeMB)))
 		return
 	}
 
@@ -2742,7 +2742,7 @@ func (h *KnowledgeHandler) UpdateKnowledgeTagBatch(c *gin.Context) {
 	var req KnowledgeTagBatchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to parse knowledge tag batch request", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 	if err := applyKnowledgeTagBatch(&req); err != nil {

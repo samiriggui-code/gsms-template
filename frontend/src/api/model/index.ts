@@ -312,7 +312,7 @@ export function saveWeKnoraCloudCredentials(data: InitializeWeKnoraCloudRequest)
         if (response.success) {
           resolve(response)
         } else {
-          reject(new Error(response.message || response.error || '凭证保存失败'))
+          reject(new Error(response.message || response.error || "Échec de l'enregistrement des identifiants"))
         }
       })
       .catch((error: any) => {

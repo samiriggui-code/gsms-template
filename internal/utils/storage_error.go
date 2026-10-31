@@ -14,22 +14,22 @@ func SanitizeStorageConnectivityError(err error) string {
 	msg := err.Error()
 	switch {
 	case strings.Contains(msg, "Endpoint url cannot have fully qualified paths"):
-		return "Endpoint 地址格式错误：请去除 http:// 或 https:// 前缀，只填写域名或 IP 地址和端口（例如：minio.example.com:9000）"
+		return "Format d'Endpoint incorrect : retirez le préfixe http:// ou https:// et indiquez seulement le domaine ou l'IP avec le port (par exemple : minio.example.com:9000)"
 	case strings.Contains(msg, "no such host"):
-		return "DNS 解析失败，请检查地址是否正确"
+		return "Échec de la résolution DNS ; vérifiez l'adresse"
 	case strings.Contains(msg, "connection refused"):
-		return "连接被拒绝，请确认服务已启动且端口正确"
+		return "Connexion refusée ; vérifiez que le service est démarré et que le port est correct"
 	case strings.Contains(msg, "no route to host"):
-		return "无法路由到目标地址，请检查网络配置"
+		return "Impossible d'atteindre l'adresse cible ; vérifiez la configuration réseau"
 	case strings.Contains(msg, "i/o timeout") || strings.Contains(msg, "deadline exceeded") || strings.Contains(msg, "context deadline"):
-		return "连接超时，请检查网络或服务状态"
+		return "Délai de connexion dépassé ; vérifiez le réseau ou l'état du service"
 	case strings.Contains(msg, "403") || strings.Contains(msg, "AccessDenied") || strings.Contains(msg, "access denied"):
-		return "认证失败，请检查访问凭证是否正确"
+		return "Échec d'authentification ; vérifiez les identifiants d'accès"
 	case strings.Contains(msg, "certificate") || strings.Contains(msg, "tls") || strings.Contains(msg, "x509"):
-		return "TLS/SSL 证书错误，请检查 SSL 配置"
+		return "Erreur de certificat TLS/SSL ; vérifiez la configuration SSL"
 	case strings.Contains(msg, "404") || strings.Contains(msg, "NoSuchBucket"):
-		return "Bucket 不存在，请检查名称和 Region"
+		return "Le bucket n'existe pas ; vérifiez son nom et la Region"
 	default:
-		return "连接失败，请检查配置参数是否正确"
+		return "Échec de connexion ; vérifiez les paramètres de configuration"
 	}
 }

@@ -575,7 +575,7 @@ func (s *knowledgeService) checkStorageEngineConfigured(ctx context.Context, kb 
 			kbIDOrEmpty(kb))
 		return nil
 	}
-	return werrors.NewBadRequestError("请先为知识库选择存储引擎，再上传内容。请前往知识库设置页面进行配置。")
+	return werrors.NewBadRequestError("Choisissez d'abord un moteur de stockage pour la base de connaissances avant d'envoyer du contenu. Configurez-le dans les paramètres de la base de connaissances.")
 }
 
 func kbIDOrEmpty(kb *types.KnowledgeBase) string {
@@ -748,21 +748,21 @@ func (s *knowledgeService) RenameKnowledgeFolder(ctx context.Context,
 ) (int64, error) {
 	source := types.NormalizeKnowledgeFolderPath(from)
 	if source == "" {
-		return 0, werrors.NewBadRequestError("源文件夹路径不能为空")
+		return 0, werrors.NewBadRequestError("Le chemin du dossier source est obligatoire")
 	}
 	target, err := normalizeTargetFolderPath(ctx, to)
 	if err != nil {
 		return 0, err
 	}
 	if target == "" {
-		return 0, werrors.NewBadRequestError("目标文件夹路径不能为空")
+		return 0, werrors.NewBadRequestError("Le chemin du dossier cible est obligatoire")
 	}
 	if target == source {
 		return 0, nil
 	}
 	// Moving a folder inside itself would make its own subtree unreachable.
 	if strings.HasPrefix(target, source+"/") {
-		return 0, werrors.NewBadRequestError("不能将文件夹移动到它自己的子目录下")
+		return 0, werrors.NewBadRequestError("Impossible de déplacer un dossier dans l'un de ses sous-dossiers")
 	}
 
 	kb, err := s.kbService.GetKnowledgeBaseByID(ctx, kbID)
@@ -798,7 +798,7 @@ func normalizeTargetFolderPath(ctx context.Context, folderPath string) (string, 
 	safe, valid := secutils.ValidateInput(trimmed)
 	if !valid {
 		logger.Errorf(ctx, "Invalid folder path: %s", secutils.SanitizeForLog(trimmed))
-		return "", werrors.NewValidationError("文件夹路径包含非法字符")
+		return "", werrors.NewValidationError("Le chemin du dossier contient des caractères non autorisés")
 	}
 	return types.NormalizeKnowledgeFolderPath(safe), nil
 }
@@ -1010,10 +1010,10 @@ func (s *knowledgeService) validateKnowledgeTagIDs(
 	for _, tagID := range unique {
 		tag, ok := tagMap[tagID]
 		if !ok {
-			return werrors.NewBadRequestError(fmt.Sprintf("标签 %s 不存在", tagID))
+			return werrors.NewBadRequestError(fmt.Sprintf("Le tag %s n'existe pas", tagID))
 		}
 		if tag.KnowledgeBaseID != kbID {
-			return werrors.NewBadRequestError("标签不属于当前知识库")
+			return werrors.NewBadRequestError("Le tag n'appartient pas à cette base de connaissances")
 		}
 	}
 	return nil
@@ -1148,10 +1148,10 @@ func (s *knowledgeService) UpdateKnowledgeTagBatch(
 			}
 			tag, ok := tagMap[tagID]
 			if !ok {
-				return werrors.NewBadRequestError(fmt.Sprintf("标签 %s 不存在", tagID))
+				return werrors.NewBadRequestError(fmt.Sprintf("Le tag %s n'existe pas", tagID))
 			}
 			if tag.TenantID != tenantID || tag.KnowledgeBaseID != knowledge.KnowledgeBaseID {
-				return werrors.NewBadRequestError(fmt.Sprintf("标签 %s 不属于知识库 %s", tagID, knowledge.KnowledgeBaseID))
+				return werrors.NewBadRequestError(fmt.Sprintf("Le tag %s n'appartient pas à la base de connaissances %s", tagID, knowledge.KnowledgeBaseID))
 			}
 		}
 	}

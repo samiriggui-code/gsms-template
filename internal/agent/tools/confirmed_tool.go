@@ -208,12 +208,12 @@ func wikiApprovalGrant(ctx context.Context, name string, kbIDs []string) (string
 // confirmedToolSummaries name each wrapped tool on the confirmation card, in
 // Chinese and English.
 var confirmedToolSummaries = map[string][2]string{
-	ToolWikiWritePage:   {"写入 Wiki 页面", "Write a Wiki page"},
-	ToolWikiReplaceText: {"修改 Wiki 页面内容", "Edit Wiki page text"},
-	ToolWikiRenamePage:  {"重命名 Wiki 页面", "Rename a Wiki page"},
-	ToolWikiDeletePage:  {"删除 Wiki 页面", "Delete a Wiki page"},
-	ToolWikiFlagIssue:   {"登记 Wiki 问题", "Flag a Wiki issue"},
-	ToolWikiUpdateIssue: {"更新 Wiki 问题状态", "Update a Wiki issue"},
+	ToolWikiWritePage:   {"Écrire une page wiki", "Write a Wiki page"},
+	ToolWikiReplaceText: {"Modifier le contenu d'une page wiki", "Edit Wiki page text"},
+	ToolWikiRenamePage:  {"Renommer une page wiki", "Rename a Wiki page"},
+	ToolWikiDeletePage:  {"Supprimer une page wiki", "Delete a Wiki page"},
+	ToolWikiFlagIssue:   {"Signaler un problème wiki", "Flag a Wiki issue"},
+	ToolWikiUpdateIssue: {"Mettre à jour l'état d'un problème wiki", "Update a Wiki issue"},
 }
 
 func confirmedToolSummary(ctx context.Context, name string, args json.RawMessage) string {

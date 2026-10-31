@@ -5035,6 +5035,13 @@ export default {
     }
   },
   chat: {
+    forkFromHere: 'Fork a new conversation from here',
+    forkFromAnswer: 'Continue in a branch from this answer',
+    forkTitleSuffix: ' (branch)',
+    forkBusy: 'Wait for the current answer to finish before branching',
+    forkFailed: 'Branching failed, please try again',
+    forkedFrom: 'Branched from another conversation',
+    documentEmpty: 'The document is empty',
     memoryUsedCount: '기억 {count}개를 참고했습니다',
     memoryForget: '이 기억 삭제',
     memoryForgotten: '기억을 삭제했습니다',

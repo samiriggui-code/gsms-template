@@ -126,7 +126,7 @@ services:
       # 时区，默认为Asia/Shanghai
       - TZ=${TZ:-Asia/Shanghai}
       # 文档处理语言（问题/摘要生成）。优先级：此环境变量（部署级覆盖，非空即生效）
-      # > Accept-Language 请求头 > 内置默认值 (zh-CN)。留空则跟随请求方 Accept-Language。
+      # > Accept-Language 请求头 > 内置默认值 (fr-FR)。留空则跟随请求方 Accept-Language。
       - WEKNORA_LANGUAGE=${WEKNORA_LANGUAGE:-}
       # Docker 沙箱默认关闭：本机 docker.sock 等同宿主机 root。
       # 系统管理员也可在「设置 → 系统设置」打开（立即生效）。未落库时读本变量。

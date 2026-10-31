@@ -592,7 +592,7 @@ async function handleFork(messageId) {
         usemenuStore.updataMenuChildren({
             id: data.session_id,
             path: `chat/${data.session_id}`,
-            title: `${sourceTitle}（分支）`,
+            title: `${sourceTitle}${t('chat.forkTitleSuffix')}`,
             parent_session_id: sourceSessionId,
             isMore: false,
             isNoTitle: false,
@@ -603,10 +603,10 @@ async function handleFork(messageId) {
         await router.push(`/platform/chat/${data.session_id}`)
     } catch (err) {
         if (err?.status === 409 || err?.$httpStatus === 409) {
-            MessagePlugin.warning('请等本轮回答结束后再分叉')
+            MessagePlugin.warning(t('chat.forkBusy'))
             return
         }
-        MessagePlugin.error('分叉失败，请重试')
+        MessagePlugin.error(t('chat.forkFailed'))
     } finally {
         forkInFlight = false
     }

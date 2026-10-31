@@ -19,7 +19,7 @@ import (
 const (
 	maxBodySize = 1024 * 10 // 最大记录10KB的body内容
 	// bodyTruncatedMarker 是日志里跟在被截断的 body 后面的标记。
-	bodyTruncatedMarker = "... [内容过长，已截断]"
+	bodyTruncatedMarker = "... [contenu trop long, tronqué]"
 )
 
 // replayedBody 把日志窥探消费掉的字节还给 handler，让它读到的 body 与没有这层
@@ -107,7 +107,7 @@ func readRequestBody(c *gin.Context) string {
 	if !strings.Contains(contentType, "application/json") &&
 		!strings.Contains(contentType, "application/x-www-form-urlencoded") &&
 		!strings.Contains(contentType, "text/") {
-		return "[非文本类型，已跳过]"
+		return "[type non textuel, ignoré]"
 	}
 
 	// 重置request body：把已窥探的前缀接回未读取的剩余部分，handler 仍能读到完整
@@ -126,7 +126,7 @@ func readRequestBody(c *gin.Context) string {
 		Closer: originalBody,
 	}
 	if err != nil {
-		return "[读取请求体失败]"
+		return "[échec de lecture du corps de la requête]"
 	}
 
 	// 用于日志的body（限制大小）
@@ -238,18 +238,18 @@ func Logger() gin.HandlerFunc {
 		if responseBody.Len() > 0 {
 			contentType := c.Writer.Header().Get("Content-Type")
 			if strings.Contains(contentType, "text/event-stream") {
-				responseBodyStr = "[SSE流式响应，已跳过]"
+				responseBodyStr = "[réponse SSE en continu, ignorée]"
 			} else if strings.Contains(contentType, "application/json") ||
 				strings.Contains(contentType, "text/") {
 				bodyBytes := responseBody.Bytes()
 				if len(bodyBytes) >= maxBodySize {
-					responseBodyStr = string(bodyBytes[:maxBodySize]) + "... [内容过长，已截断]"
+					responseBodyStr = string(bodyBytes[:maxBodySize]) + "... [contenu trop long, tronqué]"
 				} else {
 					responseBodyStr = string(bodyBytes)
 				}
 				responseBodyStr = sanitizeBody(responseBodyStr)
 			} else {
-				responseBodyStr = "[非文本类型，已跳过]"
+				responseBodyStr = "[type non textuel, ignoré]"
 			}
 		}
 

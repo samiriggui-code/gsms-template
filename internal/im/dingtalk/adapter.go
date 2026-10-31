@@ -397,7 +397,7 @@ func applyRichText(
 }
 
 func appendDroppedPictureHint(text string, pictureCount int) string {
-	hint := fmt.Sprintf("（该消息共 %d 张图片，当前仅处理第一张）", pictureCount)
+	hint := fmt.Sprintf("(ce message contient %d images ; seule la première est traitée)", pictureCount)
 	if strings.TrimSpace(text) == "" {
 		return hint
 	}

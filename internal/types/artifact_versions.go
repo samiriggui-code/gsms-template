@@ -9,8 +9,8 @@ import (
 // an explicit old/current pair. Preserve all original prose and destinations.
 func ClarifyArtifactVersions(content string, current, previous MessageArtifacts, language string) string {
 	oldLabel, newLabel := "Referenced previous version", "File generated this turn"
-	if strings.HasPrefix(language, "zh") {
-		oldLabel, newLabel = "正文引用的历史版本", "本轮生成的文件"
+	if strings.HasPrefix(language, "fr") {
+		oldLabel, newLabel = "Version précédente citée", "Fichier généré lors de ce tour"
 	}
 	seen := make(map[string]bool)
 	for _, old := range previous {
