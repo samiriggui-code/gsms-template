@@ -13,9 +13,9 @@ on:
           - site-only
           - app-only
       ref:
-        description: "Branche sur le VPS (git checkout + pull)"
+        description: "Branche sur le VPS (git checkout + pull) — main sauf test ponctuel"
         required: false
-        default: feat/site-homepage-i18n
+        default: main
 
 concurrency:
   group: deploy-vps
@@ -30,6 +30,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      - name: Validate inputs
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          # The ref is interpolated into a remote root shell: allow only plain branch names.
+          [[ "$REF" =~ ^[A-Za-z0-9._/-]+$ && "$REF" != -* && "$REF" != *..* ]] || { echo "Invalid ref: $REF"; exit 1; }
+
       - name: Require VPS secrets
         run: |
           test -n "${{ secrets.VPS_HOST }}" || { echo "Missing secret VPS_HOST"; exit 1; }
@@ -40,7 +47,14 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          printf 'Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking accept-new\n' \
+          # Pin the host key when VPS_KNOWN_HOSTS is set (ssh-keyscan output); otherwise trust on first use.
+          if [ -n "${{ secrets.VPS_KNOWN_HOSTS }}" ]; then
+            printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+            HOSTKEY_POLICY=yes
+          else
+            HOSTKEY_POLICY=accept-new
+          fi
+          printf "Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking ${HOSTKEY_POLICY}\n" \
             "${{ secrets.VPS_HOST }}" "${{ secrets.VPS_USER || 'root' }}" >> ~/.ssh/config
 
       - name: Deploy on VPS (site = website-docs, app = compose)
@@ -75,7 +89,7 @@ jobs:
                   up -d --no-build frontend app docreader postgres redis --remove-orphans
                 ;;
               *)
-                ./scripts/deploy-global-it-ss.sh
+                GIT_DEPLOY_REF='$REF' ./scripts/deploy-global-it-ss.sh
                 ;;
             esac
           "

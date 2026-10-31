@@ -17,7 +17,7 @@ L’ancien dossier **`landing/`** et le conteneur **`landing`** ne sont plus uti
 cd /opt/global-it-ss
 cp -a .env ".env.bak.$(date -u +%Y%m%dT%H%M%SZ)"
 git fetch origin
-git checkout feat/site-homepage-i18n   # ou main une fois la PR #24 mergée
+git checkout main
 git pull --ff-only
 unset COMPOSE_PROJECT_NAME
 chmod +x ./scripts/deploy-global-it-ss.sh
@@ -30,7 +30,7 @@ Rebuild complet (site + UI) :
 ./scripts/deploy-global-it-ss.sh --no-cache
 ```
 
-Wrapper local : `./scripts/deploy-vps.sh` (SSH alias `vps`, branche `feat/site-homepage-i18n` par défaut).
+Wrapper local : `./scripts/deploy-vps.sh` (SSH alias `vps`, branche `main` par défaut, `GIT_REF=…` pour une autre).
 
 ## Fichiers Compose
 
