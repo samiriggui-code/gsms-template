@@ -83,7 +83,7 @@ jobs:
               app-only)
                 docker compose --env-file .env -f docker-compose.yml \
                   -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
-                  build frontend
+                  build frontend app docreader
                 docker compose --env-file .env -f docker-compose.yml \
                   -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
                   up -d --no-build frontend app docreader postgres redis --remove-orphans

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # VPS entrypoint for global-it-ss on the shared GSMS Traefik host.
-# Builds site (website-docs: homepage + /docs/) + frontend from repo sources, then starts the stack
-# without implicit pulls/rebuilds.
+# Builds site (website-docs: homepage + /docs/), frontend, app and docreader from repo sources,
+# then starts the stack without implicit pulls/rebuilds.
 #
 # Requires .env with at least secrets and Traefik vars (see deploy/deploy-global-it-ss-vps.md).
 # Set COMPOSE_PROJECT_NAME=globalitss in .env so containers/volumes stay isolated (Compose reads it from .env).
@@ -26,9 +26,9 @@ usage() {
 Usage: ./scripts/deploy-global-it-ss.sh [--no-cache]
 
   Validates the three-file Compose stack (includes deploy/docker-compose.traefik.gsms.yml:
-  project-prefixed container names, no published app port), builds site and
-  frontend locally, then runs `up -d --no-build --remove-orphans` (drops the legacy
-  landing container). Does not pull frontend/site.
+  project-prefixed container names, no published app port), builds site,
+  frontend, app and docreader locally, then runs `up -d --no-build --remove-orphans` (drops the legacy
+  landing container). Does not pull any of them.
 
   GIT_DEPLOY_REF (default: main) selects the branch fast-forwarded before the build.
 
@@ -110,10 +110,10 @@ fi
 echo "Validating Compose configuration…"
 docker compose "${COMPOSE_FILES[@]}" config >/dev/null
 
-echo "Building site and frontend (local images gsms-site / gsms-weknora-ui)…"
-docker compose "${COMPOSE_FILES[@]}" build "${NO_CACHE[@]}" site frontend
+echo "Building site, frontend, app and docreader (local gsms-* images)…"
+docker compose "${COMPOSE_FILES[@]}" build "${NO_CACHE[@]}" site frontend app docreader
 
-echo "Starting stack (up -d --no-build; no pull for frontend/site; removes legacy landing)…"
+echo "Starting stack (up -d --no-build; no pull for locally built images; removes legacy landing)…"
 docker compose "${COMPOSE_FILES[@]}" up -d --no-build --remove-orphans
 
 echo "Deploy finished. Verify: docker ps --filter name=${PROJECT_NAME:-globalitss}"
