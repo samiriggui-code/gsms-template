@@ -220,7 +220,7 @@ func confirmedToolSummary(ctx context.Context, name string, args json.RawMessage
 	summary := name
 	if pair, ok := confirmedToolSummaries[name]; ok {
 		summary = pair[1]
-		if strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "zh") {
+		if strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "fr") {
 			summary = pair[0]
 		}
 	}

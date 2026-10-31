@@ -487,8 +487,10 @@ func (h *SystemHandler) ReconnectDocReader(c *gin.Context) {
 	engines := docparser.ListAllEngines(true, overrides, remoteEngines)
 
 	_, docreaderTransport := h.getDocReaderConnInfo()
-	c.JSON(200, gin.H{"code": 0, "msg": "Connexion réussie", "data": engines, "docreader_addr": addr,
-		"docreader_transport": docreaderTransport, "connected": true})
+	c.JSON(200, gin.H{
+		"code": 0, "msg": "Connexion réussie", "data": engines, "docreader_addr": addr,
+		"docreader_transport": docreaderTransport, "connected": true,
+	})
 }
 
 // CheckParserEngines runs availability check with the given config overrides (e.g. current form values).
@@ -828,9 +830,11 @@ func (h *SystemHandler) GetStorageEngineStatus(c *gin.Context) {
 	engines := []StorageEngineStatusItem{
 		{Name: "local", Allowed: allowed["local"], Available: true, Description: "Stockage sur le système de " +
 			"fichiers local, adapté uniquement à un déploiement mono-machine"},
-		{Name: "minio", Allowed: allowed["minio"], Available: minioConfigured || minioEnvAvailable,
+		{
+			Name: "minio", Allowed: allowed["minio"], Available: minioConfigured || minioEnvAvailable,
 			Description: "Stockage objet auto-hébergé compatible S3, adapté aux déploiements en réseau interne et " +
-				"cloud privé"},
+				"cloud privé",
+		},
 		{Name: "cos", Allowed: allowed["cos"], Available: cosConfigured, Description: "Service de stockage objet " +
 			"de Tencent Cloud, adapté au cloud public, avec accélération CDN"},
 		{Name: "tos", Allowed: allowed["tos"], Available: tosConfigured, Description: "Service de stockage objet " +
@@ -1061,8 +1065,8 @@ func (h *SystemHandler) checkCOS(c *gin.Context, ctx context.Context, cfg *types
 		logger.Errorf(ctx, "Storage check: COS connectivity failed, bucket: %s, error: %v", cfg.BucketName, err)
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "403") {
-			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false,
-				Message: "Échec d'authentification ; vérifiez Secret ID / Secret Key"}})
+			msg := "Échec d'authentification ; vérifiez Secret ID / Secret Key"
+			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false, Message: msg}})
 			return
 		}
 		if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "NoSuchBucket") {
@@ -1100,8 +1104,8 @@ func (h *SystemHandler) checkTOS(c *gin.Context, ctx context.Context, cfg *types
 		logger.Errorf(ctx, "Storage check: TOS connectivity failed, bucket: %s, error: %v", cfg.BucketName, err)
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "403") {
-			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false,
-				Message: "Échec d'authentification ; vérifiez Access Key / Secret Key"}})
+			msg := "Échec d'authentification ; vérifiez Access Key / Secret Key"
+			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false, Message: msg}})
 			return
 		}
 		if strings.Contains(errMsg, "404") {
@@ -1147,9 +1151,9 @@ func (h *SystemHandler) checkS3(c *gin.Context, ctx context.Context, cfg *types.
 		logger.Errorf(ctx, "Storage check: S3 connectivity failed, bucket: %s, error: %v", cfg.BucketName, err)
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "403") {
-			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false,
-				Message: "Échec d'authentification ; vérifiez la clé statique ou les droits du rôle AWS IAM / de " +
-					"la chaîne d'identifiants par défaut"}})
+			msg := "Échec d'authentification ; vérifiez la clé statique ou les droits du rôle AWS IAM / de " +
+				"la chaîne d'identifiants par défaut"
+			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false, Message: msg}})
 			return
 		}
 		if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "NotFound") {
@@ -1201,8 +1205,8 @@ func (h *SystemHandler) checkOSS(c *gin.Context, ctx context.Context, cfg *types
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "403") || strings.Contains(errMsg, "AccessDenied") {
 			logger.Errorf(ctx, "Storage check: OSS auth failed, endpoint: %s, bucket: %s", endpoint, cfg.BucketName)
-			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false,
-				Message: "Échec d'authentification ; vérifiez Access Key / Secret Key"}})
+			msg := "Échec d'authentification ; vérifiez Access Key / Secret Key"
+			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false, Message: msg}})
 			return
 		}
 		if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "NoSuchBucket") {
@@ -1246,8 +1250,8 @@ func (h *SystemHandler) checkKS3(c *gin.Context, ctx context.Context, cfg *types
 		logger.Errorf(ctx, "Storage check: KS3 connectivity failed, bucket: %s, error: %v", cfg.BucketName, err)
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "403") || strings.Contains(errMsg, "AccessDenied") {
-			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false,
-				Message: "Échec d'authentification ; vérifiez Access Key / Secret Key"}})
+			msg := "Échec d'authentification ; vérifiez Access Key / Secret Key"
+			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false, Message: msg}})
 			return
 		}
 		if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "NoSuchBucket") {
@@ -1299,8 +1303,8 @@ func (h *SystemHandler) checkOBS(c *gin.Context, ctx context.Context, cfg *types
 		logger.Errorf(ctx, "Storage check: OBS connectivity failed, bucket: %s, error: %v", cfg.BucketName, err)
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "403") || strings.Contains(errMsg, "AccessDenied") {
-			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false,
-				Message: "Échec d'authentification ; vérifiez Access Key / Secret Key"}})
+			msg := "Échec d'authentification ; vérifiez Access Key / Secret Key"
+			c.JSON(200, gin.H{"code": 0, "data": StorageCheckResponse{OK: false, Message: msg}})
 			return
 		}
 		if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "NoSuchBucket") {

@@ -20,9 +20,11 @@ func TestArtifactVersionsPreserveBothFiles(t *testing.T) {
 	require.Equal(t, body, ClarifyArtifactVersions(body, MessageArtifacts{old}, MessageArtifacts{old}, "fr-FR"))
 	// An explicit comparison already contains the new file; leave it alone.
 	comparison := body + "\n![新版](" + next.URL + ")"
-	require.Equal(t, comparison, ClarifyArtifactVersions(comparison, MessageArtifacts{next}, MessageArtifacts{old}, "fr-FR"))
+	require.Equal(t, comparison, ClarifyArtifactVersions(comparison, MessageArtifacts{next}, MessageArtifacts{old},
+		"fr-FR"))
 	next.SourcePath = "/workspace/output/other/比赛信息.pptx"
-	require.Equal(t, body, ClarifyArtifactVersions(body, MessageArtifacts{next}, MessageArtifacts{old}, "fr-FR"), "matching file names alone cannot establish a version relationship")
+	require.Equal(t, body, ClarifyArtifactVersions(body, MessageArtifacts{next}, MessageArtifacts{old}, "fr-FR"),
+		"matching file names alone cannot establish a version relationship")
 }
 
 func TestArtifactVersionsEscapeMarkdownDelimitersInFileName(t *testing.T) {

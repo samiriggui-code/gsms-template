@@ -40,7 +40,8 @@ func TestBuildUserHistoryMessage_FallsBackToContentWithCaptions(t *testing.T) {
 	}
 	got := buildUserHistoryMessage(msg)
 	assert.Equal(t, "user", got.Role)
-	assert.Equal(t, "look at this\n\n[Contenu de l'image envoyée par l'utilisateur]\na bar chart\na pie chart", got.Content)
+	assert.Equal(t, "look at this\n\n[Contenu de l'image envoyée par l'utilisateur]\na bar chart\na pie "+
+		"chart", got.Content)
 }
 
 // TestBuildUserHistoryMessage_AppendsAttachmentsWhenNoRenderedContent covers

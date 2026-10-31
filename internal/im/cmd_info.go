@@ -56,7 +56,7 @@ func (c *InfoCommand) Execute(ctx context.Context, cmdCtx *CommandContext, _ []s
 		sb.WriteString("\n🧠 **Mode Agent**\n")
 		sb.WriteString("Raisonnement en plusieurs étapes et appels d'outils (ReAct)\n")
 	} else {
-		sb.WriteString("\n🧠 **Mode Agent**\n")
+		sb.WriteString("\n🧠 **Mode RAG**\n")
 		sb.WriteString("Répond directement à partir de la recherche dans la base de connaissances (RAG)\n")
 	}
 

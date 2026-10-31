@@ -35,12 +35,14 @@ func TestFileMessageQAContent(t *testing.T) {
 		{
 			name: "builds query for file-only event",
 			msg:  &IncomingMessage{FileName: "report.pdf"},
-			want: "J'ai envoyé le fichier « report.pdf ». Confirme que tu l'as bien reçu et dis-moi comment tu peux m'aider ensuite.",
+			want: "J'ai envoyé le fichier « report.pdf ». Confirme que tu l'as bien reçu et dis-moi comment tu " +
+				"peux m'aider ensuite.",
 		},
 		{
 			name: "uses safe name when platform omits filename",
 			msg:  &IncomingMessage{},
-			want: "J'ai envoyé le fichier « fichier sans nom ». Confirme que tu l'as bien reçu et dis-moi comment tu peux m'aider ensuite.",
+			want: "J'ai envoyé le fichier « fichier sans nom ». Confirme que tu l'as bien reçu et dis-moi comment " +
+				"tu peux m'aider ensuite.",
 		},
 	}
 
@@ -69,7 +71,8 @@ func TestEmptyIncomingMessageReply(t *testing.T) {
 			name:      "blank text is rejected",
 			msg:       &IncomingMessage{MessageType: MessageTypeText, Content: " \n\t "},
 			wantEmpty: true,
-			wantHint:  "Impossible de reconnaître le texte de ce message. Envoyez du texte ; envoyez les images ou fichiers séparément.",
+			wantHint: "Impossible de reconnaître le texte de ce message. Envoyez du texte ; envoyez les images " +
+				"ou fichiers séparément.",
 		},
 		{
 			name:      "image without caption is accepted before QA content fill",
@@ -102,7 +105,8 @@ func TestEmptyIncomingMessageReply(t *testing.T) {
 				Extra:       map[string]string{"raw_msgtype": "video"},
 			},
 			wantEmpty: true,
-			wantHint:  "Les messages vidéo ne sont pas encore pris en charge. Envoyez du texte ; envoyez les images ou fichiers séparément.",
+			wantHint: "Les messages vidéo ne sont pas encore pris en charge. Envoyez du texte ; envoyez les " +
+				"images ou fichiers séparément.",
 		},
 	}
 

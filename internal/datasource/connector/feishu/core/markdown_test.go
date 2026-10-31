@@ -485,7 +485,8 @@ func TestBlocksToMarkdown_UnsupportedBlocksPlaceholdersNoTokenLeak(t *testing.T)
 	s := string(md)
 	for _, want := range []string{
 		"> [Bloc Feishu : Carte mentale]", "> [Bloc Feishu : Diagramme & UML]",
-		"> [Bloc Feishu : Carte de conversation]", "> [Bloc Feishu : Ticket Jira]", "> [Bloc Feishu : type inconnu (999)]",
+		"> [Bloc Feishu : Carte de " +
+			"conversation]", "> [Bloc Feishu : Ticket Jira]", "> [Bloc Feishu : type inconnu (999)]",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("missing placeholder %q, got:\n%s", want, s)

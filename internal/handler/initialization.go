@@ -448,7 +448,8 @@ func (h *InitializationHandler) UpdateKBConfig(c *gin.Context) {
 	// 保存更新后的知识库
 	if err := h.kbRepository.UpdateKnowledgeBase(ctx, kb); err != nil {
 		logger.Error(ctx, "Failed to update knowledge base", err)
-		_ = c.Error(errors.NewInternalServerError("Échec de la mise à jour de la base de connaissances : " + err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Échec de la mise à jour de la base de connaissances : " +
+			"" + err.Error()))
 		return
 	}
 
@@ -1503,7 +1504,8 @@ func (h *InitializationHandler) GetCurrentConfigByKB(c *gin.Context) {
 			return
 		}
 		logger.Error(ctx, "Failed to get knowledge base", err)
-		_ = c.Error(errors.NewInternalServerError("Échec de la lecture des informations de la base de connaissances : " +
+		_ = c.Error(errors.NewInternalServerError("Échec de la lecture des informations de la base de " +
+			"connaissances : " +
 			"" + err.Error()))
 		return
 	}

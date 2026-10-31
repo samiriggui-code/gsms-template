@@ -25,27 +25,35 @@ func TestFormatQuotedContext(t *testing.T) {
 		{
 			name:  "non-text image quote generates instruction",
 			quote: &QuotedMessage{NonTextType: "image"},
-			want:  "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux pas encore traiter ce type de contenu (image) et suggère-lui de décrire sa question par écrit. N'essaie pas de deviner le contenu de ce message.",
+			want: "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux " +
+				"pas encore traiter ce type de contenu (image) et suggère-lui de décrire sa question par écrit. " +
+				"N'essaie pas de deviner le contenu de ce message.",
 		},
 		{
 			name:  "non-text file quote generates instruction",
 			quote: &QuotedMessage{NonTextType: "file"},
-			want:  "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux pas encore traiter ce type de contenu (fichier) et suggère-lui de décrire sa question par écrit. N'essaie pas de deviner le contenu de ce message.",
+			want: "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux " +
+				"pas encore traiter ce type de contenu (fichier) et suggère-lui de décrire sa question par écrit. " +
+				"N'essaie pas de deviner le contenu de ce message.",
 		},
 		{
 			name:  "non-text unknown type uses fallback label",
 			quote: &QuotedMessage{NonTextType: "location"},
-			want:  "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux pas encore traiter ce type de message et suggère-lui de décrire sa question par écrit. N'essaie pas de deviner le contenu de ce message.",
+			want: "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux " +
+				"pas encore traiter ce type de message et suggère-lui de décrire sa question par écrit. N'essaie " +
+				"pas de deviner le contenu de ce message.",
 		},
 		{
 			name:  "bot message",
 			quote: &QuotedMessage{Content: "bot reply text", IsBotMessage: true},
-			want:  "Voici une de tes réponses précédentes (en tant que bot) citée par l'utilisateur, à titre de contexte uniquement :\n<quoted_message>\nbot reply text\n</quoted_message>",
+			want: "Voici une de tes réponses précédentes (en tant que bot) citée par l'utilisateur, à titre de " +
+				"contexte uniquement :\n<quoted_message>\nbot reply text\n</quoted_message>",
 		},
 		{
 			name:  "user message",
 			quote: &QuotedMessage{Content: "user message text", IsBotMessage: false},
-			want:  "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement :\n<quoted_message>\nuser message text\n</quoted_message>",
+			want: "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement " +
+				":\n<quoted_message>\nuser message text\n</quoted_message>",
 		},
 		{
 			name: "truncation at 500 runes",
@@ -53,7 +61,8 @@ func TestFormatQuotedContext(t *testing.T) {
 				Content:      string(make([]rune, 600)),
 				IsBotMessage: false,
 			},
-			want: "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement :\n<quoted_message>\n" + string(make([]rune, 500)) + "...\n</quoted_message>",
+			want: "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement " +
+				":\n<quoted_message>\n" + string(make([]rune, 500)) + "...\n</quoted_message>",
 		},
 	}
 
@@ -89,7 +98,8 @@ func TestBuildIMQARequest_QuotedContext(t *testing.T) {
 		if req.Query != "follow up" {
 			t.Errorf("Query = %q, want %q", req.Query, "follow up")
 		}
-		want := "Voici une de tes réponses précédentes (en tant que bot) citée par l'utilisateur, à titre de contexte uniquement :\n<quoted_message>\nbot reply\n</quoted_message>"
+		want := "Voici une de tes réponses précédentes (en tant que bot) citée par l'utilisateur, à titre de " +
+			"contexte uniquement :\n<quoted_message>\nbot reply\n</quoted_message>"
 		if req.QuotedContext != want {
 			t.Errorf("QuotedContext = %q, want %q", req.QuotedContext, want)
 		}
@@ -98,7 +108,8 @@ func TestBuildIMQARequest_QuotedContext(t *testing.T) {
 	t.Run("user quote sets QuotedContext with user label", func(t *testing.T) {
 		quote := &QuotedMessage{Content: "user msg", IsBotMessage: false}
 		req := buildIMQARequest(session, "question", "a1", "u1", nil, nil, quote)
-		want := "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement :\n<quoted_message>\nuser msg\n</quoted_message>"
+		want := "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement " +
+			":\n<quoted_message>\nuser msg\n</quoted_message>"
 		if req.QuotedContext != want {
 			t.Errorf("QuotedContext = %q, want %q", req.QuotedContext, want)
 		}
