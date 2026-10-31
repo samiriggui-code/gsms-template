@@ -98,6 +98,8 @@ type RouterParams struct {
 	AutomationHandler            *handler.AutomationHandler
 	HostSandbox                  service.HostSandboxManager
 	OperationDispatcher          *operations.HandlerDispatcher
+	TencentMeetingService        interfaces.TencentMeetingService
+	TencentMeetingHandler        *handler.TencentMeetingHandler
 }
 
 // NewRouter 创建新的路由
@@ -328,6 +330,7 @@ func NewRouter(params RouterParams) *gin.Engine {
 		RegisterEmbedChannelRoutes(v1, params.EmbedChannelHandler, rbacGuards)
 		RegisterMCPEndpointRoutes(v1, params.MCPEndpointHandler, rbacGuards)
 		RegisterDataSourceRoutes(v1, params.DataSourceHandler, params.DataSourceCredentialsHandler, rbacGuards)
+		RegisterTencentMeetingRoutes(v1, params.TencentMeetingService, params.TencentMeetingHandler, rbacGuards)
 		RegisterWeKnoraCloudRoutes(v1, params.WeKnoraCloudHandler, rbacGuards)
 		RegisterWikiPageRoutes(v1, params.WikiPageHandler, rbacGuards)
 		RegisterMemoryRoutes(v1, params.MemoryHandler, rbacGuards)

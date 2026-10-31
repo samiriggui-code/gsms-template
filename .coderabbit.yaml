@@ -1,0 +1,16 @@
+# CodeRabbit — revue automatique sur les pull requests
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+language: fr-FR
+reviews:
+  profile: chill
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!research/**"
+    - "!website-docs/en/**"
+    - "!.archify/**"
+    - "!**/*.md"
