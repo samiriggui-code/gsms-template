@@ -654,7 +654,7 @@ func TestForkHappyPathTakesSnapshotAndCopiesHistory(t *testing.T) {
 	require.Equal(t, "src", created.ParentSessionID)
 	require.Equal(t, "u-msg-2", created.ForkedFromMessageID)
 	require.Equal(t, "cfg-1", created.SandboxConfigID, "必须继承 sandbox_config_id，否则可能落到别的 backend")
-	require.Equal(t, "原会话（分支）", created.Title)
+	require.Equal(t, "原会话 (branche)", created.Title)
 	require.Equal(t, "web", created.OwnerAuthSource)
 	require.NotNil(t, created.ForkBootstrap)
 	require.Equal(t, "snap-1", created.ForkBootstrap.SnapshotID)

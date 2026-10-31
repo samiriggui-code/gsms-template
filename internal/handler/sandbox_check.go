@@ -100,12 +100,12 @@ func (h *SystemHandler) CheckSandboxConfig(c *gin.Context) {
 
 	var req SandboxCheckRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "请求体格式错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "Format du corps de la requête non valide"})
 		return
 	}
 	tenant, _ := types.TenantInfoFromContext(c.Request.Context())
 	if tenant == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "空间为空"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "L'espace est vide"})
 		return
 	}
 
@@ -113,7 +113,8 @@ func (h *SystemHandler) CheckSandboxConfig(c *gin.Context) {
 	incoming := req.Config
 	if req.ConfigID != "" {
 		if h.sandboxConfigSvc == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "沙箱配置服务不可用"})
+			c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "Le service de configuration du bac à sable est " +
+				"indisponible"})
 			return
 		}
 		entity, err := h.sandboxConfigSvc.Get(ctx, tenant.ID, req.ConfigID)
@@ -122,7 +123,7 @@ func (h *SystemHandler) CheckSandboxConfig(c *gin.Context) {
 			return
 		}
 		if entity == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "沙箱配置不存在"})
+			c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "La configuration du bac à sable n'existe pas"})
 			return
 		}
 		stored = entity.Config
@@ -224,9 +225,9 @@ func sandboxConnectionCheckConfig(cfg *types.TenantSandboxConfig) *types.TenantS
 // normally name the actual problem — a missing interpreter, an image entrypoint
 // that swallowed the command, or a bind mount that never reached the Docker VM.
 func describeProbeMismatch(exitCode int, killed bool, stdout, stderr, execErr string) string {
-	parts := []string{fmt.Sprintf("退出码 %d", exitCode)}
+	parts := []string{fmt.Sprintf("Code de sortie %d", exitCode)}
 	if killed {
-		parts = append(parts, "执行超时被终止")
+		parts = append(parts, "Arrêté après dépassement du délai")
 	}
 	switch {
 	case firstProbeLine(stderr) != "":
@@ -234,12 +235,12 @@ func describeProbeMismatch(exitCode int, killed bool, stdout, stderr, execErr st
 	case firstProbeLine(stdout) != "":
 		parts = append(parts, "stdout: "+firstProbeLine(stdout))
 	default:
-		parts = append(parts, "没有任何输出")
+		parts = append(parts, "Aucune sortie")
 	}
 	if trimmed := strings.TrimSpace(execErr); trimmed != "" {
 		parts = append(parts, trimmed)
 	}
-	return strings.Join(parts, "；")
+	return strings.Join(parts, " ; ")
 }
 
 // firstProbeLine picks the first non-empty line and caps it, so one runaway log
@@ -328,7 +329,7 @@ func (h *SystemHandler) runDeepSandboxCheck(
 		result.skip("egress_available", skipReasonSandboxExecFailed)
 		return
 	case execResult == nil:
-		result.add("sandbox_exec", false, "沙箱没有返回执行结果", latency)
+		result.add("sandbox_exec", false, "Le bac à sable n'a renvoyé aucun résultat d'exécution", latency)
 		result.skip("egress_available", skipReasonSandboxExecFailed)
 		return
 	case !strings.Contains(execResult.Stdout, marker):
@@ -393,16 +394,16 @@ func (h *SystemHandler) probeSandboxEgress(
 	case err != nil:
 		reportEgressProbe(result, policy, false, sandboxCheckReason(err), latency)
 	case execResult == nil:
-		reportEgressProbe(result, policy, false, "出网探测无返回", latency)
+		reportEgressProbe(result, policy, false, "Le test d'accès sortant n'a rien renvoyé", latency)
 	case execResult.Killed:
-		reportEgressProbe(result, policy, false, "出网探测超时", latency)
+		reportEgressProbe(result, policy, false, "Le test d'accès sortant a expiré", latency)
 	case execResult.ExitCode != 0:
 		msg := strings.TrimSpace(execResult.Stderr)
 		if msg == "" {
 			msg = strings.TrimSpace(execResult.Stdout)
 		}
 		if msg == "" {
-			msg = "国内与国际探测目标均不可达"
+			msg = "Aucune cible de test (Chine ou international) n'est joignable"
 		}
 		reportEgressProbe(result, policy, false, msg, latency)
 	default:
@@ -485,25 +486,29 @@ func explainSandboxCreateFailure(
 		}
 		if tpl.Status == sandbox.TemplateStatusUntagged {
 			return fmt.Sprintf(
-				"模板 %s 的构建已完成，但没有一个构建带上 %q 标签，创建沙箱时无法解析；"+
-					"请重新构建该模板（删除后由 WeKnora 重新创建即可）",
+				"La construction du modèle %s est terminée, mais aucune construction ne porte le tag %q, donc la "+
+					"création du bac à sable ne peut pas le résoudre ; "+
+					"reconstruisez le modèle (supprimez-le, WeKnora le recréera)",
 				templateID, sandbox.DefaultE2BTemplateTag,
 			)
 		}
 		if tpl.Status == "ready" || tpl.Status == "" {
 			return fmt.Sprintf(
-				"模板 %s 在列表中已就绪，但集群拒绝创建沙箱（HTTP 404）；"+
-					"通常是构建快照尚未生效，请稍后重试或重新构建模板",
+				"Le modèle %s est prêt dans la liste, mais le cluster refuse de créer le bac à sable (HTTP 404) ; "+
+					"en général l'instantané de construction n'est pas encore actif ; réessayez plus tard ou "+
+					"reconstruisez le modèle",
 				templateID,
 			)
 		}
 		return fmt.Sprintf(
-			"模板 %s 存在，但构建状态为 %s，还不能启动沙箱；请等待构建完成或查看构建日志",
+			"Le modèle %s existe, mais son état de construction est %s et il ne peut pas encore lancer de bac à "+
+				"sable ; attendez la fin de la construction ou consultez les journaux",
 			templateID, tpl.Status,
 		)
 	}
 	return fmt.Sprintf(
-		"当前 API Key 看不到模板 %s：模板可能已删除，或该 Key 属于其他团队/集群",
+		"La clé API actuelle ne voit pas le modèle %s : il a peut-être été supprimé, ou la clé appartient à une "+
+			"autre équipe ou un autre cluster",
 		templateID,
 	)
 }
@@ -518,14 +523,14 @@ func dockerUnavailableCheckReason(err *sandbox.RemoteError) string {
 	if host == "" {
 		detail := firstProbeLine(err.Message)
 		if detail == "" {
-			return "无法连接 Docker 守护进程"
+			return "Impossible de joindre le daemon Docker"
 		}
-		return "无法连接 Docker 守护进程：" + detail
+		return "Impossible de joindre le daemon Docker : " + detail
 	}
-	return "无法连接 Docker 守护进程 " + host +
-		"。留空地址时跟随本机 docker CLI（DOCKER_HOST 或当前 docker context）。" +
-		"Colima 一般是 unix://$HOME/.colima/default/docker.sock；" +
-		"WeKnora 跑在容器里时需要把该 socket 挂进 app。"
+	return "Impossible de joindre le daemon Docker " + host +
+		". Si l'adresse est vide, le docker CLI local est utilisé (DOCKER_HOST ou le docker context actuel). " +
+		"Avec Colima, c'est en général unix://$HOME/.colima/default/docker.sock ; " +
+		"si WeKnora tourne dans un conteneur, montez ce socket dans app."
 }
 
 func dockerHostFromUnavailableMessage(message string) string {
@@ -552,22 +557,22 @@ func sandboxCheckReason(err error) string {
 	}
 	switch remoteErr.Kind {
 	case sandbox.RemoteErrorKindAuthentication:
-		return "认证失败：API Key 无效或无权限"
+		return "Échec d'authentification : clé API non valide ou sans droits"
 	case sandbox.RemoteErrorKindNotFound:
-		return "资源不存在：请检查模板 ID"
+		return "Ressource introuvable : vérifiez l'ID du modèle"
 	case sandbox.RemoteErrorKindTimeout:
-		return "请求超时：端点不可达或响应过慢"
+		return "Délai dépassé : point d'accès injoignable ou trop lent"
 	case sandbox.RemoteErrorKindUnavailable:
 		if remoteErr.Provider == sandbox.SandboxTypeDocker {
 			return dockerUnavailableCheckReason(remoteErr)
 		}
-		return "服务不可用：端点拒绝连接"
+		return "Service indisponible : le point d'accès refuse la connexion"
 	case sandbox.RemoteErrorKindCapacity:
-		return "配额不足或触发限流"
+		return "Quota insuffisant ou limite de débit atteinte"
 	case sandbox.RemoteErrorKindUnsupported:
-		return "该后端不支持此操作"
+		return "Ce backend ne prend pas en charge cette opération"
 	case sandbox.RemoteErrorKindInvalidRequest:
-		return "参数无效：" + remoteErr.Message
+		return "Paramètre non valide : " + remoteErr.Message
 	default:
 		return remoteErr.Message
 	}

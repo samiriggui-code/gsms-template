@@ -10,276 +10,277 @@ export interface ChunkingSample {
   text: string
 }
 
-const MARKDOWN_SAMPLE = `# WeKnora 知识框架
+const MARKDOWN_SAMPLE = `# Le cadre de connaissances WeKnora
 
-WeKnora 是一个基于 LLM 的开源企业知识框架，集 RAG 问答、ReAct 智能体、Wiki 知识图谱于一体。本文介绍其设计动机、架构与典型用法。
+WeKnora est un cadre open source de gestion des connaissances d'entreprise basé sur les LLM. Il réunit questions-réponses RAG, agents ReAct et graphe de connaissances wiki. Ce document présente ses motivations, son architecture et ses usages types.
 
-## 设计动机
+## Motivations
 
-企业内部知识散落在 Confluence、飞书、Notion、Git 仓库等多种系统，传统全文检索难以理解语义，单一 LLM 又缺少可信赖的上下文来源。WeKnora 的目标是：
+Dans une entreprise, le savoir est dispersé entre Confluence, Feishu, Notion, des dépôts Git et bien d'autres outils. La recherche plein texte classique comprend mal le sens des phrases, et un LLM seul manque de sources fiables. WeKnora vise à apporter :
 
-- **多源接入**：把分散内容统一抽取、清洗、向量化
-- **多策略检索**：稠密、稀疏、知识图谱多路召回 + RRF 融合
-- **可解释推理**：ReAct Agent 让推理链条可追踪、可干预
-- **可观测**：原生集成 Langfuse，每一步推理、每一次工具调用都有 trace
+- **Connexion multi-sources** : extraire, nettoyer et vectoriser les contenus dispersés
+- **Recherche multi-stratégies** : rappel dense, creux et par graphe de connaissances, fusionné par RRF
+- **Raisonnement explicable** : l'agent ReAct rend la chaîne de raisonnement traçable et pilotable
+- **Observabilité** : intégration native de Langfuse, chaque étape et chaque appel d'outil a sa trace
 
-## 核心特性
+## Fonctionnalités clés
 
-### 多模型支持
+### Plusieurs modèles
 
-兼容 20+ 主流 LLM：OpenAI、Anthropic、DeepSeek、Qwen、智谱、混元、Gemini，以及本地 Ollama。模型层抽象 \`Provider\` 接口，新增厂商只需实现 \`Chat()\` 方法并注册即可。
+Compatible avec plus de 20 LLM du marché : OpenAI, Anthropic, DeepSeek, Qwen, Mistral, Gemini, ainsi qu'Ollama en local. La couche modèle expose une interface \`Provider\` : pour ajouter un fournisseur, il suffit d'implémenter la méthode \`Chat()\` et de l'enregistrer.
 
-### 多向量库支持
+### Plusieurs bases vectorielles
 
-通过 \`RETRIEVE_DRIVER\` 环境变量切换：
+Le choix se fait avec la variable d'environnement \`RETRIEVE_DRIVER\` :
 
-| 驱动 | 适合场景 |
+| Pilote | Cas d'usage |
 |------|---------|
-| pgvector | 已有 PostgreSQL，规模 < 1000 万 chunk |
-| Elasticsearch | 需要混合检索 + 关键词高亮 |
-| Milvus | 大规模、低延迟 |
-| Weaviate | 需要混合 BM25 + GraphQL 查询 |
-| Qdrant | 默认推荐，部署简单、性能均衡 |
+| pgvector | PostgreSQL déjà en place, moins de 10 millions de fragments |
+| Elasticsearch | Recherche hybride avec surlignage des mots-clés |
+| Milvus | Grand volume, faible latence |
+| Weaviate | Combinaison BM25 et requêtes GraphQL |
+| Qdrant | Recommandé par défaut, simple à déployer, performances équilibrées |
 
-### 数据源连接器
+### Connecteurs de sources de données
 
-- **飞书**：自动同步知识库与文档树，支持增量更新
-- **Notion**：基于 API 抽取 Page / Database
-- **语雀**：按 Group 拉取，保留多级目录
+- **Feishu** : synchronisation automatique des bases et de l'arborescence, mises à jour incrémentales
+- **Notion** : extraction des pages et bases de données par API
+- **Yuque** : import par groupe, avec conservation des dossiers
 
-每个连接器实现统一的 \`DataSource\` 接口，新增数据源约 200 行代码。
+Chaque connecteur implémente l'interface commune \`DataSource\` ; une nouvelle source représente environ 200 lignes de code.
 
-## 快速开始
+## Démarrage rapide
 
-### 环境要求
+### Prérequis
 
-- Docker 20.10+ 与 Docker Compose v2
-- 至少 8GB 内存、20GB 磁盘空间
-- 如需本地运行 LLM，建议 NVIDIA GPU 24GB 以上显存
+- Docker 20.10+ et Docker Compose v2
+- Au moins 8 Go de mémoire et 20 Go de disque
+- Pour faire tourner un LLM en local, un GPU NVIDIA avec 24 Go de mémoire vidéo ou plus
 
-### 启动命令
+### Commandes de lancement
 
 \`\`\`bash
 git clone https://github.com/Tencent/WeKnora && cd WeKnora
-cp .env.example .env       # 修改你的模型与数据库配置
-make dev-start             # 启动 postgres / redis / qdrant
-make dev-app               # 启动后端，热重载
-make dev-frontend          # 启动前端，自动刷新
+cp .env.example .env       # adaptez la configuration des modèles et de la base
+make dev-start             # lance postgres / redis / qdrant
+make dev-app               # lance le backend avec rechargement à chaud
+make dev-frontend          # lance le frontend avec rafraîchissement automatique
 \`\`\`
 
-打开浏览器访问 http://localhost:5173 即可。
+Ouvrez ensuite http://localhost:5173 dans votre navigateur.
 
-## 架构概览
+## Vue d'ensemble de l'architecture
 
-WeKnora 后端采用清晰的分层架构：
+Le backend de WeKnora suit une architecture en couches bien séparées :
 
 \`\`\`
 ┌────────────────────────┐
-│   HTTP 层 (Gin)        │  请求路由 / 鉴权 / 限流
+│   Couche HTTP (Gin)    │  routage / authentification / limitation
 ├────────────────────────┤
-│   业务层 (service)     │  核心算法 / 编排
+│   Couche métier        │  algorithmes clés / orchestration
 ├────────────────────────┤
-│   数据层 (repository)  │  数据库访问 / 缓存
+│   Couche données       │  accès base de données / cache
 ├────────────────────────┤
-│   领域模型 (types)     │  KnowledgeBase / Chunk / Agent ...
+│   Modèle de domaine    │  KnowledgeBase / Chunk / Agent ...
 └────────────────────────┘
 \`\`\`
 
-依赖注入容器（go/dig）在 \`cmd/server/main.go\` 装配所有依赖，handler 通过接口拿到 service，service 通过接口拿到 repository，所有可替换实现都在启动时绑定。
+Le conteneur d'injection de dépendances (go/dig) assemble tout dans \`cmd/server/main.go\` : les handlers obtiennent les services par interface, les services obtiennent les repositories par interface, et chaque implémentation remplaçable est liée au démarrage.
 
-### 检索流水线
+### Pipeline de recherche
 
-文档上传 → docreader 服务解析 → 分块（含父子分块） → 嵌入 → 写入向量库与图数据库 → 用户查询时多路召回 → RRF 融合 → 重排 → 返回。
+Envoi du document → analyse par docreader → découpage (avec fragments parents et enfants) → embedding → écriture dans la base vectorielle et la base de graphe → à la requête, rappel multi-voies → fusion RRF → reranking → réponse.
 
-### Agent 编排
+### Orchestration des agents
 
-Agent 引擎执行经典 ReAct 循环：
+Le moteur d'agent exécute la boucle ReAct classique :
 
-1. **Reason**：LLM 根据系统提示和当前观察输出推理
-2. **Act**：解析工具调用 JSON，分发给内置工具或 MCP 工具
-3. **Observe**：把工具返回值塞回上下文
-4. 重复 1-3 直到产出最终答案或达到最大迭代
+1. **Reason** : le LLM raisonne à partir du prompt système et de l'observation courante
+2. **Act** : l'appel d'outil JSON est analysé puis envoyé à un outil intégré ou MCP
+3. **Observe** : le résultat de l'outil est réinjecté dans le contexte
+4. Les étapes 1 à 3 se répètent jusqu'à la réponse finale ou au nombre maximal d'itérations
 
-每一步都通过 SSE 流式返回前端，并写入 Langfuse trace 便于排查。
+Chaque étape est renvoyée au frontend en continu par SSE et enregistrée dans une trace Langfuse pour le diagnostic.
 
-## 进一步阅读
+## Pour aller plus loin
 
-- API 文档：\`website-docs/04-api/01-api-overview.md\`
-- 配置项清单：\`config/config.yaml\` 与 \`.env.example\`
-- 故障排查：\`website-docs/01-getting-started/05-troubleshooting.md\`
-- 产品介绍：\`website-docs/01-getting-started/01-introduction.md\``
+- Documentation de l'API : \`website-docs/04-api/01-api-overview.md\`
+- Liste des paramètres : \`config/config.yaml\` et \`.env.example\`
+- Dépannage : \`website-docs/01-getting-started/05-troubleshooting.md\`
+- Présentation du produit : \`website-docs/01-getting-started/01-introduction.md\``
 
-const FAQ_SAMPLE = `# WeKnora 部署与使用 FAQ
+const FAQ_SAMPLE = `# FAQ déploiement et utilisation de WeKnora
 
-本文档汇总社区与内部用户最常问到的问题，按"安装 / 配置 / 检索 / 模型 / 性能"分类。
+Ce document regroupe les questions les plus fréquentes des utilisateurs, classées par thème : installation, configuration, recherche, modèles et performances.
 
-## 安装与启动
+## Installation et démarrage
 
-### Q1: Docker 镜像在哪里下载？
-官方镜像通过 daocloud 加速分发：
+### Q1 : Où télécharger les images Docker ?
+Les images officielles sont publiées sur Docker Hub :
 
 \`\`\`
-docker pull docker.m.daocloud.io/wechatopenai/weknora-app:v0.5.0
-docker pull docker.m.daocloud.io/wechatopenai/weknora-docreader:v0.5.0
-docker pull docker.m.daocloud.io/wechatopenai/weknora-ui:v0.5.0
+docker pull wechatopenai/weknora-app:v0.5.0
+docker pull wechatopenai/weknora-docreader:v0.5.0
+docker pull wechatopenai/weknora-ui:v0.5.0
 \`\`\`
 
-### Q2: 启动后访问 5173 显示旧界面？
-浏览器缓存了旧版前端资源。Ctrl+Shift+R 强制刷新即可，必要时清空站点存储。
+### Q2 : Après le démarrage, le port 5173 affiche l'ancienne interface
+Le navigateur a gardé en cache l'ancien frontend. Forcez le rechargement avec Ctrl+Maj+R, et videz les données du site si besoin.
 
-### Q3: 注册新用户报 500 Internal Server Error
-通常是后端容器未正常启动。先检查 \`make dev-logs | grep app\`，常见为数据库连接失败或迁移未执行。
+### Q3 : L'inscription renvoie 500 Internal Server Error
+Le plus souvent, le conteneur backend n'a pas démarré correctement. Vérifiez d'abord \`make dev-logs | grep app\` : la cause habituelle est un échec de connexion à la base ou une migration non appliquée.
 
-### Q4: 上传文档报 column "xxx" does not exist
-数据库迁移未完成。运行 \`make migrate-up\`，确认所有迁移成功后重启 app 容器。
+### Q4 : L'envoi d'un document renvoie column "xxx" does not exist
+Les migrations de la base ne sont pas terminées. Lancez \`make migrate-up\`, vérifiez qu'elles ont toutes réussi, puis redémarrez le conteneur app.
 
-### Q5: 文档上传后状态一直是 processing
-检查 docreader 容器是否运行（\`docker compose ps\`），并查看其日志中是否有解析报错。常见原因：依赖的 Python 包缺失、PDF 加密、扫描件 OCR 超时。
+### Q5 : Après l'envoi, le document reste en processing
+Vérifiez que le conteneur docreader tourne (\`docker compose ps\`) et cherchez des erreurs d'analyse dans ses journaux. Causes fréquentes : paquet Python manquant, PDF chiffré, délai OCR dépassé sur un document scanné.
 
-## 配置
+## Configuration
 
-### Q6: 如何切换向量库？
-修改 \`.env\` 中的 \`RETRIEVE_DRIVER\`，可选值：\`qdrant\` (默认) / \`pgvector\` / \`elasticsearch\` / \`milvus\` / \`weaviate\`。切换后需要重新嵌入存量数据。
+### Q6 : Comment changer de base vectorielle ?
+Modifiez \`RETRIEVE_DRIVER\` dans \`.env\`. Valeurs possibles : \`qdrant\` (par défaut) / \`pgvector\` / \`elasticsearch\` / \`milvus\` / \`weaviate\`. Après le changement, il faut recalculer les embeddings existants.
 
-### Q7: 如何修改默认 chunk 大小？
-全局默认在 \`config/config.yaml\` 的 \`knowledge.chunking\` 段；单个知识库可在 UI 的"分块设置"页覆盖。修改后仅对新上传文档生效。
+### Q7 : Comment modifier la taille de fragment par défaut ?
+La valeur globale se trouve dans la section \`knowledge.chunking\` de \`config/config.yaml\` ; chaque base de connaissances peut la redéfinir dans la page « Découpage » de l'interface. La modification ne s'applique qu'aux nouveaux documents.
 
-### Q8: 如何启用多模态？
-在知识库的"多模态配置"中开启，并选择一个 VLM 模型（如 GPT-4o、Qwen2.5-VL）。开启后，文档中的图片会被 VLM 描述并参与检索。
+### Q8 : Comment activer le multimodal ?
+Activez-le dans la « Configuration multimodale » de la base et choisissez un modèle VLM (GPT-4o, Qwen2.5-VL...). Les images des documents sont alors décrites par le VLM et intégrées à la recherche.
 
-### Q9: 如何自定义日志格式？
-设置 \`WEKNORA_LOG_FORMAT="%d %level %msg" LOG_LEVEL=info\`。模板必须包含 \`%msg\`；留空使用默认格式，\`json\` 不是受支持的格式关键字。
+### Q9 : Comment personnaliser le format des journaux ?
+Définissez \`WEKNORA_LOG_FORMAT="%d %level %msg" LOG_LEVEL=info\`. Le modèle doit contenir \`%msg\` ; laissez vide pour le format par défaut. \`json\` n'est pas un mot-clé de format accepté.
 
-## 检索与召回
+## Recherche et rappel
 
-### Q10: 检索结果为空但确认文档已索引
-按这个顺序排查：
+### Q10 : La recherche ne renvoie rien alors que le document est indexé
+Vérifiez dans cet ordre :
 
-1. 确认知识库状态为 \`completed\`，而不是 \`indexing\` 或 \`failed\`
-2. 检查向量库连接（默认 qdrant:6334），\`docker compose ps\` 看 qdrant 是否健康
-3. 在管理页"重建索引"，确认嵌入模型工作正常
-4. 查看后端日志中 retriever 是否报 dimension mismatch
+1. L'état de la base est bien \`completed\`, et non \`indexing\` ou \`failed\`
+2. La connexion à la base vectorielle (qdrant:6334 par défaut) : \`docker compose ps\` indique-t-il qdrant en bonne santé ?
+3. Lancez « Reconstruire l'index » dans l'administration pour vérifier que le modèle d'embedding fonctionne
+4. Cherchez une erreur dimension mismatch du retriever dans les journaux du backend
 
-### Q11: 检索结果命中但答非所问
-通常是 chunk 边界切割了关键句。尝试：
+### Q11 : La recherche trouve des résultats mais la réponse est à côté
+En général, la limite d'un fragment a coupé une phrase clé. Essayez :
 
-- 启用父子分块，让向量召回小块、上下文用大块
-- 调高 chunk overlap 到 chunk size 的 15%-20%
-- 切换到"按标题切分"或"结构感知"策略
+- d'activer les fragments parents et enfants : rappel sur les petits fragments, contexte avec les grands
+- de porter le chevauchement à 15 à 20 % de la taille des fragments
+- de passer à la stratégie « découpage par titres » ou « tenant compte de la structure »
 
-### Q12: 排序看起来不合理
-重排（rerank）模型可能未启用。在"模型设置"中配置 BGE-Reranker 或 Cohere Rerank，并在知识库配置中打开重排。
+### Q12 : Le classement semble incohérent
+Le modèle de reranking n'est peut-être pas activé. Configurez BGE-Reranker ou Cohere Rerank dans « Paramètres des modèles » et activez le reranking dans la configuration de la base.
 
-## 模型与 Token
+## Modèles et tokens
 
-### Q13: 调用 OpenAI 超时
-检查代理网络与 \`OPENAI_BASE_URL\` 配置；本地无外网时切换到 Ollama 或国内大模型。
+### Q13 : Les appels à OpenAI expirent
+Vérifiez le proxy réseau et la configuration \`OPENAI_BASE_URL\` ; sans accès internet, passez à Ollama ou à un modèle hébergé localement.
 
-### Q14: token 用量在哪里看？
-开启 Langfuse 后，每个会话、每次推理、每个工具调用的 token 消耗都有完整 trace，可按时间、空间、模型聚合。
+### Q14 : Où voir la consommation de tokens ?
+Avec Langfuse activé, chaque conversation, chaque raisonnement et chaque appel d'outil a une trace complète de sa consommation, agrégeable par période, espace ou modèle.
 
-### Q15: 如何接入私有 LLM？
-实现 \`internal/models/chat/provider/Provider\` 接口，注册到 provider 工厂，配置文件中加一条记录即可，约 100-200 行代码。
+### Q15 : Comment brancher un LLM privé ?
+Implémentez l'interface \`internal/models/chat/provider/Provider\`, enregistrez-la dans la fabrique de providers et ajoutez une entrée au fichier de configuration : environ 100 à 200 lignes de code.
 
-## 性能
+## Performances
 
-### Q16: 大文档上传慢怎么办？
-docreader 是 CPU 密集型，建议横向扩容：在 docker-compose 中调高 docreader 服务的 \`deploy.replicas\`，或独立部署到更强的机器。
+### Q16 : L'envoi de gros documents est lent
+docreader est gourmand en CPU ; augmentez sa capacité horizontalement avec \`deploy.replicas\` dans docker-compose, ou déployez-le sur une machine plus puissante.
 
-### Q17: 嵌入吞吐瓶颈
-切换到本地 Ollama + GPU 加速，或用商用 API 的批量端点（如 OpenAI 的 batch API）。设置 \`EMBED_BATCH_SIZE=64\` 显著提升吞吐。
+### Q17 : Le débit d'embedding est limité
+Passez à Ollama en local avec accélération GPU, ou utilisez le point d'accès par lots d'une API commerciale (comme l'API batch d'OpenAI). Définir \`EMBED_BATCH_SIZE=64\` améliore nettement le débit.
 
-### Q18: 数据库慢查询
-启用 \`pg_stat_statements\`，定位慢 SQL；常见瓶颈是 chunks 表的元数据 JSONB 查询，可针对热点字段加索引。`
+### Q18 : Requêtes lentes sur la base de données
+Activez \`pg_stat_statements\` pour repérer les requêtes SQL lentes ; le goulot habituel est la requête JSONB sur les métadonnées de la table chunks, à indexer sur les champs les plus sollicités.`
 
-const CHAPTER_SAMPLE = `第 1 章 引言
+const CHAPTER_SAMPLE = `1. Introduction
 
-1.1 文档目的
+1.1 Objet du document
 
-本文档描述某分布式知识检索平台的整体架构、组件划分与部署方案，面向运维工程师、SRE 与系统架构师。读者应熟悉 Docker、Kubernetes、PostgreSQL 等基础组件。
+Ce document décrit l'architecture d'ensemble d'une plateforme distribuée de recherche de connaissances, le découpage de ses composants et son plan de déploiement. Il s'adresse aux ingénieurs d'exploitation, aux SRE et aux architectes. Le lecteur doit connaître Docker, Kubernetes et PostgreSQL.
 
-1.2 名词约定
+1.2 Terminologie
 
-- 网关层（Gateway）：负责入口流量调度与协议转换
-- 业务层（Service）：承载领域逻辑与编排
-- 存储层（Storage）：封装持久化与缓存细节
-- 推理层（Inference）：与外部 LLM / 嵌入模型交互的隔离层
+- Couche passerelle (Gateway) : répartit le trafic entrant et convertit les protocoles
+- Couche métier (Service) : porte la logique du domaine et l'orchestration
+- Couche stockage (Storage) : encapsule la persistance et le cache
+- Couche inférence (Inference) : couche isolée qui dialogue avec les LLM et modèles d'embedding externes
 
-1.3 文档版本
+1.3 Version du document
 
-本版本 v1.4，对应平台代码 v0.5.x 系列。文档随代码同步更新，主要变更见附录 A。
+Version 1.4, correspondant à la série v0.5.x du code de la plateforme. Le document évolue avec le code ; les principaux changements figurent en annexe A.
 
-第 2 章 系统架构
+2. Architecture du système
 
-2.1 总体设计
+2.1 Conception générale
 
-平台采用经典的微服务架构，但在边界划分上保持克制——只在确有独立伸缩需求的位置切分服务。当前共 4 个长驻服务：网关、业务后端、文档解析、向量索引。
+La plateforme suit une architecture en microservices classique, mais découpe avec retenue : un service n'est séparé que s'il a réellement besoin de passer à l'échelle seul. Elle compte aujourd'hui 4 services permanents : passerelle, backend métier, analyse de documents et indexation vectorielle.
 
-2.2 模块划分
+2.2 Découpage en modules
 
-2.2.1 用户与权限
+2.2.1 Utilisateurs et droits
 
-用户、组织、共享空间、角色与权限规则集中在 user-service 中。RBAC 模型支持继承与覆盖，外部 OIDC 接入通过适配层完成。
+Utilisateurs, organisations, espaces partagés, rôles et règles d'accès sont regroupés dans user-service. Le modèle RBAC gère l'héritage et la surcharge ; la connexion OIDC externe passe par une couche d'adaptation.
 
-2.2.2 内容与索引
+2.2.2 Contenus et index
 
-内容侧负责文档生命周期：上传、解析、分块、嵌入、入库、检索、引用追踪。Chunk 是最细粒度的检索单元，每个 chunk 携带源文档元数据与位置信息。
+Le côté contenu gère le cycle de vie des documents : envoi, analyse, découpage, embedding, stockage, recherche et suivi des citations. Le fragment est la plus petite unité de recherche ; chacun porte les métadonnées et la position de son document source.
 
-2.2.3 推理与编排
+2.2.3 Inférence et orchestration
 
-Agent 编排器负责 ReAct 循环，工具调用通过 MCP 协议或内置注册表分发。所有 LLM 调用统一经过模型代理层，方便切换、限流与计费。
+L'orchestrateur d'agents pilote la boucle ReAct ; les appels d'outils passent par le protocole MCP ou par le registre intégré. Tous les appels aux LLM transitent par une couche de proxy des modèles, ce qui facilite le changement de modèle, la limitation de débit et la facturation.
 
-2.3 数据流
+2.3 Flux de données
 
-文档上传后依次经过：解析 → 清洗 → 分块 → 嵌入 → 写库。查询路径：rewrite → 多路召回 → fusion → rerank → context 拼接 → LLM 生成。
+Après l'envoi, un document passe par : analyse → nettoyage → découpage → embedding → stockage. Chemin d'une requête : reformulation → rappel multi-voies → fusion → reranking → assemblage du contexte → génération par le LLM.
 
-第 3 章 部署指南
+3. Guide de déploiement
 
-3.1 环境要求
+3.1 Prérequis
 
-物理资源：8 vCPU / 16 GB 内存 / 100 GB SSD 起步；生产环境建议 16 vCPU / 32 GB / 500 GB。GPU 仅在本地推理时必需。
+Ressources minimales : 8 vCPU / 16 Go de mémoire / 100 Go de SSD ; en production, 16 vCPU / 32 Go / 500 Go sont conseillés. Un GPU n'est nécessaire que pour l'inférence locale.
 
-3.2 容器编排
+3.2 Orchestration des conteneurs
 
-3.2.1 单机 Docker Compose
+3.2.1 Docker Compose sur une seule machine
 
-适合 PoC 与中小团队（< 100 人，< 100 万 chunk）。一条命令拉起全部服务：
+Adapté aux preuves de concept et aux petites équipes (moins de 100 personnes, moins d'un million de fragments). Une seule commande lance tous les services :
 
 docker compose up -d
 
-3.2.2 Kubernetes Helm
+3.2.2 Kubernetes avec Helm
 
-适合规模化部署。Helm chart 在 helm/ 目录，包含 statefulset、配置 secret、ingress 模版。可与现有 PG / Redis 集群对接。
+Adapté aux déploiements à grande échelle. Le chart Helm se trouve dans le dossier helm/ et contient statefulset, secrets de configuration et modèles d'ingress. Il peut se brancher sur des clusters PG et Redis existants.
 
-3.3 配置最佳实践
+3.3 Bonnes pratiques de configuration
 
-- 把外部依赖（数据库、对象存储、向量库）放在配置中心，避免硬编码
-- 模型 API key 用 Secret 管理，按环境隔离
-- 日志走 stdout/stderr 由编排平台采集，避免本地落盘
+- Placer les dépendances externes (base de données, stockage objet, base vectorielle) dans un centre de configuration plutôt qu'en dur
+- Gérer les clés API des modèles comme des secrets, séparés par environnement
+- Envoyer les journaux sur stdout/stderr pour que la plateforme d'orchestration les collecte, sans écriture locale
 
-第 4 章 常见运维场景
+4. Scénarios d'exploitation courants
 
-4.1 升级流程
+4.1 Procédure de mise à jour
 
-蓝绿或滚动均可。升级前必看 CHANGELOG 中是否有 schema 变更，迁移先于业务镜像替换。
+Déploiement bleu-vert ou progressif, au choix. Avant toute mise à jour, vérifiez dans le CHANGELOG s'il y a des changements de schéma : les migrations passent avant le remplacement des images.
 
-4.2 备份与恢复
+4.2 Sauvegarde et restauration
 
-PG 全量每日备份 + WAL 增量；MinIO/对象存储依赖云端版本管理。Qdrant 用 snapshot 接口定期落盘到对象存储。
+Sauvegarde complète quotidienne de PG plus WAL incrémental ; MinIO et le stockage objet s'appuient sur le versionnement du cloud. Qdrant écrit régulièrement des instantanés dans le stockage objet via son API snapshot.
 
-4.3 故障排查
+4.3 Diagnostic des pannes
 
-按"网关 → 业务 → 存储 → 模型"四个维度逐层排查。每层都有健康检查接口与 Langfuse trace 入口，组合起来可在 5 分钟内定位 80% 问题。`
+Procédez couche par couche : passerelle → métier → stockage → modèle. Chaque couche a une route de santé et une entrée de trace Langfuse ; ensemble, elles permettent de localiser 80 % des problèmes en 5 minutes.`
 
-const PLAIN_SAMPLE = `知识库的检索质量受多个因素影响，最直接的是切分策略与嵌入模型的匹配度。切分过粗会导致单段语义混杂、相关度被稀释；切分过细则丢失上下文，单独检索某一段无法回答跨段问题。一般建议切分大小落在嵌入模型推荐窗口的 50%–80%，既保证语义完整又留出余量。常见嵌入模型如 BGE、Cohere 的 embed-v3 推荐窗口为 512 tokens，对应字符大致在 300–800 之间，因为中文一个字约 0.5–1.2 个 token，英文一个词约 1.3 个 token。
+const PLAIN_SAMPLE = `La qualité de recherche d'une base de connaissances dépend de plusieurs facteurs, à commencer par l'adéquation entre la stratégie de découpage et le modèle d'embedding. Des fragments trop gros mélangent plusieurs sujets et diluent la pertinence ; des fragments trop petits perdent le contexte, si bien qu'un fragment isolé ne répond plus aux questions qui chevauchent deux passages. On conseille en général une taille de fragment comprise entre 50 % et 80 % de la fenêtre recommandée du modèle d'embedding, pour garder le sens complet tout en laissant de la marge. Les modèles courants comme BGE ou embed-v3 de Cohere recommandent une fenêtre de 512 tokens, soit à peu près 1 500 à 2 000 caractères en français, où un mot compte en moyenne pour 1,3 à 1,6 token.
 
-除了切分大小，重叠（overlap）也会显著影响召回完整性。重叠为 0 时，跨段问题往往只能召回半句话；重叠 10%–20% 通常就足够覆盖大多数边界情况；重叠超过 30% 会让相邻分块大量同质化，反而增加索引成本而不提升召回。一个简单的判断方法：对你的目标查询，平均答案长度的 1/3 作为 overlap 起点，再根据 A/B 测试微调。
+Au-delà de la taille, le chevauchement (overlap) influe nettement sur la complétude du rappel. Sans chevauchement, une question à cheval sur deux fragments ne récupère souvent qu'une demi-phrase ; un chevauchement de 10 à 20 % couvre la plupart des cas limites ; au-delà de 30 %, les fragments voisins deviennent trop semblables, ce qui alourdit l'index sans améliorer le rappel. Une méthode simple : prenez comme point de départ un tiers de la longueur moyenne des réponses attendues, puis ajustez par tests A/B.
 
-分隔符的选择应贴合文档真实结构。纯文本可保留默认双换行作为强分隔；Markdown 文档建议保留标题层级，先按标题切，再在大标题内部按段落切；代码与表格混合的内容则需要更精细的策略，例如 Tree-sitter 抽取代码结构、识别表格边界，或者直接用脚本把这两类内容预先分离再走文本切分。如果文档里大量混合中英文，分隔符里务必同时包含中文标点（。！？）和英文标点（. ! ?），否则只对一种语言生效，效果会很差。
+Les séparateurs doivent suivre la structure réelle des documents. Pour du texte brut, gardez le double saut de ligne par défaut comme séparateur fort ; pour du Markdown, conservez la hiérarchie des titres en découpant d'abord par titre, puis par paragraphe à l'intérieur des grandes sections ; pour un mélange de code et de tableaux, il faut une stratégie plus fine, par exemple extraire la structure du code avec Tree-sitter, détecter les limites des tableaux, ou séparer ces deux types de contenu par un script avant le découpage du texte. Si vos documents mélangent plusieurs langues, incluez la ponctuation de chacune dans les séparateurs, sinon le découpage ne fonctionnera bien que pour l'une d'elles.
 
-嵌入模型的选择往往被低估。开源里 BGE-large 系列在中文 benchmark 上稳定领先，BGE-M3 同时支持稠密、稀疏、ColBERT 多向量；商用 OpenAI text-embedding-3-large 通用性强、成本不算高，Voyage-3-large 在英文上略胜一筹但中文一般。对长文档场景，注意嵌入模型的最大输入长度——OpenAI 是 8191 tokens，BGE 默认 512，超长输入会被截断或分段嵌入再平均，效果都不好。
+Le choix du modèle d'embedding est souvent sous-estimé. Côté open source, la famille BGE-large reste solide, et BGE-M3 gère à la fois les vecteurs denses, creux et multi-vecteurs ColBERT ; côté commercial, text-embedding-3-large d'OpenAI est polyvalent et d'un coût raisonnable, et Voyage-3-large se distingue un peu en anglais. Pour les longs documents, surveillez la longueur d'entrée maximale du modèle : 8191 tokens chez OpenAI, 512 par défaut pour BGE. Une entrée trop longue est tronquée, ou découpée puis moyennée, et le résultat s'en ressent dans les deux cas.
 
-最后，别忽视后处理。重排（rerank）几乎在所有场景都能提升 5%–15% 的端到端效果，代价是每次查询多 100–300ms 延迟。常见 reranker 包括 BGE-Reranker、Cohere Rerank，前者开源、后者付费但效果略好。如果你的检索路径包含关键词召回，强烈建议用 reranker 做第二层过滤，不然 BM25 的纯字面命中会污染上下文。`
+Enfin, ne négligez pas le post-traitement. Le reranking améliore le résultat de bout en bout de 5 à 15 % dans presque tous les cas, au prix de 100 à 300 ms de latence supplémentaire par requête. Les rerankers courants sont BGE-Reranker, open source, et Cohere Rerank, payant mais un peu meilleur. Si votre chaîne de recherche inclut un rappel par mots-clés, un reranker en second filtre est vivement conseillé, sinon les correspondances purement littérales de BM25 pollueront le contexte.`
+
 
 export const CHUNKING_SAMPLES: ChunkingSample[] = [
   { id: "markdown", labelKey: "samples.markdown", text: MARKDOWN_SAMPLE },

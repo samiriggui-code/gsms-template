@@ -899,8 +899,8 @@ func SerializeMCPToolResult(result *types.ToolResult) (string, error) {
 func (t *MCPTool) approvalGrant(ctx context.Context) (grant, scope string) {
 	sum := sha256.Sum256(t.mcpTool.InputSchema)
 	grant = "mcp:" + t.service.ID + "/" + t.mcpTool.Name + "#" + hex.EncodeToString(sum[:6])
-	if strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "zh") {
-		return grant, fmt.Sprintf("调用 %s 的工具 %s", t.service.Name, t.mcpTool.Name)
+	if strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "fr") {
+		return grant, fmt.Sprintf("Appeler l'outil %[2]s de %[1]s", t.service.Name, t.mcpTool.Name)
 	}
 	return grant, fmt.Sprintf("Call %s tool %s", t.service.Name, t.mcpTool.Name)
 }

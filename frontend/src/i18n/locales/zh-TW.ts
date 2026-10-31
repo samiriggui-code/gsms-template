@@ -5037,6 +5037,13 @@ export default {
     }
   },
   chat: {
+    forkFromHere: '從這裡分叉出新對話',
+    forkFromAnswer: '從這則回答繼續分叉',
+    forkTitleSuffix: '（分支）',
+    forkBusy: '請等本輪回答結束後再分叉',
+    forkFailed: '分叉失敗，請重試',
+    forkedFrom: '由其他對話分叉而來',
+    documentEmpty: '文件內容為空',
     memoryUsedCount: '本次使用了 {count} 條記憶',
     memoryForget: '刪除這條記憶',
     memoryForgotten: '已刪除這條記憶',

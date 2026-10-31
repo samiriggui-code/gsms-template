@@ -52,7 +52,7 @@ func TestBlocksToMarkdown_MentionUserName(t *testing.T) {
 		calls++
 		return ""
 	}, []DocxBlock{mentionBlk("p1", "ou_gone")},
-		[]string{"@成员"})
+		[]string{"@membre"})
 	if calls != 1 {
 		t.Errorf("resolver calls = %d, want 1", calls)
 	}

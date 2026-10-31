@@ -68,12 +68,12 @@ func resolveKBReadTenant(ctx context.Context, kb *types.KnowledgeBase, shares ac
 			return kb.TenantID, nil
 		}
 	}
-	return 0, apperrors.NewForbiddenError("无权访问该知识库")
+	return 0, apperrors.NewForbiddenError("Vous n'avez pas accès à cette base de connaissances")
 }
 
 func requireKBWrite(ctx context.Context, kb *types.KnowledgeBase) (context.Context, error) {
 	if err := access.RequireKBWrite(ctx, kb); err != nil {
-		return ctx, apperrors.NewForbiddenError("无权修改该知识库")
+		return ctx, apperrors.NewForbiddenError("Vous n'avez pas le droit de modifier cette base de connaissances")
 	}
 	return types.WithExecutionTenant(ctx, kb.TenantID), nil
 }
@@ -104,14 +104,15 @@ func withKBWriteTenantInfo(
 		return ctx, nil
 	}
 	if tenants == nil {
-		return ctx, apperrors.NewServiceUnavailableError("无法获取知识库所属空间")
+		return ctx, apperrors.NewServiceUnavailableError("Impossible de déterminer l'espace propriétaire de la " +
+			"base de connaissances")
 	}
 	tenant, err := tenants.GetTenantByID(ctx, kb.TenantID)
 	if err != nil {
 		return ctx, err
 	}
 	if tenant == nil || tenant.ID != kb.TenantID {
-		return ctx, apperrors.NewNotFoundError("知识库所属空间不存在")
+		return ctx, apperrors.NewNotFoundError("L'espace propriétaire de la base de connaissances n'existe pas")
 	}
 	return context.WithValue(ctx, types.TenantInfoContextKey, tenant), nil
 }

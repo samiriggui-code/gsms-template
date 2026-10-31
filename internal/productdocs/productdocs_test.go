@@ -87,7 +87,7 @@ func TestParseDocSplitsSectionsWithSiteAnchors(t *testing.T) {
 func TestParseDocCleansSiteMarkup(t *testing.T) {
 	doc := parseSample(t)
 	lead := doc.Sections[0].Content
-	assert.Contains(t, lead, "（截图：Wiki 浏览器）")
+	assert.Contains(t, lead, "(capture d'écran : Wiki 浏览器)")
 	assert.NotContains(t, lead, "不应出现")
 	assert.Contains(t, lead, "[观测]("+PublicBaseURL+"03-features/16-observability)")
 	assert.Contains(t, lead, "[本节]("+PublicBaseURL+"03-features/14-wiki#抽取粒度)")
@@ -95,11 +95,11 @@ func TestParseDocCleansSiteMarkup(t *testing.T) {
 	enable := doc.Sections[1].Content
 	assert.Contains(t, enable, "[配置]("+PublicBaseURL+"01-getting-started/04-configuration#模型与推理)")
 	assert.NotContains(t, enable, "graph TD", "Mermaid diagrams are dropped")
-	assert.Contains(t, enable, "（此处为流程图，略）")
+	assert.Contains(t, enable, "(diagramme omis ici)")
 	assert.Contains(t, enable, "# 不是标题", "a # line inside a code fence is not a heading")
 	assert.Contains(t, enable, "export WIKI_ENABLED=true")
 
-	assert.Contains(t, doc.Sections[2].Content, "（图：拓扑）")
+	assert.Contains(t, doc.Sections[2].Content, "(image : 拓扑)")
 	assert.NotContains(t, doc.Sections[2].Content, "topology.png")
 }
 

@@ -50,58 +50,58 @@ var openPages = []string{
 	openPageAutomations,
 }
 
-type openPageSection struct{ zh, en string }
+type openPageSection struct{ fr, en string }
 
 // SettingsSections are the settings dialog's sections, keyed as the client's
 // navigation keys them, with the names it shows.
 var SettingsSections = map[string]openPageSection{
-	"general":               {"常规设置", "General Settings"},
-	"userprofile":           {"用户信息", "User Profile"},
-	"assistant":             {"助手", "Assistant"},
-	"mymemory":              {"我的记忆", "My memory"},
-	"envvars":               {"沙箱密钥", "Sandbox secrets"},
-	"tenant":                {"空间信息", "Workspace Info"},
-	"members":               {"成员管理", "Members"},
-	"chathistory":           {"消息管理", "Message Management"},
-	"memory":                {"长期记忆", "Long-term memory"},
-	"models":                {"模型管理", "Model Management"},
+	"general":               {"Paramètres généraux", "General Settings"},
+	"userprofile":           {"Profil utilisateur", "User Profile"},
+	"assistant":             {"Assistant", "Assistant"},
+	"mymemory":              {"Ma mémoire", "My memory"},
+	"envvars":               {"Secrets du bac à sable", "Sandbox secrets"},
+	"tenant":                {"Informations de l'espace", "Workspace Info"},
+	"members":               {"Membres", "Members"},
+	"chathistory":           {"Gestion des messages", "Message Management"},
+	"memory":                {"Mémoire à long terme", "Long-term memory"},
+	"models":                {"Gestion des modèles", "Model Management"},
 	"ollama":                {"Ollama", "Ollama"},
 	"weknoracloud":          {"WeKnora Cloud", "WeKnora Cloud"},
-	"websearch":             {"网络搜索", "Web Search"},
-	"vectorstore":           {"向量数据库引擎", "Vector DB Engine"},
-	"parser":                {"解析引擎", "Parser Engine"},
-	"storage":               {"存储引擎", "Storage Engine"},
-	"sandbox":               {"沙箱配置", "Sandbox Config"},
-	"system":                {"版本信息", "Version Info"},
-	"system-global":         {"系统设置", "System Settings"},
-	"model-catalog":         {"模型目录", "Model catalog"},
-	"runtime-queues":        {"任务队列", "Task Queues"},
-	"platform-api-keys":     {"平台 API Key", "Platform API Keys"},
-	"system-audit-log":      {"审计日志", "Audit log"},
-	"integration-im":        {"IM 集成", "IM Integration"},
-	"integration-embed":     {"网页嵌入", "Web Embed"},
-	"integration-api":       {"API 集成", "API Integration"},
+	"websearch":             {"Recherche web", "Web Search"},
+	"vectorstore":           {"Moteur de base vectorielle", "Vector DB Engine"},
+	"parser":                {"Moteur d'analyse", "Parser Engine"},
+	"storage":               {"Moteur de stockage", "Storage Engine"},
+	"sandbox":               {"Configuration du bac à sable", "Sandbox Config"},
+	"system":                {"Version", "Version Info"},
+	"system-global":         {"Paramètres système", "System Settings"},
+	"model-catalog":         {"Catalogue de modèles", "Model catalog"},
+	"runtime-queues":        {"Files de tâches", "Task Queues"},
+	"platform-api-keys":     {"Clés API de plateforme", "Platform API Keys"},
+	"system-audit-log":      {"Journal d'audit", "Audit log"},
+	"integration-im":        {"Intégration messagerie", "IM Integration"},
+	"integration-embed":     {"Intégration web", "Web Embed"},
+	"integration-api":       {"Intégration API", "API Integration"},
 	"integration-mcpserver": {"MCP Server", "MCP Server"},
 	"integration-cli":       {"CLI", "CLI"},
-	"integration-chrome":    {"Chrome 插件", "Chrome Extension"},
+	"integration-chrome":    {"Extension Chrome", "Chrome Extension"},
 	"integration-claw":      {"Claw Skill", "Claw Skill"},
 }
 
 // SystemSettingsPanels are the tabs inside settings section system-global.
 // "other" is conditional on the page and is reached with select_tab instead.
 var SystemSettingsPanels = map[string]openPageSection{
-	"access":   {"注册与访问", "Registration and access"},
-	"users":    {"用户管理", "User management"},
-	"tenant":   {"空间默认值", "Workspace defaults"},
-	"runtime":  {"运行与并发", "Runtime and concurrency"},
-	"security": {"网络安全", "Network security"},
+	"access":   {"Inscription et accès", "Registration and access"},
+	"users":    {"Gestion des utilisateurs", "User management"},
+	"tenant":   {"Valeurs par défaut de l'espace", "Workspace defaults"},
+	"runtime":  {"Exécution et concurrence", "Runtime and concurrency"},
+	"security": {"Sécurité réseau", "Network security"},
 }
 
 // ToolboxSections are the toolbox's tools.
 var ToolboxSections = map[string]openPageSection{
-	"skills":            {"技能管理", "Skill Management"},
-	"mcp":               {"MCP 服务", "MCP services"},
-	"browserconnection": {"浏览器连接", "Browser connection"},
+	"skills":            {"Gestion des compétences", "Skill Management"},
+	"mcp":               {"Services MCP", "MCP services"},
+	"browserconnection": {"Connexion au navigateur", "Browser connection"},
 }
 
 func sectionKeys(sections map[string]openPageSection) string {
@@ -587,10 +587,10 @@ func openPageResult(link *OpenPageLink, output string) *types.ToolResult {
 
 func (t *OpenPageTool) resolve(ctx context.Context, in openPageInput) (*OpenPageLink, *types.ToolResult) {
 	link := &OpenPageLink{DisplayType: ToolOpenPage, Page: in.Page, Note: in.Note}
-	zh := strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "zh")
-	pick := func(zhText, enText string) string {
-		if zh {
-			return zhText
+	fr := strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "fr")
+	pick := func(frText, enText string) string {
+		if fr {
+			return frText
 		}
 		return enText
 	}
@@ -615,7 +615,7 @@ func (t *OpenPageTool) resolve(ctx context.Context, in openPageInput) (*OpenPage
 			link.Detail = firstNonEmpty(doc.Label("title"), doc.Label("file_name"), in.KnowledgeID)
 		}
 		if in.Page == types.PageWiki {
-			link.Detail = pick("Wiki 首页", "Wiki home")
+			link.Detail = pick("Accueil du wiki", "Wiki home")
 			if in.WikiSlug != "" {
 				page, blocked := t.read(ctx, "wiki.get_page", map[string]string{
 					"knowledge_base_id": in.KnowledgeBaseID, "slug": in.WikiSlug,
@@ -635,7 +635,7 @@ func (t *OpenPageTool) resolve(ctx context.Context, in openPageInput) (*OpenPage
 		link.AgentID, link.Section = in.AgentID, in.Section
 		link.Label = firstNonEmpty(agent.Label("name"), in.AgentID)
 	case types.PageModelSettings:
-		link.Label = pick("模型管理", "Models")
+		link.Label = pick("Gestion des modèles", "Models")
 		if in.ModelID != "" {
 			model, blocked := t.read(ctx, "model.get", map[string]string{"model_id": in.ModelID})
 			if blocked != nil {
@@ -645,10 +645,10 @@ func (t *OpenPageTool) resolve(ctx context.Context, in openPageInput) (*OpenPage
 			link.Detail = firstNonEmpty(model.Label("display_name"), model.Label("name"), in.ModelID)
 		} else if d := in.ModelDraft; d != nil {
 			link.ModelDraft = d
-			link.Detail = pick("新模型：", "New model: ") + firstNonEmpty(d.DisplayName, d.ModelName, d.Type)
+			link.Detail = pick("Nouveau modèle : ", "New model: ") + firstNonEmpty(d.DisplayName, d.ModelName, d.Type)
 		}
 	case types.PageMCPServices:
-		link.Label = pick("MCP 服务", "MCP services")
+		link.Label = pick("Services MCP", "MCP services")
 		if in.MCPServiceID != "" {
 			svc, blocked := t.read(ctx, "mcp_service.get", map[string]string{"mcp_service_id": in.MCPServiceID})
 			if blocked != nil {
@@ -658,30 +658,30 @@ func (t *OpenPageTool) resolve(ctx context.Context, in openPageInput) (*OpenPage
 			link.Detail = firstNonEmpty(svc.Label("name"), in.MCPServiceID)
 		} else if d := in.MCPServiceDraft; d != nil {
 			link.MCPServiceDraft = d
-			link.Detail = pick("新服务：", "New service: ") + d.Name
+			link.Detail = pick("Nouveau service : ", "New service: ") + d.Name
 		}
 	case openPageSettings:
-		link.Label = pick("设置", "Settings")
+		link.Label = pick("Paramètres", "Settings")
 		if s, ok := SettingsSections[in.Section]; ok {
-			link.Section, link.Detail = in.Section, pick(s.zh, s.en)
+			link.Section, link.Detail = in.Section, pick(s.fr, s.en)
 		}
 		if p, ok := SystemSettingsPanels[in.Panel]; ok {
 			link.Panel = in.Panel
-			link.Detail = strings.TrimPrefix(link.Detail+" / "+pick(p.zh, p.en), " / ")
+			link.Detail = strings.TrimPrefix(link.Detail+" / "+pick(p.fr, p.en), " / ")
 		}
 	case openPageToolbox:
-		link.Label = pick("工具箱", "Toolbox")
+		link.Label = pick("Boîte à outils", "Toolbox")
 		if s, ok := ToolboxSections[in.Section]; ok {
-			link.Section, link.Detail = in.Section, pick(s.zh, s.en)
+			link.Section, link.Detail = in.Section, pick(s.fr, s.en)
 		}
 	case openPageAgents:
-		link.Label = pick("智能体", "Agents")
+		link.Label = pick("Agents", "Agents")
 	case openPageKnowledgeBases:
-		link.Label = pick("知识库", "Knowledge bases")
+		link.Label = pick("Bases de connaissances", "Knowledge bases")
 	case openPageOrganizations:
-		link.Label = pick("共享空间", "Shared spaces")
+		link.Label = pick("Espaces partagés", "Shared spaces")
 	case openPageAutomations:
-		link.Label = pick("自动化", "Automations")
+		link.Label = pick("Automatisations", "Automations")
 		if in.AutomationID != "" {
 			a, blocked := t.read(ctx, "automation.get", map[string]string{"automation_id": in.AutomationID})
 			if blocked != nil {

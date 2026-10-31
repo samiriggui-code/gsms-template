@@ -4381,6 +4381,13 @@ export default {
     }
   },
   chat: {
+    forkFromHere: 'Fork a new conversation from here',
+    forkFromAnswer: 'Continue in a branch from this answer',
+    forkTitleSuffix: ' (branch)',
+    forkBusy: 'Wait for the current answer to finish before branching',
+    forkFailed: 'Branching failed, please try again',
+    forkedFrom: 'Branched from another conversation',
+    documentEmpty: 'The document is empty',
     memoryUsedCount: 'Used {count} memories',
     memoryForget: 'Delete this memory',
     memoryForgotten: 'Memory deleted',

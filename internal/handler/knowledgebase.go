@@ -928,7 +928,8 @@ func validateKnowledgeBaseSettingsUpdate(
 	}
 	if !ownWorkspace && cfg != nil && cfg.StorageBackendID != nil &&
 		kbStorageBindingChanged(kb, *cfg.StorageBackendID, "") {
-		return apperrors.NewForbiddenError("只有知识库所属空间可以修改存储配置")
+		return apperrors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut modifier " +
+			"la configuration de stockage")
 	}
 	return nil
 }

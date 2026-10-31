@@ -146,7 +146,7 @@ func parseDoc(pagePath, category, raw string) (*Doc, error) {
 			fence = marker
 			if strings.TrimSpace(strings.TrimLeft(trimmed, marker[:1])) == "mermaid" {
 				dropFence = true
-				body = append(body, "（此处为流程图，略）")
+				body = append(body, "(diagramme omis ici)")
 				continue
 			}
 			body = append(body, line)
@@ -159,7 +159,7 @@ func parseDoc(pagePath, category, raw string) (*Doc, error) {
 				block += " " + strings.TrimSpace(lines[i])
 			}
 			if m := captionRE.FindStringSubmatch(block); m != nil && m[1] != "" {
-				body = append(body, "（截图："+m[1]+"）")
+				body = append(body, "(capture d'écran : "+m[1]+")")
 			}
 			continue
 		}
@@ -274,7 +274,7 @@ func rewriteLinks(docPath, line string) string {
 		if alt == "" {
 			return ""
 		}
-		return "（图：" + alt + "）"
+		return "(image : " + alt + ")"
 	})
 	return linkRE.ReplaceAllStringFunc(line, func(m string) string {
 		sub := linkRE.FindStringSubmatch(m)

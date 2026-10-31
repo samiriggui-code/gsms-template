@@ -163,10 +163,10 @@ func TestPersistTurnMessagesStoresWhatTheUserTyped(t *testing.T) {
 
 func TestUploadOnlyQuery(t *testing.T) {
 	image := &CreateKnowledgeQARequest{Images: []ImageAttachment{{Data: "data:image/png;base64,aGk="}}}
-	zh := context.WithValue(context.Background(), types.LanguageContextKey, "zh-CN")
+	zh := context.WithValue(context.Background(), types.LanguageContextKey, "fr-FR")
 	en := context.WithValue(context.Background(), types.LanguageContextKey, "en-US")
 
-	assert.Equal(t, "请根据我上传的内容回答。", uploadOnlyQuery(zh, image))
+	assert.Equal(t, "Réponds à partir de ce que j'ai envoyé.", uploadOnlyQuery(zh, image))
 	assert.Equal(t, "Please answer based on what I uploaded.", uploadOnlyQuery(en, image))
 	assert.Empty(t, uploadOnlyQuery(zh, &CreateKnowledgeQARequest{}))
 	assert.Empty(t, uploadOnlyQuery(zh, &CreateKnowledgeQARequest{Images: []ImageAttachment{{URL: "http://x/a.png"}}}))

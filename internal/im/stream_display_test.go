@@ -128,10 +128,10 @@ func TestStreamDisplayPipeline_quickQA_redGreen(t *testing.T) {
 	if intermediate == "" {
 		t.Fatal("quick QA should show pipeline progress while streaming")
 	}
-	if !strings.Contains(intermediate, "问题理解") {
+	if !strings.Contains(intermediate, "Compréhension de la question") {
 		t.Fatalf("quick QA pipeline should show query_understand step, got: %q", intermediate)
 	}
-	if strings.Contains(intermediate, "思考过程") {
+	if strings.Contains(intermediate, "Raisonnement") {
 		t.Fatalf("quick QA pipeline should not use agent think header, got: %q", intermediate)
 	}
 

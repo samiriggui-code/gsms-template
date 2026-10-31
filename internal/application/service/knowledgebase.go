@@ -761,7 +761,8 @@ func (s *knowledgeBaseService) updateStorageBackend(
 		return false, nil
 	}
 	if types.CallerFromContext(ctx).TenantID != kb.TenantID {
-		return false, apperrors.NewForbiddenError("只有知识库所属空间可以修改存储配置")
+		return false, apperrors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut " +
+			"modifier la configuration de stockage")
 	}
 	total, err := s.kgRepo.CountKnowledgeByKnowledgeBaseID(ctx, kb.TenantID, kb.ID)
 	if err != nil {
@@ -799,7 +800,8 @@ func (s *knowledgeBaseService) rejectEmbeddingModelChange(
 		return err
 	}
 	if total > 0 {
-		return apperrors.NewBadRequestError("知识库中已有文件，无法修改Embedding模型")
+		return apperrors.NewBadRequestError("La base de connaissances contient déjà des fichiers ; impossible de " +
+			"changer de modèle d'embedding")
 	}
 	return nil
 }
@@ -1586,8 +1588,8 @@ func (s *knowledgeBaseService) DuplicateKnowledgeBase(
 func duplicateKBCopySuffix(locale string) string {
 	locale = strings.ToLower(locale)
 	switch {
-	case strings.HasPrefix(locale, "zh"):
-		return " 副本"
+	case strings.HasPrefix(locale, "fr"):
+		return " copie"
 	case strings.HasPrefix(locale, "ko"):
 		return " 사본"
 	case strings.HasPrefix(locale, "ru"):
@@ -1600,8 +1602,8 @@ func duplicateKBCopySuffix(locale string) string {
 func duplicateKBDefaultName(locale string) string {
 	locale = strings.ToLower(locale)
 	switch {
-	case strings.HasPrefix(locale, "zh"):
-		return "知识库"
+	case strings.HasPrefix(locale, "fr"):
+		return "Base de connaissances"
 	case strings.HasPrefix(locale, "ko"):
 		return "지식베이스"
 	case strings.HasPrefix(locale, "ru"):

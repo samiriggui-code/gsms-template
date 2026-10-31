@@ -480,7 +480,7 @@ function showBadge(item: SettingsModalNavItem): boolean {
     width: min(300px, 88vw);
     max-width: min(300px, 88vw);
     transform: translateX(-100%);
-    transition: transform 0.2s ease;
+    transition: transform var(--app-motion-base) ease;
     box-shadow: var(--td-shadow-3);
 
     &.settings-sidebar--mobile-open {

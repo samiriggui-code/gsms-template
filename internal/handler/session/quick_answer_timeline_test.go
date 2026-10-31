@@ -42,7 +42,7 @@ func TestQuickAnswerTimelineRecorderPersistsSearchWithoutResults(t *testing.T) {
 	emitTimelineStage(t, bus, "call-1", "knowledge_search",
 		map[string]any{"query": "你好", "search_source": "knowledge"},
 		event.AgentToolResultData{
-			Output:   "未检索到相关内容",
+			Output:   "Aucun contenu pertinent trouvé",
 			Success:  true,
 			Duration: 12,
 			Data:     map[string]interface{}{"count": 0, "doc_count": 0, "web_count": 0},
@@ -56,7 +56,7 @@ func TestQuickAnswerTimelineRecorderPersistsSearchWithoutResults(t *testing.T) {
 	assert.Equal(t, "你好", call.Args["query"])
 	require.NotNil(t, call.Result)
 	assert.True(t, call.Result.Success)
-	assert.Equal(t, "未检索到相关内容", call.Result.Output)
+	assert.Equal(t, "Aucun contenu pertinent trouvé", call.Result.Output)
 	assert.Equal(t, 0, call.Result.Data["count"])
 	assert.Equal(t, int64(12), call.Duration)
 }
@@ -67,7 +67,7 @@ func TestQuickAnswerTimelineRecorderKeepsStageOrderAndIgnoresOtherTools(t *testi
 	registerQuickAnswerTimelineRecorder(bus, msg)
 
 	emitTimelineStage(t, bus, "call-1", "query_understand", nil,
-		event.AgentToolResultData{Output: "已完成问题理解", Success: true})
+		event.AgentToolResultData{Output: "Compréhension de la question terminée", Success: true})
 	emitTimelineStage(t, bus, "call-2", "web_search", nil,
 		event.AgentToolResultData{Output: "ignored", Success: true})
 	emitTimelineStage(t, bus, "call-3", "knowledge_search", nil,
@@ -104,7 +104,7 @@ func TestQuickAnswerReasoningAndTimelineShareOneStep(t *testing.T) {
 
 	appendQuickAnswerReasoning(msg, "思考中")
 	emitTimelineStage(t, bus, "call-1", "knowledge_search", nil,
-		event.AgentToolResultData{Output: "未检索到相关内容", Success: true})
+		event.AgentToolResultData{Output: "Aucun contenu pertinent trouvé", Success: true})
 	appendQuickAnswerReasoning(msg, "继续")
 
 	require.Len(t, msg.AgentSteps, 1)

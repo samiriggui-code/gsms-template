@@ -5035,6 +5035,13 @@ export default {
     }
   },
   chat: {
+    forkFromHere: 'Создать новую ветку беседы отсюда',
+    forkFromAnswer: 'Продолжить в ветке от этого ответа',
+    forkTitleSuffix: ' (ветка)',
+    forkBusy: 'Дождитесь окончания текущего ответа, прежде чем создавать ветку',
+    forkFailed: 'Не удалось создать ветку, попробуйте ещё раз',
+    forkedFrom: 'Ответвлено от другой беседы',
+    documentEmpty: 'Документ пуст',
     memoryUsedCount: 'Использовано записей памяти: {count}',
     memoryForget: 'Удалить эту запись',
     memoryForgotten: 'Запись удалена',

@@ -38,64 +38,68 @@ var (
 	// Common placeholders
 	PlaceholderQuery = PromptPlaceholder{
 		Name:        "query",
-		Label:       "用户问题",
-		Description: "用户当前的问题或查询内容",
+		Label:       "Question de l'utilisateur",
+		Description: "Question ou requête actuelle de l'utilisateur",
 	}
 
 	PlaceholderContexts = PromptPlaceholder{
 		Name:        "contexts",
-		Label:       "检索内容",
-		Description: "从知识库检索到的相关内容列表",
+		Label:       "Contenu trouvé",
+		Description: "Liste des contenus pertinents trouvés dans la base de connaissances",
 	}
 
 	PlaceholderCurrentTime = PromptPlaceholder{
-		Name:        "current_time",
-		Label:       "当前时间",
-		Description: "当前日期（ISO 格式：2006-01-02）。只用日期、不用时钟，避免秒级变化打断 provider 前缀缓存。",
+		Name:  "current_time",
+		Label: "Date du jour",
+		Description: "Date du jour (format ISO : 2006-01-02). Date seule, sans l'heure, pour ne pas casser le " +
+			"cache de préfixe du fournisseur à chaque seconde.",
 	}
 
 	PlaceholderCurrentWeek = PromptPlaceholder{
 		Name:        "current_week",
-		Label:       "当前星期",
-		Description: "当前星期几（如：星期一、Monday）",
+		Label:       "Jour de la semaine",
+		Description: "Jour de la semaine actuel (par exemple : lundi, Monday)",
 	}
 
 	// Rewrite prompt placeholders
 	PlaceholderConversation = PromptPlaceholder{
-		Name:        "conversation",
-		Label:       "历史对话",
-		Description: "格式化的历史对话内容，用于多轮对话改写",
+		Name:  "conversation",
+		Label: "Historique de la conversation",
+		Description: "Historique de la conversation mis en forme, utilisé pour reformuler les questions sur " +
+			"plusieurs tours",
 	}
 
 	PlaceholderYesterday = PromptPlaceholder{
 		Name:        "yesterday",
-		Label:       "昨天日期",
-		Description: "昨天的日期（格式：2006-01-02）",
+		Label:       "Date d'hier",
+		Description: "Date d'hier (format : 2006-01-02)",
 	}
 
 	PlaceholderAnswer = PromptPlaceholder{
 		Name:        "answer",
-		Label:       "助手回答",
-		Description: "助手的回答内容（用于对话历史格式化）",
+		Label:       "Réponse de l'assistant",
+		Description: "Contenu de la réponse de l'assistant (pour mettre en forme l'historique)",
 	}
 
 	// Agent mode specific placeholders
 	PlaceholderKnowledgeBases = PromptPlaceholder{
-		Name:        "knowledge_bases",
-		Label:       "知识库列表",
-		Description: "自动格式化的知识库列表，包含名称、描述、文档数量等信息",
+		Name:  "knowledge_bases",
+		Label: "Liste des bases de connaissances",
+		Description: "Liste des bases de connaissances mise en forme automatiquement, avec nom, description, " +
+			"nombre de documents, etc.",
 	}
 
 	PlaceholderWebSearchStatus = PromptPlaceholder{
 		Name:        "web_search_status",
-		Label:       "网络搜索状态",
-		Description: "网络搜索工具是否启用的状态（Enabled 或 Disabled）",
+		Label:       "État de la recherche web",
+		Description: "Indique si l'outil de recherche web est activé (Enabled ou Disabled)",
 	}
 
 	PlaceholderLanguage = PromptPlaceholder{
-		Name:        "language",
-		Label:       "用户语言",
-		Description: "用户界面的语言偏好，如 Chinese (Simplified)、English、Korean 等，用于控制 LLM 回答语言",
+		Name:  "language",
+		Label: "Langue de l'utilisateur",
+		Description: "Langue préférée de l'interface, par exemple French, English, etc., utilisée pour choisir la " +
+			"langue des réponses du LLM",
 	}
 )
 

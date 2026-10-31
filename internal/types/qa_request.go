@@ -9,8 +9,8 @@ import (
 // carries an image or file but no text. The stored user message keeps its
 // empty text; only model input uses this question.
 func UploadOnlyQuestion(locale string) string {
-	if strings.HasPrefix(locale, "zh") {
-		return "请根据我上传的内容回答。"
+	if strings.HasPrefix(locale, "fr") {
+		return "Réponds à partir de ce que j'ai envoyé."
 	}
 	return "Please answer based on what I uploaded."
 }

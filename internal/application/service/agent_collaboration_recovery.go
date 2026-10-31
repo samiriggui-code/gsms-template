@@ -648,9 +648,13 @@ func (s *AgentCollaboration) finishInterruptedParent(ctx context.Context, b *col
 			logger.Warnf(ctx, "Failed to clear collaboration live stream: %v", err)
 		}
 	}()
-	reason := "任务执行期间服务中断，当前步骤没有可安全恢复的检查点，已停止本轮及未完成的子任务，避免重复执行。请重新发起任务。"
+	reason := "Le service a été interrompu pendant l'exécution et l'étape en cours n'avait aucun point de reprise " +
+		"sûr. Ce tour et les sous-tâches inachevées ont été arrêtés pour éviter une double exécution. Relancez la " +
+		"tâche."
 	if !time.Now().Before(g.Deadline) {
-		reason = "任务已超过执行时限，已停止本轮及未完成的子任务，避免重复执行。已保存的执行记录和子任务结果仍可查看。"
+		reason = "La tâche a dépassé son délai d'exécution. Ce tour et les sous-tâches inachevées ont été arrêtés " +
+			"pour éviter une double exécution. L'historique enregistré et les résultats des sous-tâches restent " +
+			"consultables."
 	}
 	wasCompleted := answer.IsCompleted
 	if !wasCompleted {
