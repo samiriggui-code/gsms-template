@@ -367,7 +367,7 @@ import {
 } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
-import { resolveLandingSiteUrl } from '@/utils/landingSiteUrl'
+import { publicSiteUrl } from '@/utils/runtimeConfig'
 
 // Import screenshot images
 import screenshot1 from '@/assets/img/screenshot-1.svg'
@@ -378,7 +378,7 @@ import screenshot4 from '@/assets/img/screenshot-4.svg'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const landingSiteUrl = resolveLandingSiteUrl()
+const landingSiteUrl = publicSiteUrl()
 const { t, tm, locale } = useI18n()
 const { formatRole, roleIcon } = useRoleLabel()
 

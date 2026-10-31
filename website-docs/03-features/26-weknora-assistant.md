@@ -1,63 +1,63 @@
-# WeKnora 助手
+# Assistant WeKnora
 
-WeKnora 助手既能回答关于 WeKnora 的版本更新、功能用法、配置和故障排查问题，也能结合当前页面，以当前用户的身份创建智能体、设置定时任务、整理知识和调整配置。点击左上角 Logo 旁的助手入口，右侧会展开对话面板；可以先提问，也可以直接描述想完成的事。助手使用你的身份与资源权限，不会获得额外的管理员权限。
+L’assistant WeKnora répond aux questions sur les mises à jour, l’usage, la configuration et le dépannage WeKnora, et peut aussi, depuis la page courante et avec votre identité, créer des agents, planifier des tâches, organiser les connaissances et ajuster la configuration. Cliquez l’entrée assistant à côté du logo en haut à gauche : un panneau de conversation s’ouvre à droite ; posez une question ou décrivez directement ce que vous voulez accomplir. Il utilise vos droits et ressources, sans privilèges administrateur supplémentaires.
 
-<Screenshot src="/screenshots/assistant-release-guide.png" caption="询问 WeKnora v0.9.0 的新功能，依据产品文档了解使用方式" />
+<Screenshot src="/screenshots/assistant-release-guide.png" caption="Demander les nouveautés WeKnora v0.9.0 et comment les utiliser via la doc produit" />
 
-<Screenshot src="/screenshots/assistant-overview.png" caption="结合当前知识库中的资料，处理活动筹备中的实际问题" />
+<Screenshot src="/screenshots/assistant-overview.png" caption="Traiter un problème concret de préparation d’événement avec les documents de la KB courante" />
 
-## 从一句话开始 {#getting-started}
+## Commencer en une phrase {#getting-started}
 
-升级到 v0.9.0 后，入口引导会突出显示 Logo 旁的助手按钮。点击入口打开助手，或点击「知道了」，即可完成这次提示；新用户在首次使用引导中也能找到它。
+Après passage à v0.9.0, l’onboarding met en avant le bouton assistant près du logo. Ouvrez l’assistant ou « Compris » pour fermer l’indication ; les nouveaux utilisateurs le trouvent aussi dans le guide de première utilisation.
 
-可以先尝试这些任务：
+Exemples de tâches :
 
-- 「WeKnora 这个版本更新了什么？这些功能该怎么用？」
-- 「帮我创建一个读书会策划助手，绑定活动资料，创建前让我确认。」
-- 「讲一下当前知识库的解析配置，哪些设置影响图片检索？」
-- 「帮我查找这个问题的相关资料，给出原文出处。」
-- 「检查这份文档的解析状态，说明失败原因和下一步怎么处理。」
-- 「整理一个每天汇总公开资讯的自动化任务，先让我确认配置。」
+- « Qu’est-ce qui change dans cette version WeKnora et comment utiliser ces fonctions ? »
+- « Crée un assistant pour organiser un club de lecture, lie les docs événement, fais-moi valider avant création. »
+- « Explique la config parsing de cette KB : quels réglages impactent la recherche d’images ? »
+- « Trouve des sources pertinentes pour ce problème avec les références originales. »
+- « Vérifie l’état de parsing de ce document, la cause d’échec et la suite. »
+- « Prépare une automatisation quotidienne de veille publique, fais-moi valider la config d’abord. »
 
-助手可以搜索和阅读当前版本的产品文档，也会按任务发现可用的管理操作。需要修改资源时，是否先征求确认由[执行权限](28-agent-permissions.md)决定；你的空间角色、资源访问权限和各项操作本身的限制始终有效。
+L’assistant peut chercher et lire la doc produit de la version courante et découvrir les opérations de gestion disponibles. Pour modifier des ressources, confirmation préalable selon les [permissions d’exécution](28-agent-permissions.md) ; rôle dans l’espace, accès ressources et limites de chaque opération restent applicables.
 
-## 当前页面与资料范围 {#context}
+## Page courante et périmètre documentaire {#context}
 
-从智能体、知识库、文档或设置页打开助手时，页面信息帮助它理解「这里」「这份文档」等表达。这里指 WeKnora 内的页面上下文，不代表助手会读取电脑上其他应用的画面。当前页面不会自动把检索限制在某个知识库，也不会赋予新的访问权限。希望只使用指定资料时，在输入框中通过 `@` 选择知识库、文档或标签，并明确说明任务范围。
+Depuis agent, KB, document ou paramètres, le contexte de page aide à interpréter « ici », « ce document », etc. Il s’agit du contexte de page WeKnora, pas d’une lecture d’autres applications sur l’ordinateur. La page courante ne limite pas automatiquement la recherche à une KB ni n’accorde de nouveaux droits. Pour un périmètre précis, `@` dans la zone de saisie pour KB, document ou tag, et précisez la tâche.
 
-助手拥有独立的会话历史。普通聊天和助手会话分开保存，助手会话仅对发起者可见；空间管理员也不能因此浏览其他成员的助手历史。
+L’assistant a un historique de session distinct. Chat ordinaire et sessions assistant sont séparés ; l’historique assistant n’est visible que pour son auteur ; un admin espace ne peut pas parcourir celui des autres membres.
 
-## 能处理哪些事情 {#capabilities}
+## Ce que l’assistant peut faire {#capabilities}
 
-| 任务 | 示例 |
+| Tâche | Exemples |
 | --- | --- |
-| WeKnora 使用帮助 | 查询版本更新，解释功能、配置项与部署条件，排查使用问题 |
-| 智能体配置 | 创建智能体，选择模型、知识库与工具，并在保存前核对配置 |
-| 知识问答 | 检索知识库与 Wiki，阅读来源，核对回答 |
-| 内容维护 | 按授权创建或修改文档、FAQ 和知识库内容 |
-| 配置与诊断 | 查看模型、智能体、MCP 和技能配置，检查解析或检索问题 |
-| 页面协作 | 打开相关页面，辅助填写配置，再由你检查 |
-| 持续任务 | 创建和管理[自动化](27-automations.md)，查看运行结果 |
+| Aide WeKnora | Mises à jour, fonctions, config, déploiement, dépannage |
+| Config agent | Créer agent, modèles, KB, outils, valider avant enregistrement |
+| Q&R connaissances | Recherche KB et Wiki, lecture sources, vérification réponses |
+| Maintenance contenu | Créer/modifier documents, FAQ, contenu KB selon autorisation |
+| Config et diagnostic | Modèles, agents, MCP, skills ; parsing ou retrieval |
+| Collaboration page | Ouvrir pages liées, aider à remplir config, vous validez |
+| Tâches récurrentes | Créer/gérer [automatisations](27-automations.md), consulter exécutions |
 
-部分任务依赖相应能力已经配置，例如联网搜索需要搜索服务，技能执行需要可用的沙箱。助手不会因为能找到一个操作，就绕过该操作所需的权限。
+Certaines tâches exigent des capacités déjà configurées (recherche Web, sandbox pour skills). Trouver une opération ne contourne pas les permissions requises.
 
-## 多智能体协作 {#collaboration}
+## Collaboration multi-agents {#collaboration}
 
-遇到可以拆开的研究或整理任务，助手可以安排多个智能体分别处理，再汇总结果。你可以查看各个任务的进度、输出与待处理事项，也可以继续补充要求或停止任务。
+Pour recherche ou organisation décomposable, l’assistant peut assigner plusieurs agents puis agréger. Suivez progression, sorties et éléments en attente ; ajoutez des consignes ou arrêtez.
 
-<Screenshot src="/screenshots/agent-collaboration.png" caption="多个智能体分别处理子任务，结果回到同一任务中汇总" />
+<Screenshot src="/screenshots/agent-collaboration.png" caption="Plusieurs agents traitent des sous-tâches, résultats regroupés dans la même tâche" />
 
-- 临时协作智能体继承当前任务允许使用的能力；也可以使用同一空间中已有的智能推理智能体作为模板。
-- 每个子任务有独立会话，不会自动复制父会话的全部历史或附件。任务描述应包含必要背景和资料范围。
-- 一个任务最多创建 16 个协作实例，同时最多运行 3 个；等待审批的实例不占运行名额。协作智能体不能继续递归创建下一层智能体。
-- 停止主任务会取消协作组内仍在运行的任务，已经完成的写入不会自动撤销。
+- Les agents collaboratifs temporaires héritent des capacités autorisées pour la tâche ; un agent de raisonnement existant dans l’espace peut servir de modèle.
+- Chaque sous-tâche a sa session, sans copie automatique de tout l’historique ou des pièces du parent. La description doit inclure contexte et périmètre documentaire.
+- Maximum 16 instances collaboratives par tâche, 3 en parallèle ; instances en attente d’approbation ne comptent pas dans le quota. Un agent collaboratif ne crée pas récursivement une couche suivante.
+- Arrêter la tâche principale annule les tâches encore en cours du groupe ; les écritures déjà terminées ne sont pas annulées automatiquement.
 
-协作不会扩大资源权限。若使用[按用户复用沙箱](22-skills-sandbox.md#user-sandbox)，会话的工作目录仍分别管理，但它们可能位于同一台机器中，不能把目录分开理解成操作系统级隔离。
+La collaboration n’élargit pas les droits ressources. Avec [sandbox partagée par utilisateur](22-skills-sandbox.md#user-sandbox), répertoires de session restent séparés mais peuvent cohabiter sur la même machine : ce n’est pas une isolation OS entre répertoires.
 
-## 名称与权限上限 {#settings}
+## Nom et plafond de permissions {#settings}
 
-空间可配置助手显示名称和执行权限上限。助手默认上限为「修改前确认」；单次会话选择的权限不能超过空间上限。普通自定义智能体的权限上限与助手配置分别管理。
+L’espace peut configurer le nom affiché de l’assistant et le plafond de permissions d’exécution. Plafond assistant par défaut « confirmation avant modification » ; le choix par session ne dépasse pas le plafond espace. Plafonds des agents personnalisés sont gérés séparément.
 
-管理操作发现、产品文档查询等能力属于内置 WeKnora 助手，不能仅靠复制名称或系统提示词给自定义智能体增加这些权限。
+Découverte d’opérations de gestion, requête doc produit, etc. sont propres à l’assistant WeKnora intégré ; copier le nom ou le prompt système sur un agent custom ne les accorde pas.
 
-相关内容：[Agent](07-agent.md) · [自动化](27-automations.md) · [执行权限与审批](28-agent-permissions.md)
+Voir aussi : [Agent](07-agent.md) · [Automatisations](27-automations.md) · [Permissions d’exécution et approbations](28-agent-permissions.md)

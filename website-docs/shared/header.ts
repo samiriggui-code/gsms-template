@@ -13,20 +13,20 @@ export type SiteNavItem = {
 };
 
 export const siteNavigation: SiteNavItem[] = [
-  { label: '产品能力', href: '/#capabilities', badge: '' },
-  { label: 'v0.9.0', href: '/#release', badge: 'NEW' },
-  { label: '生态集成', href: '/#ecosystem', badge: '' },
-  { label: '企业部署', href: '/#enterprise', badge: '' },
-  { label: '文档', href: '/docs/', badge: '' },
+  { label: 'Pôles', href: '/#poles' },
+  { label: 'Moteur IA', href: '/#engine' },
+  { label: 'WeKnora', href: '/#product', badge: 'NEW' },
+  { label: 'Intégrations', href: '/#ecosystem' },
+  { label: 'Documentation', href: '/docs/' },
+  { label: 'Contact', href: '/#contact' },
   {
-    label: '模型评测',
+    label: 'Benchmarks',
     href: '/docs/models',
-    badge: '',
     children: [
       { label: 'LLM', href: '/docs/models#llm' },
       { label: 'Embed', href: '/docs/models#embed' },
       { label: 'Rerank', href: '/docs/models#rerank' },
-      { label: '数据集', href: '/docs/models#dataset' },
+      { label: 'Jeux de données', href: '/docs/models#dataset' },
     ],
   },
 ];
@@ -34,7 +34,15 @@ export const siteNavigation: SiteNavItem[] = [
 // Everything else the homepage loads (Next chunks, images) is served from here:
 // Next's assetPrefix points at it and homepage/public mirrors the same path.
 export const homeAssets = '/docs/_home';
+/** En-tête doc + homepage (assets sous homepage/public → /docs/_home/). */
+export const siteBrand = {
+  name: 'Global-IT-SS',
+  tagline: 'IT Services & Sales',
+  logoSrc: `${homeAssets}/brand-gis/logo-transparent.svg`,
+} as const;
 export const repositoryUrl = 'https://github.com/Tencent/WeKnora';
+const configuredAppUrl = typeof process === 'undefined' ? undefined : process.env.NEXT_PUBLIC_APP_URL;
+export const proAppUrl = (configuredAppUrl ?? 'https://app.global-it-ss.com').replace(/\/$/, '');
 export const headerIcons: Record<string, string> = {
   sun: 'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5',
   moon: 'M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z',

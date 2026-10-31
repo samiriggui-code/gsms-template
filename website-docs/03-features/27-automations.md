@@ -1,47 +1,47 @@
-# 自动化
+# Automatisations
 
-将重复任务交给 WeKnora 助手按计划执行，例如每天整理公开资讯、定期检查知识库或汇总工作资料。在侧边栏打开「自动化」，创建任务、查看运行记录和处理待审批事项。
+Confiez à l’assistant WeKnora des tâches répétitives selon un planning : veille quotidienne, contrôles réguliers de la base de connaissances, synthèse de documents de travail. Ouvrez « Automatisations » dans la barre latérale pour créer des tâches, consulter les exécutions et traiter les approbations en attente.
 
-<Screenshot src="/screenshots/automation-conversation.png" caption="告诉助手任务和执行时间，用一句话设置自动化" />
+<Screenshot src="/screenshots/automation-conversation.png" caption="Décrire la tâche et l’horaire en une phrase pour configurer une automatisation" />
 
-## 创建任务 {#create}
+## Créer une tâche {#create}
 
-可以直接告诉 WeKnora 助手：「每天上午 9 点汇总读书会的筹备待办，创建前让我确认。」助手会整理任务和计划，供你核对。也可以从「自动化」页面手动填写：
+Vous pouvez dire à l’assistant WeKnora : « Chaque jour à 9h, résume les tâches en attente pour le club de lecture, fais-moi valider avant création. » Il structure tâche et planning pour validation. Ou manuellement depuis la page Automatisations :
 
-1. 点击「新建自动化」，填写名称和任务说明。写清需要使用的资料、预期产物和完成标准。
-2. 选择一次性执行或周期执行，并检查时区。周期任务使用 Cron 表达式，最小间隔为 5 分钟。
-3. 选择会话方式、执行权限及通知选项。需要连续积累上下文时使用同一会话；每次独立处理时创建新会话，也可携带上次成功结果。
-4. 保存后检查下次运行时间。可手动运行一次，核对结果，再保持计划开启。
+1. « Nouvelle automatisation », nom et description. Précisez sources, livrables attendus et critères de fin.
+2. Exécution unique ou périodique, vérifier le fuseau. Périodique = expression Cron, intervalle minimum 5 minutes.
+3. Mode de session, permissions d’exécution, notifications. Même session pour contexte continu ; nouvelle session à chaque fois, éventuellement avec le dernier succès.
+4. Après sauvegarde, vérifier la prochaine exécution ; lancer manuellement une fois, valider, puis laisser le planning actif.
 
-<Screenshot src="/screenshots/automation-setup.png" caption="手动设置重复频率、执行时间与时区，预览后续运行时间" />
+<Screenshot src="/screenshots/automation-setup.png" caption="Fréquence, horaire et fuseau ; aperçu des prochaines exécutions" />
 
-自动化由 WeKnora 助手执行，可单独指定模型；没有指定时使用助手的模型配置。需要其他智能体参与时，在任务说明中描述分工，由助手进行协作。
+Les automatisations sont exécutées par l’assistant WeKnora ; un modèle dédié est possible, sinon config modèle de l’assistant. Autres agents : décrire le partage dans la consigne, l’assistant coordonne.
 
-## 运行与结果 {#runs}
+## Exécutions et résultats {#runs}
 
-任务详情展示运行记录和结果。你可以打开对应会话查看完整过程，也可以让助手分析某次结果。任务可暂停、恢复或手动运行；取消一次运行不等于删除整个计划。
+Le détail de tâche liste exécutions et résultats. Ouvrir la session pour le déroulé complet, ou demander à l’assistant d’analyser une exécution. Pause, reprise, exécution manuelle ; annuler une exécution ≠ supprimer le planning.
 
-| 设置 | 作用 |
+| Réglage | Effet |
 | --- | --- |
-| 时区 | 决定计划时间；API 未指定时使用 UTC。建议明确填写 `Asia/Shanghai` 等 IANA 时区 |
-| 错过执行 | 选择跳过，或恢复后补跑一次；不会把全部错过的时刻逐个补跑 |
-| 重叠执行 | 上一轮未结束时选择跳过或排队 |
-| 执行时长 | 默认 30 分钟，最多 4 小时；等待审批的时间不计入执行时长 |
-| 审批等待 | 默认 24 小时，可设置 5 分钟至 7 天 |
-| 成功通知 | 可选择成功后接收站内通知；结果与待审批事项可从通知中心查看 |
+| Fuseau | Heure planifiée ; API sans valeur = UTC. Recommandé : fuseau IANA explicite (`Asia/Shanghai`, etc.) |
+| Exécution manquée | Ignorer, ou une reprise après retour ; pas de rattrapage de toutes les occurrences manquées |
+| Chevauchement | Si le tour précédent n’est pas fini : ignorer ou mettre en file |
+| Durée d’exécution | Défaut 30 min, max 4 h ; attente d’approbation non comptée |
+| Attente approbation | Défaut 24 h, de 5 min à 7 jours |
+| Notification succès | Notification in-app optionnelle ; résultats et approbations via le centre de notifications |
 
-连续失败 3 次后任务会自动暂停，应先查看失败原因再恢复。服务中断后无法确定执行结果的任务可能进入「需要处理」状态，系统不会直接重放可能已经完成的写入。
+Après 3 échecs consécutifs, la tâche se met en pause : analyser la cause avant reprise. Après interruption de service, une exécution dont l’issue est incertaine peut passer en « à traiter » ; le système ne rejoue pas automatiquement des écritures peut-être déjà effectuées.
 
-## 权限与审批 {#approval}
+## Permissions et approbations {#approval}
 
-自动化以创建者的身份执行，只能使用创建者当前有权访问的资源。它不保存一份永久有效的用户凭证；角色或资源权限变化会影响下一次运行。任务仅由本人管理，当前自动化接口不对 API Key 开放。
+L’automatisation s’exécute avec l’identité du créateur et les ressources accessibles au créateur à ce moment. Pas de credential utilisateur permanent ; changement de rôle ou de droits impacte la prochaine exécution. Seul le créateur gère la tâche ; les API automatisations ne sont pas ouvertes aux clés API.
 
-需要审批时，运行会暂停并产生通知。打开待审批事项，核对操作、资源和影响后再决定。无人值守执行不能代替用户回答任意自由文本问题，任务说明应提前包含必要条件。
+Si approbation requise, l’exécution pause et notifie. Ouvrir l’élément en attente, vérifier opération, ressources et impact. Exécution sans présence ne remplace pas une réponse libre de l’utilisateur : la consigne doit contenir les prérequis.
 
-对已出现过的审批需求，可以在任务中管理长期授权，授权范围限定到相应操作和资源。长期授权仍受当前用户权限、资源范围、失效条件及强制审批规则约束。撤销授权后，后续操作重新按审批策略处理。详见[执行权限与审批](28-agent-permissions.md)。
+Pour des besoins d’approbation récurrents, gérer une autorisation durable dans la tâche, limitée à l’opération et aux ressources concernées. Toujours soumis aux droits actuels, périmètre, expiration, révocation et règles d’approbation forcée. Après révocation, les opérations suivantes suivent à nouveau la politique. Voir [Permissions d’exécution et approbations](28-agent-permissions.md).
 
-## 部署与容量 {#limits}
+## Déploiement et capacité {#limits}
 
-默认每个空间最多 100 个任务，每个进程同时执行 4 个任务，每个任务保留最近 200 条运行记录。自动化调度属于应用运行能力，应保证应用持续运行，并做好数据库备份；个人电脑休眠或服务停止期间不能按时执行。
+Par défaut 100 tâches max par espace, 4 exécutions simultanées par processus, 200 dernières exécutions conservées par tâche. Le planificateur fait partie de l’application : maintenir l’app en marche et sauvegarder la base ; veille ou arrêt du poste empêche l’exécution à l’heure.
 
-相关内容：[WeKnora 助手](26-weknora-assistant.md) · [自动化 API](../04-api/02-api-automations.md)
+Voir aussi : [Assistant WeKnora](26-weknora-assistant.md) · [API Automatisations](../04-api/02-api-automations.md)

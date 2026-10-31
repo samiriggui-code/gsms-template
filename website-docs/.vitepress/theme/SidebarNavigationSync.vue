@@ -2,7 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useData } from 'vitepress'
 
-const { page } = useData()
+const { page, lang } = useData()
 const label = ref<HTMLElement>()
 
 async function revealCurrentPage() {
@@ -28,5 +28,5 @@ watch(() => page.value.relativePath, revealCurrentPage, { flush: 'post' })
 </script>
 
 <template>
-  <p ref="label" class="wk-docs-label">使用文档</p>
+  <p ref="label" class="wk-docs-label">{{ lang.startsWith('en') ? 'Docs' : 'Documentation' }}</p>
 </template>

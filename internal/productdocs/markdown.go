@@ -37,7 +37,7 @@ var (
 // Doc is one documentation page.
 type Doc struct {
 	Path     string // "03-features/14-wiki", the page's path under the site
-	Category string // Sidebar group, e.g. "功能模块"
+	Category string // Sidebar group, e.g. "Fonctions"
 	Title    string
 	Sections []*Section // In page order; the first is the text before any "##"
 }

@@ -1,37 +1,37 @@
-# API 参考：组织与共享
+# Référence API : organisation et partage
 
-管理组织成员以及知识库和智能体的共享关系。组织以工作空间为成员单位。
+Gestion des membres d’organisation et des relations de partage pour les bases de connaissances et les agents. Une organisation regroupe des espaces de travail comme unités membres.
 
-组织（Organization）以“空间（tenant）”为成员单位。组织组路由的 API key 策略为 `manage_spaces` 或 full-access；两个只读的「共享知识库清单」端点额外允许 `retrieve`，方便只读 key 发现自己本就有权检索的共享库；KB/Agent 分享管理仅 full-access key 可用。
+Une organisation (Organization) regroupe des espaces (tenant) comme membres. Les routes du groupe organisation exigent pour les clés API `manage_spaces` ou full-access ; deux points de terminaison en lecture seule « listes de bases partagées » acceptent en plus `retrieve`, afin qu’une clé en lecture seule découvre les bases partagées qu’elle est déjà autorisée à interroger ; la gestion du partage KB/Agent n’est disponible qu’avec une clé full-access.
 
-## 组织管理（/api/v1/organizations）
+## Gestion des organisations (`/api/v1/organizations`)
 
 ### POST /api/v1/organizations
 
-用途：创建组织。权限：Admin+。
+Rôle : Créer une organisation. Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `name` | string | 是 | 组织名称 |
-| `description` | string | 否 | 描述 |
-| `avatar` | string | 否 | 头像 URL |
-| `searchable` | bool | 否 | 是否可被搜索发现 |
-| `require_approval` | bool | 否 | 加入是否需审批 |
-| `member_limit` | int | 否 | 成员空间数上限 |
-| `invite_code_validity_days` | int | 否 | 邀请码有效期（天） |
+| `name` | string | oui | Nom de l’organisation |
+| `description` | string | non | Description |
+| `avatar` | string | non | URL de l’avatar |
+| `searchable` | bool | non | Peut être découverte via la recherche |
+| `require_approval` | bool | non | L’adhésion nécessite une approbation |
+| `member_limit` | int | non | Nombre maximal d’espaces membres |
+| `invite_code_validity_days` | int | non | Validité du code d’invitation (jours) |
 
-响应：201 `{"success":true,"data":{OrganizationResponse}}`
+Réponse : 201 `{"success":true,"data":{OrganizationResponse}}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"name":"研发组织"}'
+  -H 'Content-Type: application/json' -d '{"name":"Organisation R&D"}'
 ```
 
 ### GET /api/v1/organizations
 
-用途：列出我所在的组织。权限：Viewer+。
+Rôle : Lister les organisations dont je fais partie. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{"organizations":[...],"total":N,"resource_counts":{"knowledge_bases":{"by_organization":{}},"agents":{"by_organization":{}}}}}`
+Réponse : 200 `{"success":true,"data":{"organizations":[...],"total":N,"resource_counts":{"knowledge_bases":{"by_organization":{}},"agents":{"by_organization":{}}}}}`
 
 ```bash
 curl $BASE/api/v1/organizations -H "Authorization: Bearer $TOKEN"
@@ -39,9 +39,9 @@ curl $BASE/api/v1/organizations -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/organizations/preview/:code
 
-用途：按邀请码预览组织（不加入）。权限：Viewer+。路径参数：`code` 邀请码。
+Rôle : Aperçu d’une organisation via code d’invitation (sans adhérer). Permissions : Viewer+. Paramètre de chemin : `code` — code d’invitation.
 
-响应：200 `{"success":true,"data":{id,name,description,avatar,member_count,share_count,agent_share_count,is_already_member,require_approval,created_at}}`
+Réponse : 200 `{"success":true,"data":{id,name,description,avatar,member_count,share_count,agent_share_count,is_already_member,require_approval,created_at}}`
 
 ```bash
 curl $BASE/api/v1/organizations/preview/ABC123 -H "Authorization: Bearer $TOKEN"
@@ -49,9 +49,9 @@ curl $BASE/api/v1/organizations/preview/ABC123 -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/organizations/join
 
-用途：凭邀请码加入组织。权限：Admin+。请求体：`{"invite_code":"..."}`（必填）。
+Rôle : Rejoindre une organisation avec un code d’invitation. Permissions : Admin+. Corps : `{"invite_code":"..."}` (obligatoire).
 
-响应：200 `{"success":true,"data":{OrganizationResponse}}`
+Réponse : 200 `{"success":true,"data":{OrganizationResponse}}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations/join -H "Authorization: Bearer $TOKEN" \
@@ -60,47 +60,47 @@ curl -X POST $BASE/api/v1/organizations/join -H "Authorization: Bearer $TOKEN" \
 
 ### POST /api/v1/organizations/join-request
 
-用途：提交加入申请（需审批的组织）。权限：Admin+。
+Rôle : Soumettre une demande d’adhésion (organisation avec approbation). Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `invite_code` | string | 是 | 邀请码 |
-| `message` | string | 否 | 申请附言 |
-| `role` | string | 否 | 期望角色 |
+| `invite_code` | string | oui | Code d’invitation |
+| `message` | string | non | Message joint à la demande |
+| `role` | string | non | Rôle souhaité |
 
-响应：200 `{"success":true,"data":{JoinRequest}}`
+Réponse : 200 `{"success":true,"data":{JoinRequest}}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations/join-request -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"invite_code":"ABC123","message":"申请加入"}'
+  -H 'Content-Type: application/json' -d '{"invite_code":"ABC123","message":"Demande d'adhésion"}'
 ```
 
 ### GET /api/v1/organizations/search
 
-用途：搜索可发现（searchable）的组织。权限：Viewer+。
+Rôle : Rechercher des organisations découvrables (`searchable`). Permissions : Viewer+.
 
-| 查询参数 | 类型 | 必填 | 说明 |
+| Paramètre | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `q` | string | 否 | 关键字 |
-| `limit` | int | 否 | 默认 20，上限 100 |
+| `q` | string | non | Mot-clé |
+| `limit` | int | non | Par défaut 20, plafond 100 |
 
-响应：200 `{"success":true,"data":[SearchableOrganization],"total":N}`
+Réponse : 200 `{"success":true,"data":[SearchableOrganization],"total":N}`
 
 ```bash
-curl "$BASE/api/v1/organizations/search?q=研发" -H "Authorization: Bearer $TOKEN"
+curl "$BASE/api/v1/organizations/search?q=R%26D" -H "Authorization: Bearer $TOKEN"
 ```
 
 ### POST /api/v1/organizations/join-by-id
 
-用途：按组织 ID 加入可发现组织（无需邀请码）。权限：Admin+。
+Rôle : Rejoindre une organisation découvrable par ID (sans code d’invitation). Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `organization_id` | string | 是 | 目标组织 ID |
-| `message` | string | 否 | 附言 |
-| `role` | string | 否 | 期望角色 |
+| `organization_id` | string | oui | ID de l’organisation cible |
+| `message` | string | non | Message joint |
+| `role` | string | non | Rôle souhaité |
 
-响应：200 `{"success":true,"data":{OrganizationResponse}}`
+Réponse : 200 `{"success":true,"data":{OrganizationResponse}}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations/join-by-id -H "Authorization: Bearer $TOKEN" \
@@ -109,9 +109,9 @@ curl -X POST $BASE/api/v1/organizations/join-by-id -H "Authorization: Bearer $TO
 
 ### GET /api/v1/organizations/:id
 
-用途：组织详情。权限：Viewer+。
+Rôle : Détail d’une organisation. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{OrganizationResponse}}`
+Réponse : 200 `{"success":true,"data":{OrganizationResponse}}`
 
 ```bash
 curl $BASE/api/v1/organizations/org-1 -H "Authorization: Bearer $TOKEN"
@@ -119,20 +119,20 @@ curl $BASE/api/v1/organizations/org-1 -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/organizations/:id
 
-用途：更新组织（服务层校验调用者空间是组织 admin，不限于 owner）。权限：Admin+。请求体字段同创建（均可选）。
+Rôle : Mettre à jour l’organisation (la couche service vérifie que l’espace appelant est admin de l’organisation, pas seulement owner). Permissions : Admin+. Corps : mêmes champs que la création (tous optionnels).
 
-响应：200 `{"success":true,"data":{OrganizationResponse}}`
+Réponse : 200 `{"success":true,"data":{OrganizationResponse}}`
 
 ```bash
 curl -X PUT $BASE/api/v1/organizations/org-1 -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -d '{"description":"更新描述"}'
+  -H 'Content-Type: application/json' -d '{"description":"Description mise à jour"}'
 ```
 
 ### DELETE /api/v1/organizations/:id
 
-用途：删除组织。权限：Admin+（服务层要求组织 owner）。
+Rôle : Supprimer l’organisation. Permissions : Admin+ (la couche service exige le owner de l’organisation).
 
-响应：200 `{"success":true,"message":"Organization deleted successfully"}`
+Réponse : 200 `{"success":true,"message":"Organization deleted successfully"}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/organizations/org-1 -H "Authorization: Bearer $TOKEN"
@@ -140,9 +140,9 @@ curl -X DELETE $BASE/api/v1/organizations/org-1 -H "Authorization: Bearer $TOKEN
 
 ### POST /api/v1/organizations/:id/leave
 
-用途：本空间退出组织。权限：Admin+。无请求体。本空间分享进该组织的知识库和 Agent 会被一并撤销。
+Rôle : Quitter l’organisation depuis l’espace courant. Permissions : Admin+. Sans corps. Les bases de connaissances et agents que cet espace a partagés dans l’organisation sont révoqués.
 
-响应：200 `{"success":true,"message":"Left organization successfully"}`
+Réponse : 200 `{"success":true,"message":"Left organization successfully"}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations/org-1/leave -H "Authorization: Bearer $TOKEN"
@@ -150,14 +150,14 @@ curl -X POST $BASE/api/v1/organizations/org-1/leave -H "Authorization: Bearer $T
 
 ### POST /api/v1/organizations/:id/request-upgrade
 
-用途：申请提升本空间在组织内的角色。权限：Admin+。
+Rôle : Demander une élévation du rôle de l’espace courant dans l’organisation. Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `requested_role` | string | 是 | 期望的组织角色（`viewer/editor/admin`） |
-| `message` | string | 否 | 附言 |
+| `requested_role` | string | oui | Rôle organisation souhaité (`viewer/editor/admin`) |
+| `message` | string | non | Message joint |
 
-响应：200 `{"success":true,"data":{JoinRequest}}`
+Réponse : 200 `{"success":true,"data":{JoinRequest}}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations/org-1/request-upgrade -H "Authorization: Bearer $TOKEN" \
@@ -166,9 +166,9 @@ curl -X POST $BASE/api/v1/organizations/org-1/request-upgrade -H "Authorization:
 
 ### POST /api/v1/organizations/:id/invite-code
 
-用途：生成组织邀请码。权限：Admin+（服务层要求组织 admin）。无请求体。
+Rôle : Générer un code d’invitation pour l’organisation. Permissions : Admin+ (la couche service exige admin organisation). Sans corps.
 
-响应：200 `{"success":true,"data":{"invite_code":"..."}}`
+Réponse : 200 `{"success":true,"data":{"invite_code":"..."}}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations/org-1/invite-code -H "Authorization: Bearer $TOKEN"
@@ -176,13 +176,13 @@ curl -X POST $BASE/api/v1/organizations/org-1/invite-code -H "Authorization: Bea
 
 ### GET /api/v1/organizations/:id/search-tenants
 
-用途：按空间 ID 解析可邀请的空间。权限：Admin+，且调用者空间须为组织 admin。自 v0.8.2 起只接受完整的空间 ID，不再按空间名称跨空间搜索，`limit` 参数已移除。
+Rôle : Résoudre un espace invitable par ID d’espace. Permissions : Admin+, et l’espace appelant doit être admin de l’organisation. Depuis v0.8.2, seul l’ID d’espace complet est accepté (plus de recherche inter-espaces par nom) ; le paramètre `limit` a été retiré.
 
-| 查询参数 | 类型 | 必填 | 说明 |
+| Paramètre | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `q` | string | 是 | 完整的空间 ID |
+| `q` | string | oui | ID d’espace complet |
 
-响应：200 `{"success":true,"data":[{"tenant_id","tenant_name"}]}`。`q` 不是有效 ID、空间不存在或已是组织成员时返回空数组，否则返回唯一候选。
+Réponse : 200 `{"success":true,"data":[{"tenant_id","tenant_name"}]}`. Tableau vide si `q` n’est pas un ID valide, l’espace n’existe pas ou est déjà membre ; sinon un candidat unique.
 
 ```bash
 curl "$BASE/api/v1/organizations/org-1/search-tenants?q=10002" -H "Authorization: Bearer $TOKEN"
@@ -190,7 +190,7 @@ curl "$BASE/api/v1/organizations/org-1/search-tenants?q=10002" -H "Authorization
 
 ### GET /api/v1/organizations/:id/search-users
 
-用途：已废弃别名，行为同 `search-tenants`。权限：Admin+。参数同上。
+Rôle : Alias obsolète, même comportement que `search-tenants`. Permissions : Admin+. Paramètres identiques.
 
 ```bash
 curl "$BASE/api/v1/organizations/org-1/search-users?q=10002" -H "Authorization: Bearer $TOKEN"
@@ -198,16 +198,16 @@ curl "$BASE/api/v1/organizations/org-1/search-users?q=10002" -H "Authorization: 
 
 ### POST /api/v1/organizations/:id/invite
 
-用途：直接邀请空间加入组织。权限：Admin+。
+Rôle : Inviter directement un espace à rejoindre l’organisation. Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `tenant_id` | uint64 | 二选一 | 目标空间 ID（推荐） |
-| `user_id` | string | 二选一 | 兼容路径：用户 ID（解析为其空间） |
-| `representative_user_id` | string | 否 | 已忽略，仅为兼容保留：直接添加的空间不挂代表用户，避免邀请方指定对方空间里哪位用户的信息出现在成员列表中 |
-| `role` | string | 是 | 组织内角色 |
+| `tenant_id` | uint64 | l’un des deux | ID de l’espace cible (recommandé) |
+| `user_id` | string | l’un des deux | Chemin de compatibilité : ID utilisateur (résolu vers son espace) |
+| `representative_user_id` | string | non | Ignoré, conservé pour compatibilité : un espace ajouté directement n’a pas d’utilisateur représentant, pour éviter que l’inviteur impose quel utilisateur de l’espace invité apparaît dans la liste des membres |
+| `role` | string | oui | Rôle dans l’organisation |
 
-响应：200 `{"success":true,"message":"Member added successfully"}`
+Réponse : 200 `{"success":true,"message":"Member added successfully"}`
 
 ```bash
 curl -X POST $BASE/api/v1/organizations/org-1/invite -H "Authorization: Bearer $TOKEN" \
@@ -216,9 +216,9 @@ curl -X POST $BASE/api/v1/organizations/org-1/invite -H "Authorization: Bearer $
 
 ### GET /api/v1/organizations/:id/members
 
-用途：组织成员（空间）列表。权限：Viewer+。`email` 只对调用方自己空间那一行返回，其他空间只返回用户名和头像。
+Rôle : Liste des membres (espaces) de l’organisation. Permissions : Viewer+. `email` n’est renvoyé que pour la ligne correspondant à l’espace appelant ; les autres espaces n’ont que nom d’utilisateur et avatar.
 
-响应：200 `{"success":true,"data":{"members":[{id,user_id,representative_user_id,role,tenant_id,tenant_name,username,email,avatar,joined_at}],"total":N}}`
+Réponse : 200 `{"success":true,"data":{"members":[{id,user_id,representative_user_id,role,tenant_id,tenant_name,username,email,avatar,joined_at}],"total":N}}`
 
 ```bash
 curl $BASE/api/v1/organizations/org-1/members -H "Authorization: Bearer $TOKEN"
@@ -226,9 +226,9 @@ curl $BASE/api/v1/organizations/org-1/members -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/organizations/:id/members/:tenant_id
 
-用途：修改成员空间的组织角色。权限：Admin+。路径参数 `tenant_id` 为成员空间 ID。请求体：`{"role":"editor"}`（必填，`viewer/editor/admin`）。
+Rôle : Modifier le rôle organisation d’un espace membre. Permissions : Admin+. Paramètre de chemin `tenant_id` : ID de l’espace membre. Corps : `{"role":"editor"}` (obligatoire, `viewer/editor/admin`).
 
-响应：200 `{"success":true,"message":"Member role updated successfully"}`
+Réponse : 200 `{"success":true,"message":"Member role updated successfully"}`
 
 ```bash
 curl -X PUT $BASE/api/v1/organizations/org-1/members/2 -H "Authorization: Bearer $TOKEN" \
@@ -237,9 +237,9 @@ curl -X PUT $BASE/api/v1/organizations/org-1/members/2 -H "Authorization: Bearer
 
 ### DELETE /api/v1/organizations/:id/members/:tenant_id
 
-用途：移除成员空间（含自移除）。权限：Admin+。被移除空间分享进该组织的知识库和 Agent 会被一并撤销。
+Rôle : Retirer un espace membre (y compris auto-retrait). Permissions : Admin+. Les partages KB et Agent de l’espace retiré vers cette organisation sont révoqués.
 
-响应：200 `{"success":true,"message":"Member removed successfully"}`
+Réponse : 200 `{"success":true,"message":"Member removed successfully"}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/organizations/org-1/members/2 -H "Authorization: Bearer $TOKEN"
@@ -247,9 +247,9 @@ curl -X DELETE $BASE/api/v1/organizations/org-1/members/2 -H "Authorization: Bea
 
 ### GET /api/v1/organizations/:id/join-requests
 
-用途：加入申请队列。权限：Admin+。
+Rôle : File des demandes d’adhésion. Permissions : Admin+.
 
-响应：200 `{"success":true,"data":{"requests":[{id,user_id,username,email,message,request_type,prev_role,requested_role,status,created_at,reviewed_at}],"total":N}}`
+Réponse : 200 `{"success":true,"data":{"requests":[{id,user_id,username,email,message,request_type,prev_role,requested_role,status,created_at,reviewed_at}],"total":N}}`
 
 ```bash
 curl $BASE/api/v1/organizations/org-1/join-requests -H "Authorization: Bearer $TOKEN"
@@ -257,15 +257,15 @@ curl $BASE/api/v1/organizations/org-1/join-requests -H "Authorization: Bearer $T
 
 ### PUT /api/v1/organizations/:id/join-requests/:request_id/review
 
-用途：审批加入/升级申请。权限：Admin+。
+Rôle : Approuver ou refuser une demande d’adhésion ou d’upgrade. Permissions : Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `approved` | bool | 是 | 通过/拒绝 |
-| `message` | string | 否 | 审批意见 |
-| `role` | string | 否 | 通过时授予的角色 |
+| `approved` | bool | oui | Approuver / refuser |
+| `message` | string | non | Commentaire de revue |
+| `role` | string | non | Rôle accordé si approuvé |
 
-响应：200 `{"success":true,"message":"Review completed"}`
+Réponse : 200 `{"success":true,"message":"Review completed"}`
 
 ```bash
 curl -X PUT $BASE/api/v1/organizations/org-1/join-requests/req-1/review \
@@ -274,9 +274,9 @@ curl -X PUT $BASE/api/v1/organizations/org-1/join-requests/req-1/review \
 
 ### GET /api/v1/organizations/:id/shares
 
-用途：查看共享到该组织的 KB 列表。权限：Viewer+。
+Rôle : Lister les KB partagées vers cette organisation. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{"shares":[KnowledgeBaseShareResponse],"total":N}}`
+Réponse : 200 `{"success":true,"data":{"shares":[KnowledgeBaseShareResponse],"total":N}}`
 
 ```bash
 curl $BASE/api/v1/organizations/org-1/shares -H "Authorization: Bearer $TOKEN"
@@ -284,9 +284,9 @@ curl $BASE/api/v1/organizations/org-1/shares -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/organizations/:id/agent-shares
 
-用途：查看共享到该组织的 Agent 列表。权限：Viewer+。
+Rôle : Lister les agents partagés vers cette organisation. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{"shares":[AgentShareResponse],"total":N}}`
+Réponse : 200 `{"success":true,"data":{"shares":[AgentShareResponse],"total":N}}`
 
 ```bash
 curl $BASE/api/v1/organizations/org-1/agent-shares -H "Authorization: Bearer $TOKEN"
@@ -294,9 +294,9 @@ curl $BASE/api/v1/organizations/org-1/agent-shares -H "Authorization: Bearer $TO
 
 ### GET /api/v1/organizations/:id/shared-knowledge-bases
 
-用途：组织空间视图：组织内全部共享 KB（含我自己的）。权限：Viewer+；API key 需 `manage_spaces`、`retrieve` 或 full-access，且只返回该 key 白名单内的 KB。
+Rôle : Vue espace organisation : toutes les KB partagées dans l’organisation (y compris les miennes). Permissions : Viewer+ ; clé API : `manage_spaces`, `retrieve` ou full-access ; ne renvoie que les KB de la liste blanche de la clé.
 
-响应：200 `{"success":true,"data":[...含 is_mine、source_from_agent 标记...],"total":N}`
+Réponse : 200 `{"success":true,"data":[...avec marqueurs is_mine, source_from_agent...],"total":N}`
 
 ```bash
 curl $BASE/api/v1/organizations/org-1/shared-knowledge-bases -H "Authorization: Bearer $TOKEN"
@@ -304,28 +304,28 @@ curl $BASE/api/v1/organizations/org-1/shared-knowledge-bases -H "Authorization: 
 
 ### GET /api/v1/organizations/:id/shared-agents
 
-用途：组织空间视图：组织内全部共享 Agent。权限：Viewer+。
+Rôle : Vue espace organisation : tous les agents partagés dans l’organisation. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":[SharedAgentInfo],"total":N}`
+Réponse : 200 `{"success":true,"data":[SharedAgentInfo],"total":N}`
 
 ```bash
 curl $BASE/api/v1/organizations/org-1/shared-agents -H "Authorization: Bearer $TOKEN"
 ```
 
-## KB 分享（/api/v1/knowledge-bases/:id/shares）
+## Partage KB (`/api/v1/knowledge-bases/:id/shares`)
 
-API key：仅 full-access。Handler: `internal/handler/organization.go`
+Clé API : full-access uniquement. Handler : `internal/handler/organization.go`
 
 ### POST /api/v1/knowledge-bases/:id/shares
 
-用途：把 KB 分享到组织。权限：KB 创建者 OR Admin+。
+Rôle : Partager une KB vers une organisation. Permissions : créateur de la KB OU Admin+.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `organization_id` | string | 是 | 目标组织 |
-| `permission` | string | 是 | 共享权限（组织角色语义，如 `viewer/editor`） |
+| `organization_id` | string | oui | Organisation cible |
+| `permission` | string | oui | Permission de partage (sémantique rôle organisation, ex. `viewer/editor`) |
 
-响应：201 `{"success":true,"data":{KBShare}}`
+Réponse : 201 `{"success":true,"data":{KBShare}}`
 
 ```bash
 curl -X POST $BASE/api/v1/knowledge-bases/kb-1/shares -H "Authorization: Bearer $TOKEN" \
@@ -334,9 +334,9 @@ curl -X POST $BASE/api/v1/knowledge-bases/kb-1/shares -H "Authorization: Bearer 
 
 ### GET /api/v1/knowledge-bases/:id/shares
 
-用途：查看该 KB 的分享列表。权限：Viewer+。
+Rôle : Lister les partages de cette KB. Permissions : Viewer+.
 
-响应：200 `{"success":true,"data":{"shares":[KnowledgeBaseShareResponse],"total":N}}`
+Réponse : 200 `{"success":true,"data":{"shares":[KnowledgeBaseShareResponse],"total":N}}`
 
 ```bash
 curl $BASE/api/v1/knowledge-bases/kb-1/shares -H "Authorization: Bearer $TOKEN"
@@ -344,17 +344,17 @@ curl $BASE/api/v1/knowledge-bases/kb-1/shares -H "Authorization: Bearer $TOKEN"
 
 ### PUT /api/v1/knowledge-bases/:id/shares/:share_id
 
-用途：修改分享权限。权限：KB 创建者 OR Admin+。请求体：`{"permission":"editor"}`（必填）。
+Rôle : Modifier la permission d’un partage. Permissions : créateur de la KB OU Admin+. Corps : `{"permission":"editor"}` (obligatoire).
 
-服务层规则（与取消分享共用）：
+Règles couche service (communes avec l’annulation de partage) :
 
-- 原分享人需在 KB 所属空间内操作，且空间角色为 Contributor+；
-- KB 所属空间的 Admin+ 可以管理本空间的全部分享；
-- 目标组织中角色为 admin 的空间，其 Admin+ 用户只能**降低**权限或取消分享，不能把权限提升到超过当前值。
+- L’auteur du partage initial doit agir depuis l’espace propriétaire de la KB avec rôle Contributor+ ;
+- un Admin+ de l’espace propriétaire peut gérer tous les partages de cet espace ;
+- pour un espace dont le rôle dans l’organisation cible est admin, ses Admin+ ne peuvent **qu’abaisser** la permission ou annuler le partage, pas l’élever au-delà de la valeur actuelle.
 
-`share_id` 必须属于路径中的 KB，否则 404。
+`share_id` doit appartenir à la KB du chemin, sinon 404.
 
-响应：200 `{"success":true,"message":"Share permission updated successfully"}`
+Réponse : 200 `{"success":true,"message":"Share permission updated successfully"}`
 
 ```bash
 curl -X PUT $BASE/api/v1/knowledge-bases/kb-1/shares/s-1 -H "Authorization: Bearer $TOKEN" \
@@ -363,23 +363,23 @@ curl -X PUT $BASE/api/v1/knowledge-bases/kb-1/shares/s-1 -H "Authorization: Bear
 
 ### DELETE /api/v1/knowledge-bases/:id/shares/:share_id
 
-用途：取消分享。权限：KB 创建者 OR Admin+，服务层规则同上。`share_id` 必须属于路径中的 KB，否则 404。
+Rôle : Retirer un partage. Permissions : créateur de la KB OU Admin+, mêmes règles service. `share_id` doit appartenir à la KB du chemin, sinon 404.
 
-响应：200 `{"success":true,"message":"Share removed successfully"}`
+Réponse : 200 `{"success":true,"message":"Share removed successfully"}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/knowledge-bases/kb-1/shares/s-1 -H "Authorization: Bearer $TOKEN"
 ```
 
-## Agent 分享（/api/v1/agents/:id/shares）
+## Partage Agent (`/api/v1/agents/:id/shares`)
 
-API key：仅 full-access。Handler: `internal/handler/organization.go`
+Clé API : full-access uniquement. Handler : `internal/handler/organization.go`
 
 ### POST /api/v1/agents/:id/shares
 
-用途：把 Agent 分享到组织。权限：Agent 创建者 OR Admin+。请求体同 KB 分享（`organization_id` + `permission`，必填）。内置智能体不能分享（400）：每个空间都有同 ID 的内置智能体，分享后接收方无法区分。Agent 的知识库范围会开放给组织成员，因此调用者必须有权直接分享其中每个知识库（知识库创建者或 Admin+），`kb_selection_mode: all` 只有 Admin+ 可以分享，否则 403。
+Rôle : Partager un agent vers une organisation. Permissions : créateur de l’agent OU Admin+. Corps identique au partage KB (`organization_id` + `permission`, obligatoires). Les agents intégrés ne peuvent pas être partagés (400) : chaque espace a un agent intégré de même ID, le destinataire ne pourrait pas les distinguer. Le périmètre de bases de l’agent est exposé aux membres de l’organisation ; l’appelant doit pouvoir partager directement chaque base (créateur ou Admin+) ; `kb_selection_mode: all` n’est autorisé qu’à Admin+, sinon 403.
 
-响应：201 `{"success":true,"data":{AgentShare}}`
+Réponse : 201 `{"success":true,"data":{AgentShare}}`
 
 ```bash
 curl -X POST $BASE/api/v1/agents/agent-1/shares -H "Authorization: Bearer $TOKEN" \
@@ -388,9 +388,9 @@ curl -X POST $BASE/api/v1/agents/agent-1/shares -H "Authorization: Bearer $TOKEN
 
 ### GET /api/v1/agents/:id/shares
 
-用途：查看该 Agent 的分享列表。权限：Agent 创建者 OR Admin+。
+Rôle : Lister les partages de cet agent. Permissions : créateur de l’agent OU Admin+.
 
-响应：200 `{"success":true,"data":{"shares":[AgentShareResponse],"total":N}}`
+Réponse : 200 `{"success":true,"data":{"shares":[AgentShareResponse],"total":N}}`
 
 ```bash
 curl $BASE/api/v1/agents/agent-1/shares -H "Authorization: Bearer $TOKEN"
@@ -398,21 +398,21 @@ curl $BASE/api/v1/agents/agent-1/shares -H "Authorization: Bearer $TOKEN"
 
 ### DELETE /api/v1/agents/:id/shares/:share_id
 
-用途：取消 Agent 分享。权限：Agent 创建者 OR Admin+，服务层规则同 KB 取消分享。`share_id` 必须属于路径中的 Agent，否则 404。
+Rôle : Annuler le partage d’un agent. Permissions : créateur de l’agent OU Admin+, mêmes règles service que l’annulation KB. `share_id` doit appartenir à l’agent du chemin, sinon 404.
 
-响应：200 `{"success":true,"message":"Share removed successfully"}`
+Réponse : 200 `{"success":true,"message":"Share removed successfully"}`
 
 ```bash
 curl -X DELETE $BASE/api/v1/agents/agent-1/shares/s-1 -H "Authorization: Bearer $TOKEN"
 ```
 
-## 共享资源聚合视图
+## Vues agrégées des ressources partagées
 
 ### GET /api/v1/shared-knowledge-bases
 
-用途：列出通过组织共享给我的 KB（去除属主侧向量库元数据）。权限：Viewer+；API key 需 `manage_spaces`、`retrieve` 或 full-access，且只返回该 key 白名单内的 KB。
+Rôle : Lister les KB partagées avec moi via les organisations (métadonnées du magasin vectoriel côté propriétaire retirées). Permissions : Viewer+ ; clé API : `manage_spaces`, `retrieve` ou full-access ; ne renvoie que les KB de la liste blanche de la clé.
 
-响应：200 `{"success":true,"data":[...],"total":N}`
+Réponse : 200 `{"success":true,"data":[...],"total":N}`
 
 ```bash
 curl $BASE/api/v1/shared-knowledge-bases -H "Authorization: Bearer $TOKEN"
@@ -420,11 +420,11 @@ curl $BASE/api/v1/shared-knowledge-bases -H "Authorization: Bearer $TOKEN"
 
 ### GET /api/v1/shared-agents
 
-用途：列出通过组织共享给我的 Agent。权限：Viewer+；API key 同上。
+Rôle : Lister les agents partagés avec moi via les organisations. Permissions : Viewer+ ; clé API : idem.
 
-响应：200 `{"success":true,"data":[SharedAgentInfo],"total":N}`。`SharedAgentInfo` 含 `source_tenant_id`（来源空间）、`org_name`、`shared_by_username`、`permission`，以及 `web_search_ready`——只返回「来源空间的联网搜索是否可用」这一个布尔位，不下发来源空间的 provider 配置（会泄露配置），也不拿接收方空间的 provider ID 去比对（会误报不可用）。
+Réponse : 200 `{"success":true,"data":[SharedAgentInfo],"total":N}`. `SharedAgentInfo` inclut `source_tenant_id` (espace source), `org_name`, `shared_by_username`, `permission`, et `web_search_ready` — un seul booléen indiquant si la recherche Web est disponible côté espace source, sans config provider source (fuite) ni comparaison avec les ID provider de l’espace receveur (faux négatifs).
 
-使用共享 Agent 调用其它接口时，若同名 Agent 被多个空间共享，可带 `agent_source_tenant_id` 指明来源空间；该值会与共享关系逐一校验，非法或无权限时直接报错，不会静默回退到别的来源。
+Pour appeler d’autres interfaces avec un agent partagé, si le même agent est partagé par plusieurs espaces, passer `agent_source_tenant_id` pour préciser la source ; la valeur est vérifiée contre chaque relation de partage ; invalide ou non autorisé → erreur explicite, pas de repli silencieux vers une autre source.
 
 ```bash
 curl $BASE/api/v1/shared-agents -H "Authorization: Bearer $TOKEN"
@@ -432,20 +432,20 @@ curl $BASE/api/v1/shared-agents -H "Authorization: Bearer $TOKEN"
 
 ### POST /api/v1/shared-agents/disabled
 
-用途：设置“本空间禁用某共享 Agent”（影响整个空间的会话下拉）。权限：Admin+；API key 同上。
+Rôle : Désactiver un agent partagé pour l’espace courant (affecte la liste déroulante des sessions de tout l’espace). Permissions : Admin+ ; clé API : idem.
 
-| 字段 | 类型 | 必填 | 说明 |
+| Champ | Type | Obligatoire | Description |
 | --- | --- | --- | --- |
-| `agent_id` | string | 是（`binding:"required"`） | 共享 Agent ID |
-| `disabled` | bool | 否 | 是否禁用（默认 false） |
+| `agent_id` | string | oui (`binding:"required"`) | ID de l’agent partagé |
+| `disabled` | bool | non | Désactivé (défaut false) |
 
-响应：200 `{"success":true}`
+Réponse : 200 `{"success":true}`
 
 ```bash
 curl -X POST $BASE/api/v1/shared-agents/disabled -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{"agent_id":"agent-1","disabled":true}'
 ```
 
-## 实现参考
+## Référence d’implémentation
 
-路由注册：`internal/router/routes_agent.go` 的 `RegisterOrganizationRoutes`。Handler：`internal/handler/organization.go`。
+Enregistrement des routes : `RegisterOrganizationRoutes` dans `internal/router/routes_agent.go`. Handler : `internal/handler/organization.go`.

@@ -1,0 +1,95 @@
+name: Deploy VPS (site + app)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Que déployer"
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - site-only
+          - app-only
+      ref:
+        description: "Branche sur le VPS (git checkout + pull) — main sauf test ponctuel"
+        required: false
+        default: main
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Validate inputs
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          # The ref is interpolated into a remote root shell: allow only plain branch names.
+          [[ "$REF" =~ ^[A-Za-z0-9._/-]+$ && "$REF" != -* && "$REF" != *..* ]] || { echo "Invalid ref: $REF"; exit 1; }
+
+      - name: Require VPS secrets
+        run: |
+          test -n "${{ secrets.VPS_HOST }}" || { echo "Missing secret VPS_HOST"; exit 1; }
+          test -n "${{ secrets.VPS_SSH_KEY }}" || { echo "Missing secret VPS_SSH_KEY"; exit 1; }
+
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pin the host key when VPS_KNOWN_HOSTS is set (ssh-keyscan output); otherwise trust on first use.
+          if [ -n "${{ secrets.VPS_KNOWN_HOSTS }}" ]; then
+            printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+            HOSTKEY_POLICY=yes
+          else
+            HOSTKEY_POLICY=accept-new
+          fi
+          printf "Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking ${HOSTKEY_POLICY}\n" \
+            "${{ secrets.VPS_HOST }}" "${{ secrets.VPS_USER || 'root' }}" >> ~/.ssh/config
+
+      - name: Deploy on VPS (site = website-docs, app = compose)
+        env:
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR || '/opt/global-it-ss' }}
+          REF: ${{ inputs.ref }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          ssh vps "set -euo pipefail
+            cd '$VPS_APP_DIR'
+            cp -a .env \".env.bak.\$(date -u +%Y%m%dT%H%M%SZ)\"
+            git fetch origin
+            git checkout '$REF'
+            git pull --ff-only origin '$REF'
+            unset COMPOSE_PROJECT_NAME
+            chmod +x ./scripts/deploy-global-it-ss.sh
+            case '$TARGET' in
+              site-only)
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  build site
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  up -d --no-build site --remove-orphans
+                ;;
+              app-only)
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  build frontend app docreader
+                docker compose --env-file .env -f docker-compose.yml \
+                  -f deploy/docker-compose.traefik.yml -f deploy/docker-compose.traefik.gsms.yml \
+                  up -d --no-build frontend app docreader postgres redis --remove-orphans
+                ;;
+              *)
+                GIT_DEPLOY_REF='$REF' ./scripts/deploy-global-it-ss.sh
+                ;;
+            esac
+          "

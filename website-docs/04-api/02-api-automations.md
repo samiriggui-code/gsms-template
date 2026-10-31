@@ -1,28 +1,28 @@
-# API 参考：自动化与通知
+# Référence API : automatisations et notifications
 
-自动化由内置 WeKnora 助手以创建者身份执行。以下接口需要已登录用户，空间 Viewer+ 可使用，只能访问本人的任务和通知；API Key 未获准访问这些路由。
+Les automatisations s’exécutent via l’assistant WeKnora intégré, au nom du créateur. Les interfaces ci-dessous exigent un utilisateur connecté, Viewer+ dans l’espace, et n’accèdent qu’aux tâches et notifications de l’appelant ; les clés API ne sont pas autorisées sur ces routes.
 
-## 任务管理 {#tasks}
+## Gestion des tâches {#tasks}
 
-| 方法与路径 | 用途 |
+| Méthode et chemin | Usage |
 | --- | --- |
-| `GET /api/v1/automations` | 列出本人的任务 |
-| `POST /api/v1/automations` | 创建任务 |
-| `POST /api/v1/automations/validate-trigger` | 校验计划并预览下次执行时间 |
-| `GET /api/v1/automations/by-session/:session_id` | 查询会话关联任务 |
-| `GET /api/v1/automations/:id` | 任务详情 |
-| `PUT /api/v1/automations/:id` | 更新任务，使用 `AutomationPatch` 中出现的字段 |
-| `DELETE /api/v1/automations/:id` | 删除任务 |
-| `POST /api/v1/automations/:id/pause` | 暂停计划 |
-| `POST /api/v1/automations/:id/resume` | 恢复计划 |
-| `POST /api/v1/automations/:id/run` | 立即运行 |
+| `GET /api/v1/automations` | Lister les tâches de l’utilisateur |
+| `POST /api/v1/automations` | Créer une tâche |
+| `POST /api/v1/automations/validate-trigger` | Valider le planning et prévisualiser la prochaine exécution |
+| `GET /api/v1/automations/by-session/:session_id` | Tâche liée à une session |
+| `GET /api/v1/automations/:id` | Détail d’une tâche |
+| `PUT /api/v1/automations/:id` | Mettre à jour (champs présents dans `AutomationPatch`) |
+| `DELETE /api/v1/automations/:id` | Supprimer une tâche |
+| `POST /api/v1/automations/:id/pause` | Mettre le planning en pause |
+| `POST /api/v1/automations/:id/resume` | Reprendre le planning |
+| `POST /api/v1/automations/:id/run` | Exécuter immédiatement |
 
-创建请求的必填字段为 `name`、`instruction`、`trigger`。示例：
+Champs obligatoires à la création : `name`, `instruction`, `trigger`. Exemple :
 
 ```json
 {
-  "name": "每日知识摘要",
-  "instruction": "读取我有权访问的知识库，概括新增内容并给出来源，不修改资料。",
+  "name": "Synthèse quotidienne des connaissances",
+  "instruction": "Lire les bases de connaissances auxquelles j’ai accès, résumer les ajouts récents avec les sources, sans modifier les données.",
   "trigger": {"type": "cron", "expr": "0 9 * * *", "timezone": "Asia/Shanghai"},
   "session_mode": "per_run",
   "access_level": "read_only",
@@ -30,45 +30,45 @@
 }
 ```
 
-| 字段 | 说明 |
+| Champ | Description |
 | --- | --- |
-| `trigger.type` | `cron` 或 `once` |
-| `trigger.expr` | 五字段或六字段 Cron，也接受 `@daily` 等描述；最小间隔 5 分钟 |
-| `trigger.at` | 一次性时间，RFC3339 或指定时区的本地时间；不存在的本地时间会被拒绝 |
-| `trigger.timezone` | IANA 时区，省略为 UTC |
-| `model_id` | 可选模型；空值使用助手默认模型 |
-| `session_mode` | `per_run`（默认）或 `persistent` |
-| `carry_last_result` | 为每次新会话带入上次成功结果，默认 false |
-| `misfire_policy` | `skip`（默认）或 `run_once` |
-| `overlap_policy` | `skip`（默认）或 `queue` |
-| `access_level` | `read_only` / `confirm`（默认）/ `auto_write`，受助手权限上限约束 |
-| `approval_timeout_minutes` | 默认 1440，范围 5–10080 |
-| `limits.max_duration_minutes` | 默认 30，最多 240；不计审批等待时间 |
-| `notify_on_success` | 默认 false；失败始终通知 |
+| `trigger.type` | `cron` ou `once` |
+| `trigger.expr` | Cron à cinq ou six champs, ou descripteurs comme `@daily` ; intervalle minimum 5 minutes |
+| `trigger.at` | Heure unique, RFC3339 ou heure locale dans le fuseau indiqué ; heure locale inexistante refusée |
+| `trigger.timezone` | Fuseau IANA ; UTC si omis |
+| `model_id` | Modèle optionnel ; vide = modèle par défaut de l’assistant |
+| `session_mode` | `per_run` (défaut) ou `persistent` |
+| `carry_last_result` | Injecter le dernier succès dans chaque nouvelle session ; défaut `false` |
+| `misfire_policy` | `skip` (défaut) ou `run_once` |
+| `overlap_policy` | `skip` (défaut) ou `queue` |
+| `access_level` | `read_only` / `confirm` (défaut) / `auto_write`, plafonné par le niveau d’accès de l’assistant |
+| `approval_timeout_minutes` | Défaut 1440, plage 5–10080 |
+| `limits.max_duration_minutes` | Défaut 30, max 240 ; n’inclut pas l’attente d’approbation |
+| `notify_on_success` | Défaut `false` ; les échecs notifient toujours |
 
-任务说明支持模板变量 `now`、`last_run_at`、`last_success_at`、`run_id`、`automation_name`，写成双花括号形式。自动化由内置助手执行，协作需求通过任务说明表达。
+Les consignes acceptent les variables de modèle `now`, `last_run_at`, `last_success_at`, `run_id`, `automation_name` entre doubles accolades. L’exécution passe par l’assistant intégré ; les besoins de collaboration s’expriment dans la consigne.
 
-## 运行记录与授权 {#runs}
+## Exécutions et autorisations {#runs}
 
-| 方法与路径 | 用途 |
+| Méthode et chemin | Usage |
 | --- | --- |
-| `GET /api/v1/automations/:id/runs` | 运行记录 |
-| `GET /api/v1/automation-runs/:id` | 一次运行详情 |
-| `POST /api/v1/automation-runs/:id/cancel` | 取消该次运行 |
-| `GET /api/v1/automations/:id/grants` | 任务的长期授权 |
-| `GET /api/v1/automations/:id/grant-candidates` | 从已有审批中列出可授权候选 |
-| `POST /api/v1/automations/:id/grants` | 以 `{"prompt_id":"..."}` 添加授权 |
+| `GET /api/v1/automations/:id/runs` | Historique des exécutions |
+| `GET /api/v1/automation-runs/:id` | Détail d’une exécution |
+| `POST /api/v1/automation-runs/:id/cancel` | Annuler cette exécution |
+| `GET /api/v1/automations/:id/grants` | Autorisations durables de la tâche |
+| `GET /api/v1/automations/:id/grant-candidates` | Candidats dérivés d’approbations existantes |
+| `POST /api/v1/automations/:id/grants` | Ajouter une autorisation avec `{"prompt_id":"..."}` |
 
-运行状态包括 `queued`、`running`、`awaiting_approval`、`succeeded`、`failed`、`cancelled`、`skipped` 和 `needs_attention`。后者表示执行中断且结果不确定，不应自动重试可能已经生效的写操作。
+Statuts d’exécution : `queued`, `running`, `awaiting_approval`, `succeeded`, `failed`, `cancelled`, `skipped`, `needs_attention`. Ce dernier signifie interruption avec issue incertaine — ne pas rejouer automatiquement des écritures peut-être déjà appliquées.
 
-统一授权查询与撤销接口为 `GET /api/v1/agent/grants` 和 `DELETE /api/v1/agent/grants/:id`；审批答复使用 `POST /api/v1/agent/prompts/:prompt_id`。请求结构与校验见 `internal/handler/mcp_service.go`、`agent_grant.go`。
+Liste unifiée et révocation : `GET /api/v1/agent/grants` et `DELETE /api/v1/agent/grants/:id` ; réponse aux approbations : `POST /api/v1/agent/prompts/:prompt_id`. Structure et validation : `internal/handler/mcp_service.go`, `agent_grant.go`.
 
-## 站内通知 {#notifications}
+## Notifications in-app {#notifications}
 
-| 方法与路径 | 用途 |
+| Méthode et chemin | Usage |
 | --- | --- |
-| `GET /api/v1/notifications` | 查询本人通知 |
-| `POST /api/v1/notifications/read` | 标记已读，请求 `{"ids":["..."]}` |
-| `DELETE /api/v1/notifications/read` | 清理已读通知 |
+| `GET /api/v1/notifications` | Notifications de l’utilisateur |
+| `POST /api/v1/notifications/read` | Marquer comme lues : `{"ids":["..."]}` |
+| `DELETE /api/v1/notifications/read` | Supprimer les notifications lues |
 
-实现参考：`internal/router/routes_automation.go`、`internal/handler/automation.go`、`internal/types/automation.go`。使用方式见[自动化](../03-features/27-automations.md)。
+Référence d’implémentation : `internal/router/routes_automation.go`, `internal/handler/automation.go`, `internal/types/automation.go`. Usage produit : [Automatisations](../03-features/27-automations.md).

@@ -6,6 +6,9 @@
 # global-it-ss: also clears fixed `container_name` from docker-compose.yml so
 # COMPOSE_PROJECT_NAME=globalitss yields project-prefixed names (e.g. globalitss-frontend-1),
 # and unpublishes `app` on the host (API via Traefik + internal `app:8080` only).
+# `app` and `docreader` get local image names and `pull_policy: build`, so the server
+# runs this repo's code (French server messages, no ebooklib) instead of the
+# upstream wechatopenai/weknora-* images from Docker Hub.
 # Requires Docker Compose 2.24+ for `!reset`.
 #
 # In .env on the VPS:
@@ -18,13 +21,13 @@
 #     -f deploy/docker-compose.traefik.gsms.yml up -d
 
 services:
-  landing:
+  site:
     container_name: !reset null
     ports: !reset []
     labels:
-      - traefik.http.routers.gsms-landing.middlewares=gsms-secure
-      - traefik.http.routers.gsms-landing.service=gsms-landing
-      - traefik.http.services.gsms-landing.loadbalancer.server.port=3000
+      - traefik.http.routers.gsms-site.middlewares=gsms-secure
+      - traefik.http.routers.gsms-site.service=gsms-site
+      - traefik.http.services.gsms-site.loadbalancer.server.port=80
 
   frontend:
     container_name: !reset null
@@ -35,6 +38,8 @@ services:
       - traefik.http.services.gsms-app.loadbalancer.server.port=80
 
   app:
+    image: gsms-weknora-app:${WEKNORA_VERSION:-latest}
+    pull_policy: build
     container_name: !reset null
     ports: !reset []
 
@@ -45,6 +50,8 @@ services:
     container_name: !reset null
 
   docreader:
+    image: gsms-weknora-docreader:${WEKNORA_VERSION:-latest}
+    pull_policy: build
     container_name: !reset null
 
   sandbox:

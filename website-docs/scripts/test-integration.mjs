@@ -210,7 +210,7 @@ try {
         const image = document.querySelector('.wk-brand img');
         return image?.complete && image.naturalWidth === 945 && image.naturalHeight === 650;
       });
-      assert.equal(await page.locator('.wk-brand img').getAttribute('src'), '/docs/_home/brand/weknora-original.png');
+      assert.equal(await page.locator('.wk-brand img').getAttribute('src'), '/docs/_home/brand-gis/logo-transparent.svg');
       await checkVisibleControl(page, '.wk-theme-toggle');
     }
   }

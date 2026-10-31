@@ -1,42 +1,42 @@
-# ParadeDB 存量库升级
+# Mise à niveau ParadeDB (bases existantes)
 
-仓库的生产与开发 Compose 使用 `paradedb/paradedb:v0.25.11-pg17`。本文处理 **0.22.x → 0.25.11、PostgreSQL 主版本保持 17** 的升级；不适用于 PostgreSQL 跨主版本升级，也不代表 Helm 中其他旧版本可以直接套用。
+Les Compose de production et de développement du dépôt utilisent `paradedb/paradedb:v0.25.11-pg17`. Ce document couvre la montée de version **0.22.x → 0.25.11, PostgreSQL restant en 17** ; ce n’est pas une montée de version majeure PostgreSQL, et les autres anciennes versions Helm ne sont pas couvertes telles quelles.
 
-该版本线相对 `v0.22.6-pg17` 带来 PostgreSQL 17.9 → 17.11、pgvector 0.8.1 → 0.8.4（修复并行 HNSW 构建缓冲区溢出与 HNSW vacuum 期间的索引损坏）以及 pg_search 基于 WAL 的崩溃恢复（0.24.0 起，见 paradedb#4901）。
+Par rapport à `v0.22.6-pg17`, cette branche apporte PostgreSQL 17.9 → 17.11, pgvector 0.8.1 → 0.8.4 (correctifs de dépassement de tampon lors de la construction HNSW parallèle et de corruption d’index pendant le vacuum HNSW) ainsi que la reprise après crash basée sur le WAL pour pg_search (à partir de 0.24.0, voir paradedb#4901).
 
 > [!WARNING]
-> 替换镜像后**必须**把扩展 catalog 升级到与镜像一致的版本。catalog 停留在旧版本时，部分扩展 SQL 函数（例如 `paradedb.version_info()`）会因签名与新二进制不匹配而触发段错误，导致整个 PostgreSQL 实例崩溃并进入恢复。也**不要**在新镜像上执行 `ALTER EXTENSION pg_search UPDATE TO '0.22.6'`，它同样会造成上述不匹配。
+> Après remplacement de l’image, il **faut** mettre à jour le catalogue d’extensions pour qu’il corresponde à l’image. Si le catalogue reste sur une ancienne version, certaines fonctions SQL d’extension (par ex. `paradedb.version_info()`) peuvent provoquer un segfault par incompatibilité de signature avec le binaire, entraînant l’arrêt de l’instance PostgreSQL et une reprise. **Ne pas** exécuter `ALTER EXTENSION pg_search UPDATE TO '0.22.6'` sur la nouvelle image : même problème.
 
-## 升级步骤
+## Étapes de mise à niveau
 
-所有命令在仓库根目录执行。开发环境的数据库命令使用 `docker compose -f docker-compose.dev.yml`，开发后端在宿主机上手动停止；开发 Compose 没有 `app` 服务。保留原数据卷，**不要执行 `down -v`、删除卷或换成 PG18 镜像**。
+Toutes les commandes s’exécutent à la racine du dépôt. Pour l’environnement de développement, les commandes base de données utilisent `docker compose -f docker-compose.dev.yml` ; le backend de dev sur l’hôte doit être arrêté manuellement — le Compose de dev n’a pas de service `app`. Conservez le volume de données : **n’exécutez pas `down -v`**, ne supprimez pas le volume et ne passez pas à une image PG18.
 
-1. 停止 app 和其他数据库写入方；启用了 Langfuse 时也要停止其 web/worker，本地运行的开发后端同样需要停止。
+1. Arrêtez app et tout autre producteur d’écritures sur la base ; si Langfuse est activé, arrêtez aussi web/worker ; arrêtez le backend de dev local s’il tourne.
 
    ```bash
-   # 标准部署；开发环境请停止宿主机上的后端进程
+   # Déploiement standard ; en dev, arrêtez le backend sur l’hôte
    docker compose stop app
-   # 仅在启用了 Langfuse 时执行
+   # Uniquement si Langfuse est activé
    docker compose stop langfuse-web langfuse-worker
    ```
 
-2. 备份所有数据库和角色，包括 Langfuse 库，并确认能够恢复。备份存放在数据库数据卷之外。
+2. Sauvegardez toutes les bases et rôles, y compris Langfuse, et vérifiez la restauration. Stockez la sauvegarde en dehors du volume de données.
 
    ```bash
    umask 077
    docker compose exec -T postgres sh -c 'pg_dumpall -U "$POSTGRES_USER"' > paradedb-before-upgrade.sql
    ```
 
-   若旧镜像在当前 CPU 上无法启动，先保存停止状态的数据卷快照，在兼容机器上制作逻辑备份或验证快照可恢复，再改动唯一的数据副本。
+   Si l’ancienne image ne démarre pas sur le CPU actuel, snapshottez d’abord le volume à l’arrêt, produisez une sauvegarde logique sur une machine compatible ou validez la restauration du snapshot, puis modifiez la seule copie des données.
 
-3. 使用更新后的 Compose，只替换数据库容器：
+3. Avec le Compose mis à jour, remplacez uniquement le conteneur base de données :
 
    ```bash
    docker compose pull postgres
    docker compose up -d --no-deps --wait postgres
    ```
 
-4. 完成扩展的 SQL 升级。仅替换镜像不会更新已有数据库内的 `pg_extension` 版本。新镜像自带 0.22.x 起的完整升级脚本链，任意 0.22.x 都可以一步升级到镜像默认版本：
+4. Terminez la mise à niveau SQL des extensions. Remplacer l’image seule ne met pas à jour `pg_extension` dans les bases existantes. La nouvelle image inclut la chaîne complète de scripts depuis 0.22.x ; toute 0.22.x peut monter d’un coup vers la version par défaut de l’image :
 
    ```bash
    docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' <<'SQL'
@@ -47,24 +47,24 @@
    SQL
    ```
 
-   在**其他已安装 `pg_search` 或 `vector` 的数据库**中同样执行，包括安装过该扩展的 `postgres`、模板库或 Langfuse 库。不要为了升级而向原本不需要的数据库安装扩展。`pg_search` 的 catalog 与 `paradedb.version_info()` 应均报告 0.25.11，`vector` 应为 0.8.4。
+   Exécutez la même chose dans **toute autre base** où `pg_search` ou `vector` est installé (y compris `postgres`, modèles ou base Langfuse). N’installez pas d’extension sur des bases qui n’en ont pas besoin. Le catalogue `pg_search` et `paradedb.version_info()` doivent indiquer 0.25.11, `vector` 0.8.4.
 
-5. 恢复原先运行的写入服务，确认数据库迁移状态，执行有代表性的关键词与向量检索。已有的 BM25 与 HNSW 索引在新版本下可继续读写，无需专门重建全部索引或重新导入文档；如遇异常可 `REINDEX`。保留备份直到验证完成。
+5. Redémarrez les services d’écriture, vérifiez l’état des migrations WeKnora, testez recherche par mots-clés et vectorielle. Les index BM25 et HNSW existants restent utilisables sans réimport complet ; en cas d’anomalie, `REINDEX`. Gardez la sauvegarde jusqu’à validation.
 
-## 自动迁移的范围
+## Périmètre des migrations automatiques
 
-WeKnora 启动时的迁移只在 WeKnora 数据库内升级扩展，遵守 `app.skip_embedding`，不安装缺失的扩展，也不降级或处理其他版本线：
+Au démarrage, WeKnora ne met à niveau les extensions que dans sa base, respecte `app.skip_embedding`, n’installe pas d’extensions manquantes, ne rétrograde pas et ne gère pas d’autres lignes de version :
 
-- `000115`：已安装的 `pg_search` 为 0.22.0–0.25.10 且服务器提供 0.25.11 时，升级到 0.25.11；已安装的 `vector` 为 0.8.0–0.8.3 且服务器提供 0.8.4 时，升级到 0.8.4。
-- `000099`：历史迁移，仅在服务器提供 0.22.6 扩展包（即仍使用 `v0.22.6-pg17` 镜像）时把 0.22.2–0.22.5 升级到 0.22.6；新镜像上会跳过，交给 `000115`。
+- `000115` : `pg_search` installé en 0.22.0–0.25.10 et serveur en 0.25.11 → montée en 0.25.11 ; `vector` installé en 0.8.0–0.8.3 et serveur en 0.8.4 → montée en 0.8.4.
+- `000099` : migration historique ; ne s’applique que si le serveur fournit le paquet 0.22.6 (image `v0.22.6-pg17`) pour monter 0.22.2–0.22.5 → 0.22.6 ; ignorée sur la nouvelle image, déléguée à `000115`.
 
-如果这些迁移在替换数据库镜像**之前**已经执行，安装新镜像后不会自动再跑一次，需要手动执行上面的 SQL。没有对应迁移的旧应用也需手工升级。其他数据库的扩展不能靠 WeKnora 的迁移代管。
+Si ces migrations ont déjà tourné **avant** le remplacement de l’image base, elles ne se relancent pas automatiquement après la nouvelle image : exécutez le SQL ci-dessus. Les anciennes versions sans migration correspondante aussi. Les extensions dans d’autres bases ne sont pas gérées par WeKnora.
 
-## 回滚与复现验证
+## Rollback et validation
 
-回滚只能将升级前备份/快照恢复到独立数据卷，配合旧镜像使用。仅把镜像标签改回旧版不会撤销扩展 SQL 变更；而且 pg_search 0.24 起会向 WAL 写入自定义资源管理器记录，旧镜像无法重放这些记录。迁移的 down 文件也不会尝试降级扩展。
+Le rollback repose sur restauration de la sauvegarde/snapshot d’avant montée vers un volume isolé avec l’ancienne image. Revenir seulement à l’ancien tag d’image n’annule pas les changements SQL d’extension ; depuis pg_search 0.24, des enregistrements WAL de gestionnaire de ressources personnalisés empêchent la relecture par l’ancienne image. Les fichiers down de migration ne rétrogradent pas les extensions.
 
-仓库提供隔离验证脚本，默认验证 0.22.2 → 0.25.11，也可用 `--to 0.22.6` 验证历史补丁升级：
+Le dépôt fournit un script de validation isolé (par défaut 0.22.2 → 0.25.11, ou `--to 0.22.6` pour un patch historique) :
 
 ```bash
 docker pull paradedb/paradedb:v0.22.2-pg17
@@ -72,4 +72,4 @@ docker pull paradedb/paradedb:v0.25.11-pg17
 python3 scripts/test_paradedb_upgrade.py
 ```
 
-脚本使用临时容器和卷，不映射端口；验证同一数据卷升级、表内容、关键词/向量检索、迁移幂等性和重启后结果，并输出备份与日志。该用例验证固定测试数据，部署时仍需检查自己的数据和检索负载。
+Le script utilise conteneurs et volumes temporaires sans port mappé ; il valide montée sur le même volume, contenu des tables, recherche mots-clés/vecteur, idempotence des migrations et stabilité après redémarrage, avec logs et sauvegarde. Jeu de test fixe : en production, validez aussi vos données et charge de recherche.

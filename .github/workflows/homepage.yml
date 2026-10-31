@@ -1,0 +1,49 @@
+name: Homepage (Global-IT-SS + WeKnora)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "website-docs/homepage/**"
+      - "website-docs/shared/**"
+      - ".github/workflows/homepage.yml"
+  pull_request:
+    paths:
+      - "website-docs/homepage/**"
+      - "website-docs/shared/**"
+      - ".github/workflows/homepage.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "24"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify:
+    name: Build homepage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: website-docs/homepage
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: website-docs/homepage/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build

@@ -1,87 +1,87 @@
-# API 参考：沙箱、技能与个人变量
+# Référence API : sandbox, skills et variables personnelles
 
-管理沙箱配置、技能目录、安装任务、会话交互终端和个人环境变量。路径均以 `/api/v1` 为前缀；示例中的 `$BASE` 为服务地址，`$TOKEN` 为当前用户的 Bearer token。界面操作步骤见[技能目录与沙箱](../03-features/22-skills-sandbox.md)。
+Gestion des configurations sandbox, du catalogue de skills, des tâches d’installation, du terminal interactif de session et des variables d’environnement personnelles. Les chemins sont préfixés par `/api/v1` ; dans les exemples, `$BASE` est l’adresse du service et `$TOKEN` le Bearer token de l’utilisateur courant. Les étapes côté interface sont décrites dans [Catalogue de skills et sandbox](../03-features/22-skills-sandbox.md).
 
-## 权限
+## Permissions
 
-| 资源 | 读 | 写 / 检测 |
+| Ressource | Lecture | Écriture / test |
 | --- | --- | --- |
-| 沙箱配置列表/详情 | Viewer+；API Key 必须 full-access | Admin+；API Key 必须 full-access |
-| 沙箱实例清单、已安装技能及文件 | Admin+ | Admin+；API Key 必须 full-access |
-| 技能目录列表 | Viewer+，JWT | 目录增删、安装、包文件浏览需 Admin+；写组的 API Key 必须 full-access |
-| `/skills` 可用技能 | Viewer+，JWT | 只读，查询参数 sandbox_config_id；共享智能体另传 agent_id、agent_source_tenant_id |
-| 会话交互终端 | 会话属主，仅登录 JWT | 取票据后建立 WebSocket |
-| `/me/env-vars*` | 已登录的当前调用者 | 仅修改自己，服务端推导身份；无额外管理员门槛，使用 Bearer JWT |
+| Liste / détail des configs sandbox | Viewer+ ; clé API full-access obligatoire | Admin+ ; clé API full-access obligatoire |
+| Inventaire des sandboxes, skills installés et fichiers | Admin+ | Admin+ ; clé API full-access obligatoire |
+| Catalogue de skills | Viewer+, JWT | Ajout/suppression catalogue, installation, fichiers du paquet : Admin+ ; clé API du groupe écriture full-access obligatoire |
+| Skills disponibles `/skills` | Viewer+, JWT | Lecture seule ; paramètre `sandbox_config_id` ; agent partagé : aussi `agent_id`, `agent_source_tenant_id` |
+| Terminal interactif de session | Propriétaire de la session, JWT connecté uniquement | Établir WebSocket après obtention du ticket |
+| `/me/env-vars*` | Appelant connecté courant | Modifier uniquement soi-même ; identité déduite côté serveur ; pas de seuil admin supplémentaire ; Bearer JWT |
 
-跨空间 ID 不授予访问权。个人变量接口不能替代空间技能管理接口。
+Un ID d’un autre espace n’accorde pas l’accès. Les interfaces de variables personnelles ne remplacent pas la gestion des skills au niveau espace.
 
-## 沙箱配置
+## Configurations sandbox
 
-| 方法 | 路径 | 请求 / 响应 |
+| Méthode | Chemin | Requête / réponse |
 | --- | --- | --- |
 | GET | `/sandbox-configs` | 200 `{success,data:[ConfigResponse],workspace_scripts_disabled}` |
-| POST | `/sandbox-configs` | `{name,description?,config}`；201 `{success,data:ConfigResponse}` |
+| POST | `/sandbox-configs` | `{name,description?,config}` ; 201 `{success,data:ConfigResponse}` |
 | GET | `/sandbox-configs/:id` | 200 `{success,data:ConfigResponse}` |
-| PUT | `/sandbox-configs/:id` | `{name,description?,config}`，name 必填；200 同详情 |
-| DELETE | `/sandbox-configs/:id` | 可选 `force=true`；200 `{success:true}` |
-| GET | `/sandbox-configs/:id/sandboxes` | 200 `{success,data:SandboxInventory}`，包含占用和关联智能体 |
-| PUT | `/sandbox-configs/workspace-policy` | `{"scripts_disabled":true}`；返回 success/workspace_scripts_disabled |
-| POST | `/sandbox-configs/templates/query` | `{config,config_id?,ensure_standard?,replace_standard?,ensure_desktop?,replace_desktop?}`；查询远端模板，可创建/替换标准模板或桌面模板，replace 需要 config_id |
+| PUT | `/sandbox-configs/:id` | `{name,description?,config}`, `name` obligatoire ; 200 identique au détail |
+| DELETE | `/sandbox-configs/:id` | optionnel `force=true` ; 200 `{success:true}` |
+| GET | `/sandbox-configs/:id/sandboxes` | 200 `{success,data:SandboxInventory}`, occupation et agents associés |
+| PUT | `/sandbox-configs/workspace-policy` | `{"scripts_disabled":true}` ; retourne success / workspace_scripts_disabled |
+| POST | `/sandbox-configs/templates/query` | `{config,config_id?,ensure_standard?,replace_standard?,ensure_desktop?,replace_desktop?}` ; interroge les modèles distants, peut créer/remplacer modèle standard ou bureau ; `replace` exige `config_id` |
 
-ConfigResponse 为 `{id,name,description,sandbox_type,config,created_at,updated_at}`，凭据脱敏。编辑时以保存的配置为基础更新；脱敏占位值保留旧凭据，`skill_image` 由安装服务维护，客户端不能替换。
+ConfigResponse : `{id,name,description,sandbox_type,config,created_at,updated_at}`, credentials masqués. À l’édition, mise à jour à partir de la config enregistrée ; les valeurs placeholder masquées conservent les anciens identifiants ; `skill_image` est maintenu par le service d’installation, le client ne peut pas le remplacer.
 
-### config 字段
+### Champs `config`
 
-| 字段 | 类型 | 说明 |
+| Champ | Type | Description |
 | --- | --- | --- |
-| `sandbox_type` | string | docker/cube/e2b；local 已移除；Lite 桌面的 host 不能保存为配置 |
-| `default_timeout_sec` | int | 执行超时，0 使用内置默认 |
-| `terminal_idle_disconnect_sec` | int | 终端/桌面无操作多久断开，0 为默认 900 秒，生效范围 60 秒–24 小时 |
-| `desktop_enabled` | bool | 声明所选模板是 Cube/E2B 桌面模板；已安装技能后不能切换 |
-| `allow_private_endpoints` | bool | 允许私网集群地址，不放行 link-local/云元数据 |
-| `env_vars` | map[string]string | 该沙箱配置的环境，值加密保存 |
-| `skill_rollout` | string | next_turn（默认）/new_session；`allocation_mode=user` 时不生效，已有共用机器始终保留当前镜像 |
-| `allocation_mode` | string | session（默认，每会话一台）/user（同一用户共用）；只影响首次分配，不迁移已有会话 |
-| `network` | object | Cube/E2B 网络策略，见下 |
-| `cube` / `e2b` / `docker` | object | 与 sandbox_type 对应的连接配置 |
-| `volume_mount` | object | 可选卷配置；后端能力决定是否生效，不能仅凭字段存在认定支持 |
-| `skill_image` | object | 安装服务维护的快照信息，只读 |
+| `sandbox_type` | string | docker/cube/e2b ; local retiré ; l’hôte du bureau Lite ne peut pas être enregistré comme config |
+| `default_timeout_sec` | int | Timeout d’exécution ; 0 = défaut intégré |
+| `terminal_idle_disconnect_sec` | int | Délai sans activité avant déconnexion terminal/bureau ; 0 = 900 s par défaut ; plage effective 60 s–24 h |
+| `desktop_enabled` | bool | Indique que le modèle choisi est un modèle bureau Cube/E2B ; ne peut pas basculer après installation de skills |
+| `allow_private_endpoints` | bool | Autorise les adresses de cluster privées ; n’autorise pas link-local / métadonnées cloud |
+| `env_vars` | map[string]string | Environnement de cette config sandbox ; valeurs chiffrées à l’enregistrement |
+| `skill_rollout` | string | next_turn (défaut) / new_session ; sans effet si `allocation_mode=user` ; les machines partagées existantes gardent toujours l’image courante |
+| `allocation_mode` | string | session (défaut, une machine par session) / user (partagée par utilisateur) ; n’affecte que la première allocation, ne migre pas les sessions existantes |
+| `network` | object | Politique réseau Cube/E2B, voir ci-dessous |
+| `cube` / `e2b` / `docker` | object | Config de connexion selon `sandbox_type` |
+| `volume_mount` | object | Config de volume optionnelle ; l’effet dépend des capacités backend, la seule présence du champ ne prouve pas le support |
+| `skill_image` | object | Infos snapshot maintenues par le service d’installation, lecture seule |
 
-volume_mount 字段包括 enabled、mount_path、provider、volume_id、volume_name；volume_owner_fingerprint 由服务端管理。卷配置与后端支持能力共同决定是否挂载，编辑时保留服务端返回的归属信息。
+Les champs `volume_mount` incluent enabled, mount_path, provider, volume_id, volume_name ; `volume_owner_fingerprint` est géré côté serveur. Le montage dépend de la config volume et du support backend ; à l’édition, conserver les infos de propriété renvoyées par le serveur.
 
-后端配置：
+Configuration backend :
 
-| 后端 | 字段 |
+| Backend | Champs |
 | --- | --- |
-| cube | api_url、proxy_url、sandbox_domain、template_id；api_key 按集群需要；http_timeout_sec、cube_sandbox_ttl_seconds、dns_servers |
-| e2b | api_key、template_id 必填；api_url、sandbox_domain、proxy_url 用于自托管；http_timeout_sec、e2b_sandbox_ttl_seconds |
-| docker | image 必填；host（空为本机 socket）、tls_cert_path（TCP 必需）、cpu_limit、memory_limit_mb、pids_limit、network_mode（bridge/none）、runtime、idle_ttl_seconds、http_timeout_sec |
+| cube | api_url, proxy_url, sandbox_domain, template_id ; api_key selon le cluster ; http_timeout_sec, cube_sandbox_ttl_seconds, dns_servers |
+| e2b | api_key, template_id obligatoires ; api_url, sandbox_domain, proxy_url pour auto-hébergement ; http_timeout_sec, e2b_sandbox_ttl_seconds |
+| docker | image obligatoire ; host (vide = socket local), tls_cert_path (obligatoire en TCP), cpu_limit, memory_limit_mb, pids_limit, network_mode (bridge/none), runtime, idle_ttl_seconds, http_timeout_sec |
 
 ```bash
 curl -X POST "$BASE/api/v1/sandbox-configs" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"name":"E2B 工作环境","config":{"sandbox_type":"e2b","e2b":{"api_key":"<e2b-key>","template_id":"<template-id>"}}}'
+  -d '{"name":"E2B dev","config":{"sandbox_type":"e2b","e2b":{"api_key":"<e2b-key>","template_id":"<template-id>"}}}'
 
 curl "$BASE/api/v1/sandbox-configs/cfg-1/sandboxes" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-修改后端身份和删除配置会检查远端实例。409 的 error.code 可为 `sandboxes_still_live`、`sandbox_inventory_unverifiable`、`skill_snapshot_release_failed` 等；423 表示配置正在被另一个请求修改。`force=true` 仅允许在库存无法核实时删除，不会跳过已确认的活跃/暂停实例。响应中的占用数据用于定位相关会话和智能体。
+La modification de l’identité backend et la suppression de config vérifient les instances distantes. En 409, `error.code` peut être `sandboxes_still_live`, `sandbox_inventory_unverifiable`, `skill_snapshot_release_failed`, etc. ; 423 = config en cours de modification par une autre requête. `force=true` n’est autorisé à la suppression que si l’inventaire est invérifiable ; n’ignore pas les instances actives/en pause confirmées. Les données d’occupation dans la réponse aident à localiser sessions et agents concernés.
 
-### 网络策略
+### Politique réseau
 
-`network`：
+`network` :
 
-| 字段 | 说明 |
+| Champ | Description |
 | --- | --- |
-| `deny_egress_by_default` | false 默认允许出站；true 默认拒绝 |
-| `allow_out` | IPv4/CIDR/域名或单标签通配域名，域名用于默认拒绝模式 |
-| `deny_out` | IPv4/CIDR 拒绝清单 |
-| `cube_rules` | Cube 的 name/scheme/sni/host/methods/path/deny/audit/inject 规则，顺序有意义 |
-| `e2b_host_rules` | E2B 的 host/headers 规则；host 也须列入 allow_out |
-| `allow_public_inbound` | 兼容旧输入，保存时清除，入站始终要求凭据 |
+| `deny_egress_by_default` | false = sortie autorisée par défaut ; true = refus par défaut |
+| `allow_out` | IPv4/CIDR/domaine ou domaine wildcard à un label ; domaines pour le mode refus par défaut |
+| `deny_out` | Liste de refus IPv4/CIDR |
+| `cube_rules` | Règles Cube name/scheme/sni/host/methods/path/deny/audit/inject ; l’ordre compte |
+| `e2b_host_rules` | Règles E2B host/headers ; host doit aussi figurer dans allow_out |
+| `allow_public_inbound` | Entrée legacy ; effacé à l’enregistrement ; l’entrée exige toujours des credentials |
 
-`cube_rules[].inject` 为 `[{header,secret,format}]`，`e2b_host_rules[].headers` 为 header→secret，秘密字段加密保存并脱敏。Docker 用 `docker.network_mode`，不支持这些 L7 规则。
+`cube_rules[].inject` : `[{header,secret,format}]` ; `e2b_host_rules[].headers` : header→secret ; champs secret chiffrés et masqués. Docker utilise `docker.network_mode`, sans ces règles L7.
 
 ```json
 {
@@ -93,9 +93,9 @@ curl "$BASE/api/v1/sandbox-configs/cfg-1/sandboxes" \
 
 ### POST /system/sandbox-check
 
-请求 `{config,config_id?,deep?}`；config_id 可用于恢复已保存的脱敏凭据。`deep=false` 做连接检查；true 还执行临时脚本，远端后端会实际创建并销毁沙箱，可能产生后端用量。
+Corps `{config,config_id?,deep?}` ; `config_id` peut restaurer des credentials masqués enregistrés. `deep=false` : test de connexion ; `true` exécute aussi un script temporaire ; le backend distant crée et détruit une sandbox (usage backend possible).
 
-成功执行探测返回 `{success:true,data:{ok,provider,checks,capabilities}}`，探测失败也可为 HTTP 200，应检查 data.ok；参数错误返回 400 的 code/msg。每个 check 含 name/ok/message/reason/latency_ms，`ok=null` 表示跳过。例如默认拒绝出网时外网探针被策略跳过，不等于通过外网访问验证。
+Succès de la sonde : `{success:true,data:{ok,provider,checks,capabilities}}` ; échec de sonde possible en HTTP 200 — vérifier `data.ok` ; erreur de paramètres : 400 avec code/msg. Chaque check : name/ok/message/reason/latency_ms ; `ok=null` = ignoré. Ex. : sonde Internet ignorée par la politique en refus sortie par défaut ≠ validation d’accès Internet réussi.
 
 ```bash
 curl -X POST "$BASE/api/v1/system/sandbox-check" \
@@ -103,18 +103,18 @@ curl -X POST "$BASE/api/v1/system/sandbox-check" \
   -d '{"config_id":"cfg-1","deep":true}'
 ```
 
-## 技能目录
+## Catalogue de skills
 
-| 方法 | 路径 | 请求 / 响应 |
+| Méthode | Chemin | Requête / réponse |
 | --- | --- | --- |
-| GET | `/skills/catalog` | 200 `{success,data:[CatalogItem]}`；CatalogItem 含 `installations:[{sandbox_config_id,status,enabled,version,bundle_sha256,served?,...}]` |
-| POST | `/skills/catalog` | multipart `file` 或 JSON `{"source":"@owner/slug"}`；201 `{success,data:{id,name,version,description}}` |
-| POST | `/skills/catalog/:id/install` | `{"sandbox_config_ids":["cfg-1","cfg-2"]}`；202 `{success,data:{installs,errors?}}` |
+| GET | `/skills/catalog` | 200 `{success,data:[CatalogItem]}` ; CatalogItem inclut `installations:[{sandbox_config_id,status,enabled,version,bundle_sha256,served?,...}]` |
+| POST | `/skills/catalog` | multipart `file` ou JSON `{"source":"@owner/slug"}` ; 201 `{success,data:{id,name,version,description}}` |
+| POST | `/skills/catalog/:id/install` | `{"sandbox_config_ids":["cfg-1","cfg-2"]}` ; 202 `{success,data:{installs,errors?}}` |
 | GET | `/skills/catalog/:id/files` | 200 `{success,data:[FileEntry]}` |
 | GET | `/skills/catalog/:id/files/content?path=SKILL.md` | 200 `{success,data:FileContent}` |
-| DELETE | `/skills/catalog/:id` | 无安装引用时删除；200 `{success:true}` |
+| DELETE | `/skills/catalog/:id` | Suppression sans références d’installation ; 200 `{success:true}` |
 
-安装到多沙箱可能部分受理：检查 `data.installs` 和 `data.errors`，HTTP 202 不表示全部安装完成。目录删除不会隐式卸载各沙箱。
+Installation sur plusieurs sandboxes : acceptation partielle possible — vérifier `data.installs` et `data.errors` ; HTTP 202 n’implique pas que toutes les installations soient terminées. Supprimer du catalogue ne désinstalle pas implicitement sur chaque sandbox.
 
 ```bash
 curl -X POST "$BASE/api/v1/skills/catalog" \
@@ -124,31 +124,31 @@ curl -X POST "$BASE/api/v1/skills/catalog/catalog-1/install" \
   -d '{"sandbox_config_ids":["cfg-1"]}'
 ```
 
-来源写法、匿名下载要求和 ZIP 限制见[技能来源](../03-features/22-skills-sandbox.md#支持的来源)。
+Formats de source, exigences de téléchargement anonyme et limites ZIP : [Sources de skills](../03-features/22-skills-sandbox.md#sources-supportees).
 
-## 沙箱内技能
+## Skills dans la sandbox {#skills-dans-la-sandbox}
 
-以下路径前缀是 `/sandbox-configs/:id/skills`，所有操作含读都需 Admin+。
+Préfixe `/sandbox-configs/:id/skills` ; toutes les opérations, y compris lecture, exigent Admin+.
 
-| 方法 | 后缀 | 行为 |
+| Méthode | Suffixe | Comportement |
 | --- | --- | --- |
-| GET | 空 | `{success,data:[SkillResponse]}` |
-| POST | 空 | ZIP file 或 source JSON 安装；202 `{success,data:{skill_id}}` |
+| GET | (vide) | `{success,data:[SkillResponse]}` |
+| POST | (vide) | Installation ZIP ou JSON source ; 202 `{success,data:{skill_id}}` |
 | GET | `/:skillId` | `{success,data:SkillResponse}` |
-| POST | `/:skillId/reinstall` | 复用包重装，可选 `{"instructions":"..."}`（≤10000 字符）作为安装说明；202 `{success,data:{skill_id}}` |
-| POST | `/:skillId/stop` | 停止安装；200 返回技能状态，已 failed 可重复调用，其他非 installing 状态拒绝 |
-| GET | `/:skillId/guidance` | 当前安装运行的说明：`{success,data:{accepting,messages:[{id,content,status}]}}` |
-| POST | `/:skillId/guidance` | 安装进行中追加说明 `{expected_message_id,steer_id,content}`：`expected_message_id` 取 SkillResponse 的 `install_message_id`，`steer_id` 为客户端生成的 UUID（重试不会重复追加），`content` 1–10000 字符；202 `{success:true}`，安装已换轮次返回 409 |
-| PATCH | `/:skillId` | `enabled?`、`envs?`；省略不修改 |
-| DELETE | `/:skillId` | 从此沙箱卸载，保留目录包 |
-| GET | `/:skillId/files` | 文件清单 |
-| GET | `/:skillId/files/content?path=SKILL.md` | 读取相对路径文件，拒绝穿越 |
-| GET | `/:skillId/install-events` | SSE 安装进度 |
-| GET | `/:skillId/transcript` | SSE 安装过程事件 |
+| POST | `/:skillId/reinstall` | Réinstallation avec le même paquet ; optionnel `{"instructions":"..."}` (≤10000 caractères) comme consignes d’installation ; 202 `{success,data:{skill_id}}` |
+| POST | `/:skillId/stop` | Arrêter l’installation ; 200 retourne l’état du skill ; rappelable si déjà failed ; autres états non installing refusés |
+| GET | `/:skillId/guidance` | Consignes de l’installation en cours : `{success,data:{accepting,messages:[{id,content,status}]}}` |
+| POST | `/:skillId/guidance` | Ajouter une consigne pendant l’installation `{expected_message_id,steer_id,content}` : `expected_message_id` depuis `install_message_id` du SkillResponse ; `steer_id` UUID client (retry sans doublon) ; `content` 1–10000 caractères ; 202 `{success:true}` ; 409 si l’installation a changé de tour |
+| PATCH | `/:skillId` | `enabled?`, `envs?` ; omission = pas de modification |
+| DELETE | `/:skillId` | Désinstallation de cette sandbox ; le paquet catalogue est conservé |
+| GET | `/:skillId/files` | Liste des fichiers |
+| GET | `/:skillId/files/content?path=SKILL.md` | Fichier chemin relatif ; traversal refusé |
+| GET | `/:skillId/install-events` | SSE progression d’installation |
+| GET | `/:skillId/transcript` | SSE événements du processus d’installation |
 
-SkillResponse 包括 id/name/version/description/enabled/status/error/bundle_sha256/installed_snapshot_id/install_session_id/install_message_id/created_at/updated_at，以及 `envs:[{name,description,required,is_set}]`。升级或重装进行中、或失败后，`served:{version}` 标明沙箱仍在提供的上一个就绪版本；智能体可用技能以该版本为准。文件响应可为 UTF-8 文本、小图片的 base64 或二进制元数据，不能假定所有文件都有文本内容。
+SkillResponse : id/name/version/description/enabled/status/error/bundle_sha256/installed_snapshot_id/install_session_id/install_message_id/created_at/updated_at, plus `envs:[{name,description,required,is_set}]`. Pendant upgrade/réinstallation ou après échec, `served:{version}` indique la dernière version prête encore servie par la sandbox ; les skills utilisables par l’agent suivent cette version. Réponse fichier : texte UTF-8, petite image en base64 ou métadonnées binaires — ne pas supposer du texte pour tous les fichiers.
 
-PATCH 的 envs 只更新已声明变量；未声明名称忽略，空字符串清除值、保留声明。
+PATCH `envs` : met à jour uniquement les variables déclarées ; noms non déclarés ignorés ; chaîne vide efface la valeur en conservant la déclaration.
 
 ```bash
 curl -X PATCH "$BASE/api/v1/sandbox-configs/cfg-1/skills/skill-1" \
@@ -159,64 +159,64 @@ curl -N "$BASE/api/v1/sandbox-configs/cfg-1/skills/skill-1/install-events" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-进度载荷为 `{percent,stage,log?,status?,done}`。断开连接不取消安装；done 可能只是无法继续跟随进度，最终结果以技能 status 为准。无 Redis 时流提示改为轮询状态。transcript 的 204 表示安装刚开始、事件定位尚未准备；404 可表示无日志或日志已过期，不能据此判定安装失败。
+Charge de progression : `{percent,stage,log?,status?,done}`. Déconnexion n’annule pas l’installation ; `done` peut signifier seulement impossibilité de suivre la progression — l’état final est `status` du skill. Sans Redis, le flux invite à interroger l’état. Transcript 204 = installation vient de démarrer, événements pas encore prêts ; 404 = pas de journal ou journal expiré — ne pas en déduire un échec d’installation.
 
-`GET /skills?sandbox_config_id=cfg-1` 返回可用于智能体的技能元数据 `{success,data:[{name,description}],skills_available}`，与管理员看到的全部安装记录不同。
+`GET /skills?sandbox_config_id=cfg-1` retourne les métadonnées skills utilisables par l’agent `{success,data:[{name,description}],skills_available}`, distinct de la liste complète des installations visible par l’admin.
 
-助手通过 `skill.list` 调用此接口，必须传入 `agent.get` 返回的 `sandbox_config_id`（可为空）；仅投影 `name`、`description` 和 `skills_available`，不暴露共享智能体查询参数或技能管理接口。空配置 ID 返回空列表且 `skills_available:false`，应提示用户在智能体编辑器选择沙箱；配置技能时使用返回的 `name`，不是安装记录 ID。
+L’assistant appelle cette interface via `skill.list` avec le `sandbox_config_id` renvoyé par `agent.get` (peut être vide) ; projection uniquement de `name`, `description` et `skills_available` — pas les paramètres d’agent partagé ni les interfaces de gestion des skills. ID de config vide : liste vide et `skills_available:false` ; inviter l’utilisateur à choisir une sandbox dans l’éditeur d’agent ; pour configurer un skill, utiliser le `name` retourné, pas l’ID d’enregistrement d’installation.
 
-同时传 `agent_id` 和 `agent_source_tenant_id`（共享智能体的来源空间 ID）时，列出该共享智能体可 @ 的技能：沙箱配置取自智能体本身，忽略查询中的 `sandbox_config_id`；智能体技能范围为 `selected` 时只返回指定技能，禁用时返回空列表且 `skills_available:false`。调用者无权使用该智能体时返回 403。
+Avec `agent_id` et `agent_source_tenant_id` (ID espace source de l’agent partagé) : liste les skills @mentionnables pour cet agent partagé ; la config sandbox vient de l’agent lui-même, `sandbox_config_id` en query ignoré ; périmètre skills `selected` : seulement les skills indiqués ; désactivé : liste vide et `skills_available:false`. 403 si l’appelant ne peut pas utiliser cet agent.
 
-## 会话交互终端
+## Terminal interactif de session {#terminal-interactif-de-session}
 
-对话侧栏的终端通过 WebSocket 连接本会话的远程沙箱，仅 Cube/E2B 支持。路由由 `internal/router/routes_chat.go` 注册，尚未进入 Swagger；桌面接口见[会话 API](02-api-chat.md#sandbox-desktop)，代理要求见[沙箱部署](../06-development/04-sandbox-deployment.md#交互终端与图形桌面)。
+Le terminal du panneau latéral de dialogue se connecte en WebSocket à la sandbox distante de la session ; Cube/E2B uniquement. Route enregistrée par `internal/router/routes_chat.go`, pas encore dans Swagger ; bureau : [API session](02-api-chat.md#sandbox-desktop) ; exigences proxy : [Déploiement sandbox](../06-development/04-sandbox-deployment.md#terminal-interactif-et-bureau-graphique).
 
 ### POST /api/v1/sessions/:session_id/sandbox/terminal-ticket
 
-签发两分钟有效的握手票据。需要会话属主的登录 Bearer access token，API Key 不能调用。
+Émet un ticket de poignée de main valide deux minutes. Requiert le Bearer access token connecté du propriétaire de session ; clé API interdite.
 
 ```bash
 curl -X POST "$BASE/api/v1/sessions/$SESSION_ID/sandbox/terminal-ticket" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-响应：200 `{"success":true,"data":{"ticket":"<ticket>","expires_in":120}}`。
+Réponse : 200 `{"success":true,"data":{"ticket":"<ticket>","expires_in":120}}`.
 
 ### GET /api/v1/sessions/:id/sandbox/terminal
 
-WebSocket 握手，不走普通认证中间件：
+Poignée de main WebSocket, sans middleware d’auth classique :
 
-| 查询参数 | 必填 | 说明 |
+| Paramètre query | Obligatoire | Description |
 | --- | --- | --- |
-| `ticket` | 是 | 上一步取得的票据，绑定用户、空间、会话和签发时的 access token |
-| `provision` | 否 | `1` 表示允许创建或唤醒沙箱（可能计费）；省略时只连接正在运行的沙箱 |
-| `agent_id` / `agent_source_tenant_id` | 否 | 与 `provision=1` 一起使用，指定按哪个智能体（含共享智能体）的沙箱配置创建 |
-| `cols` / `rows` | 否 | 初始终端尺寸 |
-| `pty_id` | 否 | 重新接上之前 `ready` 帧返回的 Shell 进程 |
+| `ticket` | oui | Ticket de l’étape précédente, lié à utilisateur, espace, session et access token à l’émission |
+| `provision` | non | `1` autorise création ou réveil sandbox (facturation possible) ; omis = connexion uniquement à une sandbox en cours d’exécution |
+| `agent_id` / `agent_source_tenant_id` | non | Avec `provision=1`, précise selon quel agent (y compris partagé) créer la sandbox |
+| `cols` / `rows` | non | Taille initiale du terminal |
+| `pty_id` | non | Reprendre le processus shell renvoyé par la trame `ready` |
 
-连接后，二进制帧双向传输终端输入输出；文本帧为 JSON 控制消息：服务端发送 `ready`（含 `pty_id`、`backend`、`reattachable`）、`exited`（含 `exit_code`）和 `error`，客户端可发送 `{"type":"resize","cols":..,"rows":..}`。`reattachable` 为 `false`（Docker）时没有 `pty_id`，断开即结束 Shell，客户端不应自动重连。错误码包括 `SANDBOX_NOT_BOUND`、`SANDBOX_PAUSED`、`SANDBOX_STOPPED`（不会暂停的 Docker 后端：容器已停止或已被空闲回收）、`TERMINAL_UNSUPPORTED`、`IDLE_DISCONNECTED`、`AUTH_REVOKED`、`INTERNAL`。每个会话最多同时 5 个终端，超出返回 429。
+Après connexion, trames binaires bidirectionnelles pour E/S terminal ; trames texte JSON de contrôle : serveur envoie `ready` (avec `pty_id`, `backend`, `reattachable`), `exited` (avec `exit_code`) et `error` ; client peut envoyer `{"type":"resize","cols":..,"rows":..}`. Si `reattachable` est `false` (Docker), pas de `pty_id`, déconnexion termine le shell — le client ne doit pas se reconnecter automatiquement. Codes d’erreur : `SANDBOX_NOT_BOUND`, `SANDBOX_PAUSED`, `SANDBOX_STOPPED` (backend Docker sans pause : conteneur arrêté ou récupéré par idle), `TERMINAL_UNSUPPORTED`, `IDLE_DISCONNECTED`, `AUTH_REVOKED`, `INTERNAL`. Maximum 5 terminaux simultanés par session ; au-delà 429.
 
-## Lite 本机项目目录
+## Répertoire projet hôte Lite
 
-仅 Lite 桌面版提供，其他部署返回 404。它在运行 Lite 的电脑上弹出系统目录选择框，用户选定的目录会加入已批准列表；随后创建会话时把返回的 `dir` 作为 `project_dir` 传入，即可让该会话在[本机沙箱](../03-features/22-skills-sandbox.md#lite-host)中使用这个目录。`project_dir` 字段见[会话 API](02-api-chat.md)。
+Uniquement en édition bureau Lite ; autres déploiements 404. Ouvre sur la machine qui exécute Lite une boîte de dialogue système de choix de dossier ; le dossier choisi rejoint la liste approuvée ; à la création de session, passer le `dir` retourné comme `project_dir` pour utiliser ce dossier dans la [sandbox hôte](../03-features/22-skills-sandbox.md#lite-host). Champ `project_dir` : [API session](02-api-chat.md).
 
-| 方法 | 路径 | 请求 / 响应 |
+| Méthode | Chemin | Requête / réponse |
 | --- | --- | --- |
-| POST | `/system/host-project-dir` | 无请求体；200 `{"code":0,"msg":"success","data":{"dir":"/Users/me/project"}}`，取消选择时 `dir` 为空。仅接受登录 JWT，Viewer+，API Key 被拒绝 |
+| POST | `/system/host-project-dir` | Sans corps ; 200 `{"code":0,"msg":"success","data":{"dir":"/Users/me/project"}}`, `dir` vide si annulation. JWT connecté uniquement, Viewer+ ; clé API refusée |
 
-## 个人环境变量
+## Variables d’environnement personnelles {#variables-denvironnement-personnelles}
 
-调用者身份由当前认证上下文确定，不接收 user_id。个人接口返回变量名、来源及更新时间，不返回明文。
+L’identité de l’appelant est déterminée par le contexte d’auth courant ; pas de `user_id` en entrée. Les interfaces personnelles renvoient noms, source et horodatage de mise à jour, pas les valeurs en clair.
 
-| 方法 | 路径 | 请求 |
+| Méthode | Chemin | Requête |
 | --- | --- | --- |
-| GET | `/me/env-vars` | 返回按 sandbox_config_id 分组的配置变量与技能变量 |
-| PUT | `/me/env-vars/skill` | `{skill_id,name,value}`，名称须为技能已声明项 |
+| GET | `/me/env-vars` | Variables de config et de skill groupées par `sandbox_config_id` |
+| PUT | `/me/env-vars/skill` | `{skill_id,name,value}`, nom doit être déclaré par le skill |
 | DELETE | `/me/env-vars/skill` | `{skill_id,name}` |
 | PUT | `/me/env-vars/sandbox` | `{sandbox_config_id,name,value}` |
 | DELETE | `/me/env-vars/sandbox` | `{sandbox_config_id,name}` |
 
-读取为 `{success,data:[{sandbox_config_id,sandbox_config_name,description,vars,skills}]}`，source 标明 user/workspace/unset 等状态。设置/删除成功返回 success；删未设置项返回 404。个人沙箱变量拒绝 WEKNORA_ 前缀和 PATH 等保留名；技能声明变量可使用所需的 WEKNORA_* 凭据名。
+Lecture : `{success,data:[{sandbox_config_id,sandbox_config_name,description,vars,skills}]`, source indique user/workspace/unset, etc. Succès pour set/delete ; 404 si suppression d’une entrée non définie. Variables sandbox personnelles : refus du préfixe WEKNORA_ et noms réservés comme PATH ; variables déclarées par skill peuvent utiliser les noms WEKNORA_* requis.
 
 ```bash
 curl -X PUT "$BASE/api/v1/me/env-vars/skill" \
@@ -228,4 +228,4 @@ curl -X DELETE "$BASE/api/v1/me/env-vars/skill" \
   -d '{"skill_id":"skill-1","name":"API_TOKEN"}'
 ```
 
-覆盖顺序为个人技能值 > 个人沙箱值 > 空间技能值。写入个人值不会更改管理员配置。实现参考：`internal/router/routes_infra.go`、`routes_agent.go`、`routes_auth_tenant.go`，以及 `internal/handler/sandbox_config.go`、`sandbox_skill.go`、`skill_catalog.go`、`me_env_var.go`、`host_project_picker.go`。
+Ordre de priorité : valeur skill personnelle > valeur sandbox personnelle > valeur skill espace. Écrire une valeur personnelle ne modifie pas la config admin. Référence d’implémentation : `internal/router/routes_infra.go`, `routes_agent.go`, `routes_auth_tenant.go`, et `internal/handler/sandbox_config.go`, `sandbox_skill.go`, `skill_catalog.go`, `me_env_var.go`, `host_project_picker.go`.

@@ -1,9 +1,14 @@
 import { createServer } from 'node:http';
-import { createReadStream } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
 import { resolve, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveSiteFile } from './site-files.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../static-site');
+if (!existsSync(resolve(root, 'index.html'))) {
+  console.error('static-site/ is missing. Run: npm run build');
+  console.error('For live reload without a full build, use: npm run dev');
+  process.exit(1);
+}
 const portIndex = process.argv.indexOf('--port');
 const port = Number(portIndex < 0 ? 3000 : process.argv[portIndex + 1]);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.mp4': 'video/mp4', '.srt': 'application/x-subrip; charset=utf-8' };

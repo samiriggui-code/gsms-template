@@ -18,6 +18,14 @@ COPY homepage/package.json homepage/package-lock.json ./homepage/
 RUN npm run setup
 
 COPY . .
+# EN doc cross-links still being fixed; VPS deploy sets this to 1 via compose build-arg.
+ARG WEKNORA_SKIP_SITE_LINK_CHECK=0
+ENV WEKNORA_SKIP_SITE_LINK_CHECK=${WEKNORA_SKIP_SITE_LINK_CHECK}
+# Baked into static export (Espace pro, footer, etc.)
+ARG NEXT_PUBLIC_APP_URL=https://app.global-it-ss.com
+ARG NEXT_PUBLIC_SITE_URL=https://www.global-it-ss.com
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 RUN npm run build
 
 # Pin the runtime base. Do NOT switch back to floating `nginx:stable-alpine`:

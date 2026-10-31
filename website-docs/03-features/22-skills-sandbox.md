@@ -1,215 +1,215 @@
-# 技能目录与沙箱
+# Catalogue de skills et sandbox
 
-技能由 `SKILL.md` 说明、脚本、模板和资料组成，沙箱提供脚本执行环境。将技能添加到空间目录并安装到沙箱后，在智能体中选择对应沙箱和技能，即可用于智能推理对话。
+Un skill comprend `SKILL.md`, scripts, modèles et ressources ; la sandbox fournit l’environnement d’exécution. Après ajout au catalogue de l’espace et installation dans une sandbox, sélectionnez sandbox et skills sur l’agent pour les utiliser en conversation de raisonnement intelligent.
 
-## 配置并使用技能 {#从配置到第一次执行}
+## Configurer et utiliser les skills {#configuration-premiere-execution}
 
-1. 空间 Admin/Owner 在「设置 → 沙箱配置」创建配置，选择 Docker、CubeSandbox 或 E2B，填写连接信息。
-2. 按向导连接集群、选择模板；需要验证完整链路时运行「完整验证」。完整验证会实际创建沙箱、执行探针并清理。
-3. 在侧边栏「工具箱 → 技能管理」添加 ZIP 或来源链接，再选择要安装的沙箱（旧的「设置 → 技能管理」链接会自动跳转到这里）。目录收录成功只表示安装包已保存；安装状态就绪后才能执行。
-4. 打开智能体编辑器的「技能」分区，选择沙箱，设置技能范围为全部、指定技能或禁用。技能执行用于智能推理模式。
-5. 进入对话提问，或用 `@技能` 提示智能体优先使用该技能。需要文件时上传附件，生成的交付文件在对话右侧「沙箱可视化」面板的「产物」标签中预览、下载。
+1. Admin/Owner : « Paramètres → Configuration sandbox », créer une config Docker, CubeSandbox ou E2B avec les informations de connexion.
+2. Suivre l’assistant : connecter le cluster, choisir le template ; « Validation complète » pour tester la chaîne (crée une sandbox, sonde, nettoie).
+3. Barre latérale « Boîte à outils → Gestion des skills » : ZIP ou lien source, puis sandbox cible (l’ancien lien « Paramètres → Gestion des skills » redirige ici). Enregistrement au catalogue = paquet sauvé ; exécution seulement quand l’installation est prête.
+4. Éditeur agent, section « Skills » : sandbox, périmètre tous / skills choisis / désactivé. Exécution skills = mode raisonnement intelligent.
+5. Conversation : question ou `@skill` pour prioriser un skill. Pièces jointes si besoin ; livrables dans l’onglet « Livrables » du panneau « Visualisation sandbox » à droite.
 
-`@技能` 不会取消智能体对其他已授权技能的访问。未选沙箱（macOS 上的 Lite 桌面版会改用[本机沙箱](#lite-host)）、空间关闭脚本或所需后端能力不可用时，执行工具不会注册；提示词无法绕过这些条件。
+`@skill` ne retire pas l’accès aux autres skills autorisés. Sans sandbox choisie (Lite bureau macOS → [sandbox locale](#lite-host)), scripts désactivés pour l’espace ou backend indisponible : les outils d’exécution ne s’enregistrent pas ; le prompt ne contourne pas ces conditions.
 
 <Screenshot
   src="/screenshots/skill-catalog.png"
-  caption="空间技能目录：查看技能与各沙箱安装状态" />
+  caption="Catalogue skills de l’espace : statut d’installation par sandbox" />
 
-## 管理安装与更新 {#目录、安装和更新}
+## Gérer installation et mises à jour {#catalogue-installation-mises-a-jour}
 
-技能管理页支持按名称和描述搜索。搜索忽略大小写，空格分隔的关键词需全部匹配。无匹配结果时可清空搜索，或继续添加技能。
+Recherche par nom et description (insensible à la casse, mots séparés par espaces, tous requis). Vide : effacer la recherche ou ajouter des skills.
 
-空间目录保存一份技能包；每个沙箱配置各有安装记录和包含技能的镜像快照。同一技能可以装到多个沙箱，安装进度和失败原因分别记录。
+Le catalogue espace garde un paquet ; chaque config sandbox a son enregistrement d’installation et snapshot d’image. Un même skill sur plusieurs sandboxes : progression et échecs séparés.
 
-| 操作 | 结果 |
+| Action | Résultat |
 | --- | --- |
-| 添加到目录 | 保存包、名称、版本和说明，不执行安装 |
-| 安装 | 在所选沙箱构建运行环境、安装依赖并校验可加载性，成功后发布新快照 |
-| 重试 | 复用该沙箱已保存的包再次安装，可附带安装说明；相同包已正常就绪时可跳过 |
-| 升级 | 目录重新登记新版本后，旧版本安装会标记为可升级；升级把目录中的新版本装到所选沙箱 |
-| 停止安装 | 中止进行中的安装，状态变为 failed，之后可重试或卸载 |
-| 停用 | 保留安装记录，只让智能体不再选用该技能 |
-| 从沙箱卸载 | 更新该沙箱的技能镜像，保留目录中的安装包，便于其他沙箱继续安装 |
-| 删除目录条目 | 要求已无沙箱安装引用；不会隐式卸载全部沙箱 |
+| Ajouter au catalogue | Sauve paquet, nom, version, description ; pas d’installation |
+| Installer | Sur la sandbox choisie : environnement, dépendances, vérif chargement ; snapshot publié si succès |
+| Réessayer | Réutilise le paquet sauvé sur cette sandbox, notes d’installation optionnelles ; skip si même paquet déjà prêt |
+| Mettre à niveau | Nouvelle version au catalogue → anciennes installs marquées upgradables ; installe la nouvelle version sur la sandbox choisie |
+| Arrêter installation | Aborte en cours → failed, puis retry ou désinstallation |
+| Désactiver | Conserve l’install, l’agent ne sélectionne plus le skill |
+| Désinstaller d’une sandbox | Met à jour l’image skills, paquet reste au catalogue pour d’autres sandboxes |
+| Supprimer entrée catalogue | Exige aucune install sandbox ; ne désinstalle pas implicitement toutes les sandboxes |
 
-安装页面显示百分比、阶段和日志，详细运行过程可在安装记录中查看。关闭进度抽屉或断开进度流不会停止安装。没有实时进度时可刷新技能状态；详细事件日志过期不代表技能安装包已丢失。
+La page d’installation affiche pourcentage, phase et logs ; détail dans l’historique. Fermer le tiroir ou couper le flux de progression n’arrête pas l’install. Sans flux temps réel, rafraîchir le statut ; expiration des logs détaillés ≠ perte du paquet.
 
-安装由内置安装智能体完成：它读取 `SKILL.md` 安装依赖，并核对技能需要的外部命令行工具等运行前提。缺少必需命令或存在未解决的前提（例如需要另行部署的服务）时，安装判为失败并给出原因，不会仅因为没有依赖清单就标记就绪。安装进行中，管理员可以在「安装过程」里补充安装说明，例如需要安装的 CLI、安装文档或环境限制；安装结束后也可以携带说明重新安装。
+Installation par agent intégré : lit `SKILL.md`, installe dépendances, vérifie prérequis CLI etc. Commande ou prérequis manquants (ex. service à déployer ailleurs) → échec avec raison, pas « prêt » sans liste de deps. Pendant l’install, l’admin peut ajouter des notes (CLI, doc, contraintes) ; idem au reinstall avec notes.
 
-升级或重试失败时，沙箱继续提供上一个就绪版本，智能体仍可使用；新版本安装成功后才替换。
+Échec upgrade/retry : la sandbox sert la dernière version prête ; remplacement seulement après succès de la nouvelle.
 
-每会话一台沙箱时，`skill_rollout` 控制镜像更新：默认 `next_turn` 在已有会话的下一轮重建沙箱；`new_session` 仅让之后创建沙箱的会话使用新镜像。共用沙箱模式隐藏此选项，安装或删除技能不会自动重建已有的共用机器，新镜像只用于之后新建的沙箱。沙箱重建会丢失旧实例临时运行状态，需交付的文件应写入 `/workspace/output` 并由系统收集。
+Sandbox par session : `skill_rollout` contrôle les mises à jour d’image — défaut `next_turn` reconstruit au tour suivant ; `new_session` n’affecte que les sessions créant une sandbox après coup. Mode sandbox partagée : option masquée ; install/suppression skill ne reconstruit pas la machine partagée existante. Reconstruction = perte état temporaire ; livrables dans `/workspace/output` pour collecte système.
 
 <Screenshot
   src="/screenshots/sandbox-session-skill-rollout.png"
-  alt="每会话一台沙箱时可以选择技能镜像更新策略"
+  alt="Stratégie de rollout d’image skill quand une sandbox par session"
 />
 
-### 支持的来源
+### Sources supportées {#sources-supportees}
 
-| 输入 | 说明 |
+| Entrée | Description |
 | --- | --- |
-| ZIP 文件 | 导出技能目录后上传 |
-| `@owner/slug`、`@owner/slug@1.2.0` | ClawHub 指定作者/版本 |
-| `slug`、`slug@1.2.0` | ClawHub slug |
-| ClawHub、SkillHub、自托管 SkillHub 页面 | 通过对应来源解析 |
-| GitHub/GitLab 仓库或目录 URL | 获取对应技能包 |
-| `https://skills.sh/owner/repo/slug`、ClawHub 的 skills.sh 页面 | 经安装解析器解析到仓库的具体版本和目录 |
-| 直接 ZIP 或 SKILL.md URL | 下载包或入口文件 |
+| Fichier ZIP | Exporter le répertoire skill puis upload |
+| `@owner/slug`, `@owner/slug@1.2.0` | ClawHub auteur/version |
+| `slug`, `slug@1.2.0` | Slug ClawHub |
+| Pages ClawHub, SkillHub, SkillHub auto-hébergé | Résolution via la source |
+| URL dépôt ou dossier GitHub/GitLab | Récupère le paquet skill |
+| `https://skills.sh/owner/repo/slug`, page skills.sh ClawHub | Résolveur vers version et dossier |
+| URL ZIP directe ou SKILL.md | Télécharge paquet ou entrée |
 
-来源必须可匿名读取，下载不会附带用户的私有仓库凭据。私有技能可先导出 ZIP。`owner/slug` 有歧义，应改用 `@owner/slug` 或完整 URL。
+La source doit être lisible anonymement ; pas de credentials dépôt privé utilisateur. Skills privés : exporter en ZIP. `owner/slug` ambigu → `@owner/slug` ou URL complète.
 
-技能包上限独立于普通文档：`MAX_SKILL_BUNDLE_SIZE_MB` 默认 256 MiB，未设置时至少为 `MAX_FILE_SIZE_MB`，最高 512 MiB。GitHub 下载按整个仓库压缩包计算，不只计算技能子目录。调整后重启 app 和 frontend，使应用与 Nginx 上限一致。
+Plafond paquet skill indépendant des docs : `MAX_SKILL_BUNDLE_SIZE_MB` défaut 256 MiB, sinon au moins `MAX_FILE_SIZE_MB`, max 512 MiB. GitHub compte l’archive entière du dépôt. Après changement, redémarrer app et frontend pour aligner limites app et Nginx.
 
-## 选择沙箱后端
+## Choisir le backend sandbox {#choisir-le-backend-sandbox}
 
-| 后端 | 需要填写 | 运行方式 |
+| Backend | À renseigner | Exécution |
 | --- | --- | --- |
-| Docker | 镜像；可选 daemon 地址、TLS 证书目录、CPU/内存/PID 限制、网络模式、runtime、空闲 TTL | 一个会话一个长驻容器 |
-| CubeSandbox | 控制面地址、数据面代理、沙箱域名、模板；按集群配置 API Key | 会话级远端沙箱 |
-| E2B | API Key、模板；自托管时补 API 地址、沙箱域名和数据面代理 | E2B Cloud 或 E2B 兼容控制面 |
-| host | 不用填写。仅 Lite 桌面版，当前仅 macOS | 智能体未选沙箱配置时，在本机项目目录内执行，越界由操作系统拦截 |
+| Docker | Image ; optionnel daemon, TLS, limites CPU/RAM/PID, réseau, runtime, TTL idle | Un conteneur longue durée par session |
+| CubeSandbox | Plan de contrôle, proxy data plane, domaine sandbox, template ; API Key selon cluster | Sandbox distante par session |
+| E2B | API Key, template ; auto-hébergé : URL API, domaine sandbox, proxy data plane | E2B Cloud ou plan de contrôle compatible |
+| host | Rien. Lite bureau uniquement, macOS pour l’instant | Si l’agent n’a pas de config sandbox : exécution dans le projet local, dépassements bloqués par l’OS |
 
-`local` 宿主机进程后端已移除：它在本机裸跑，没有任何隔离。Lite 的 `host` 不属于上述空间命名配置，也不是 `local` 的替代项。当前配置的完整字段见[沙箱与技能 API](../04-api/02-api-sandbox-skills.md)。
+Backend processus hôte `local` retiré (exécution nue sans isolation). `host` Lite n’est pas une config espace nommée ni un remplacement de `local`. Champs complets : [API sandbox et skills](../04-api/02-api-sandbox-skills.md).
 
-Docker 后端默认关闭。系统管理员在「系统设置 → 网络安全」启用，或用 `WEKNORA_SANDBOX_DOCKER_ENABLED=true` 作为未落库时的回退。本机连接还需要把实际 Docker socket 挂给 app；这授予 app 控制宿主机 Docker 的能力。远端 TCP daemon 要配置 TLS 证书目录，其中包括 `ca.pem`、`cert.pem`、`key.pem`。Docker 网络仅接受 `bridge` 或 `none`，可选 `runsc` 等已安装 OCI runtime。
+Docker désactivé par défaut. Admin système « Paramètres système → Sécurité réseau » ou `WEKNORA_SANDBOX_DOCKER_ENABLED=true` en repli non persisté. Socket Docker local : monter le socket réel → app contrôle Docker hôte. Daemon TCP distant : répertoire certificats TLS `ca.pem`, `cert.pem`, `key.pem`. Réseau Docker : `bridge` ou `none` ; runtime OCI optionnel (`runsc`, etc.).
 
-自托管 E2B/Cube 的 `proxy_url` 指向数据面网关：WeKnora 连接网关但保留沙箱 Host，用于没有泛域名 DNS 的集群。`allow_private_endpoints` 允许连接私网/回环的集群地址，仍不放行 link-local/云元数据地址；它与沙箱里脚本能否出网是不同配置。
+E2B/Cube auto-hébergé : `proxy_url` = passerelle data plane ; WeKnora se connecte à la passerelle en conservant le Host sandbox (clusters sans DNS wildcard). `allow_private_endpoints` autorise adresses privées/loopback, pas link-local/métadonnées cloud ; distinct de l’egress des scripts sandbox.
 
-脚本默认以沙箱内的 `root` 账号执行，模板中的 `user` 账号需显式选择。执行隔离由容器或远端沙箱提供，`/workspace` 只约定工作目录，不限制 root 命令的文件访问权限。
+Scripts par défaut en `root` dans la sandbox ; compte `user` du template = choix explicite. Isolation par conteneur/sandbox distante ; `/workspace` = convention de répertoire, pas restriction root sur le filesystem.
 
-### 网络策略
+### Politique réseau
 
-Cube/E2B 的 `config.network` 同时用于对话沙箱、技能安装和完整验证：
+`config.network` Cube/E2B pour sandbox conversation, install skill et validation complète :
 
-- 默认允许出站；`deny_egress_by_default=true` 改为默认拒绝，再通过 `allow_out` 放行 IP、CIDR 或域名。
-- `deny_out` 接受 IPv4/CIDR；域名允许规则需配合默认拒绝。
-- Cube 的 `cube_rules` 可按 Host/SNI、方法和路径设置规则、调整顺序、配置审计及 HTTPS 头注入；E2B 的 `e2b_host_rules` 配置已放行域名的请求头注入。
-- 注入的凭据加密保存，响应脱敏。入站始终需要凭据，旧字段 `allow_public_inbound` 不会开放匿名入站。
-- Docker 使用 `docker.network_mode` 控制出网，不能照搬 Cube/E2B 的细粒度规则。默认拒绝出网后，安装依赖需要的源站也必须显式放行。
+- Egress autorisé par défaut ; `deny_egress_by_default=true` puis `allow_out` IP/CIDR/domaines.
+- `deny_out` IPv4/CIDR ; règles domaine avec deny par défaut.
+- Cube `cube_rules` : Host/SNI, méthode, chemin, ordre, audit, injection en-têtes HTTPS ; E2B `e2b_host_rules` pour domaines autorisés.
+- Credentials injectés chiffrés, réponses masquées. Entrant toujours authentifié ; ancien `allow_public_inbound` n’ouvre pas l’entrant anonyme.
+- Docker : `docker.network_mode` pour l’egress, pas les règles fines Cube/E2B. Deny egress par défaut : whitelister les sources d’install deps.
 
-已有实例不会因为修改策略自动获得新配置，应在新建/重建沙箱后验证。修改后端身份或删除配置前，系统会查询运行中/暂停的实例和关联智能体；存在占用时拒绝操作，设置页会展示占用信息。
+Instances existantes ne reçoivent pas automatiquement une nouvelle politique ; valider après création/reconstruction. Changement d’identité backend ou suppression : vérif instances running/paused et agents liés ; refus si occupation, info dans les paramètres.
 
-### Lite 本机沙箱（host） {#lite-host}
+### Sandbox locale Lite (host) {#lite-host}
 
-自 v0.8.2 起，[Lite 桌面版](../05-clients/05-desktop.md)在 macOS 上用系统 Seatbelt 隔离运行智能体的命令和文件工具。智能体选了 Docker、E2B 或 Cube 配置时仍走远程沙箱；没有选沙箱配置时才使用本机沙箱。Windows 和 Linux 暂不提供该能力，此时未选配置的智能体不能执行命令。
+Depuis v0.8.2, [Lite bureau](../05-clients/05-desktop.md) sur macOS isole commandes et outils fichiers agent via Seatbelt. Config Docker/E2B/Cube choisie → sandbox distante ; sans config → sandbox locale. Windows/Linux : pas encore ; agent sans config ne peut pas exécuter de commandes.
 
-- **工作目录**：在新对话页点「选择项目」，通过系统目录选择框选定项目文件夹，对话标题栏会显示项目名。不选时显示「临时工作区」，自动在 `~/.weknora/sessions/session-*` 下创建会话目录。不能选择主目录本身、包含主目录的目录或 `~/Library` 下的目录。
-- **路径**：工作区是真实的本机路径，没有 `/workspace`、`/workspace/input` 和 `/workspace/output`。智能体直接在项目中修改文件，这些文件不会进入对话的产物列表；删除对话也不会删除本机目录。
-- **限制**：命令默认不能联网，只能写入项目目录，项目内的 `.git` 为只读。主目录中除常用开发工具链（如 `.nvm`、`.pyenv`、`.cargo`）外的内容不可读，`.ssh`、`.aws`、钥匙串等凭据位置始终不可读。
-- **审批**：本机删除操作和需要扩大沙箱访问范围的命令会触发相应确认。先核对路径与影响；批准一次操作不等于无限开放本机访问。
-- **回退**：对话回退不会还原本机项目文件，需要时请自行用 Git 管理。
+- **Répertoire de travail** : nouvelle conversation « Choisir projet », sélecteur système ; nom projet dans la barre de titre. Sinon « Espace temporaire » sous `~/.weknora/sessions/session-*`. Interdit : home, parent du home, sous `~/Library`.
+- **Chemins** : vrais chemins locaux, pas `/workspace`, `/workspace/input`, `/workspace/output`. L’agent modifie le projet ; fichiers hors liste livrables ; supprimer la conversation ne supprime pas le dossier local.
+- **Limites** : pas de réseau par défaut, écriture dans le projet seulement, `.git` du projet en lecture seule. Hors home sauf chaînes dev courantes (`.nvm`, `.pyenv`, `.cargo`) ; `.ssh`, `.aws`, trousseaux illisibles.
+- **Approbation** : suppressions locales et commandes élargissant la sandbox → confirmation. Une approbation ≠ accès local illimité.
+- **Rewind** : ne restaure pas les fichiers projet ; utiliser Git si besoin.
 
-### 在 Lite 桌面版安装本机技能
+### Installer des skills locaux sur Lite bureau
 
-macOS 桌面版可在「工具箱 → 技能管理」将技能安装到「本机」，智能体只能选择已安装且启用的本机技能。技能目录保存可复用的包，本机安装在 `~/.weknora/skills` 下维护版本目录；安装和校验成功后才切换生效版本，失败不替换正在使用的旧版本。本机安装不生成 Docker/E2B/Cube 快照。
+macOS : « Boîte à outils → Gestion des skills », installer sur « Local » ; l’agent ne choisit que skills locaux installés et activés. Catalogue = paquets réutilisables ; install locale sous `~/.weknora/skills` avec versions ; bascule après install/validation réussie. Pas de snapshot Docker/E2B/Cube.
 
-技能执行继续使用本机沙箱，项目文件不会自动进入远程沙箱产物列表。桌面版的本机技能与标准部署的远程沙箱安装目标不同；不要把远程安装路径直接复制成本机路径。
+Exécution skill reste en sandbox locale ; fichiers projet pas dans les livrables sandbox distante. Cible différente du déploiement standard ; ne pas copier le chemin install distant en local.
 
-## 环境变量与凭据
+## Variables d’environnement et secrets
 
-个人变量入口在「设置 → 沙箱密钥」；空间级技能变量在「工具箱 → 技能管理」的技能卡上配置。列表只显示变量声明、是否设置和来源，不回显秘密值。
+Variables personnelles : « Paramètres → Secrets sandbox » ; variables skill espace sur la fiche skill dans « Boîte à outils → Gestion des skills ». Liste : déclarations, présence, source ; pas de valeur secrète affichée.
 
-| 层级 | 作用 |
+| Niveau | Rôle |
 | --- | --- |
-| 空间沙箱 `config.env_vars` | 注入该配置创建的沙箱，供其脚本使用 |
-| 空间技能变量 | 管理员为技能已声明的变量填默认值 |
-| 个人沙箱变量 | 本人在该沙箱配置执行命令时使用 |
-| 个人技能变量 | 本人在该技能执行时使用 |
+| `config.env_vars` sandbox espace | Injectées dans les sandboxes de cette config, pour leurs scripts |
+| Variables skill espace | Valeurs par défaut admin pour variables déclarées du skill |
+| Variables sandbox personnelles | Pour vos exécutions sur cette config |
+| Variables skill personnelles | Pour vos exécutions de ce skill |
 
-技能变量解析中，**个人技能值 > 个人沙箱值 > 空间技能值**；未设置的名称才回退。空间沙箱环境是运行环境的一部分，不应在其中放脚本不应读取的秘密。删除个人覆盖后重新使用下层值；关闭技能不会删除个人凭据。
+Résolution skill : **personnel skill > personnel sandbox > skill espace** ; noms non définis = repli. Env sandbox espace = environnement d’exécution, pas de secrets que le script ne doit pas lire. Supprimer override personnel = repli inférieur ; désactiver skill ne supprime pas credentials personnels.
 
-个人技能变量只能使用技能已声明的名称，其中可包含技能所需的 `WEKNORA_*` 凭据。个人沙箱变量不接受 `WEKNORA_*`、`PATH` 等保留名。系统从执行命令中识别的变量只补充未设置的个人值，不覆盖已有个人或空间配置。字段和示例见[个人变量 API](../04-api/02-api-sandbox-skills.md#个人环境变量)。
+Variables skill personnelles : noms déclarés par le skill, y compris `WEKNORA_*` requis. Variables sandbox personnelles : pas de `WEKNORA_*`, `PATH`, etc. réservés. Variables reconnues dans la commande complètent seulement les valeurs personnelles absentes. Champs et exemples : [API variables personnelles](../04-api/02-api-sandbox-skills.md#variables-denvironnement-personnelles).
 
-## 生成和下载文件 {#文件和交付}
+## Générer et télécharger des fichiers {#fichiers-et-livrables}
 
-`read_file(path="skill://<name>/SKILL.md")` 读取说明；技能附带脚本通过 `shell_exec(skill_name=..., command=...)` 执行。命令中的 `$WEKNORA_SKILL_DIR` 指向技能实际安装目录；`skill://` 是读取地址，不能直接当作 shell 路径。
+`read_file(path="skill://<name>/SKILL.md")` lit la doc ; scripts via `shell_exec(skill_name=..., command=...)`. `$WEKNORA_SKILL_DIR` = répertoire install réel ; `skill://` pour lecture, pas chemin shell direct.
 
-每会话一台时，附件暂存到 `/workspace/input`，工作脚本放在 `/workspace`，可下载产物放在 `/workspace/output`。按用户复用时，以该会话的工作目录为基准，使用其中的 `input` 和 `output` 目录。用 `write_sandbox_file` 新建/续写，用 `edit_sandbox_file` 局部替换，用 `read_file` 分页读取。文件工具边界、输出预算和重建行为见[Agent 引擎](07-agent.md)，交付入口见[会话与对话体验](18-chat-experience.md)。
+Une sandbox par session : pièces jointes dans `/workspace/input`, scripts dans `/workspace`, livrables téléchargeables dans `/workspace/output`. Réutilisation par utilisateur : répertoire session avec `input` et `output`. `write_sandbox_file` créer/append, `edit_sandbox_file` remplacement partiel, `read_file` paginé. Limites outils fichiers, budget sortie, reconstruction : [Moteur Agent](07-agent.md) ; livrables : [Expérience de conversation](18-chat-experience.md).
 
 <Screenshot
   src="/screenshots/skill-sandbox-chat.png"
-  caption="沙箱生成 Word 文件后，在对话中预览并下载" />
+  caption="Après génération Word en sandbox : aperçu et téléchargement dans la conversation" />
 
-命令执行期间，对话中的工具卡片会实时显示输出末尾几行，便于判断长命令的进度；这些中间输出不会写入模型上下文。
+Pendant l’exécution, la carte outil affiche les dernières lignes de sortie pour suivre une commande longue ; sortie intermédiaire non injectée dans le contexte modèle.
 
-### 长命令与后台任务
+### Commandes longues et tâches arrière-plan
 
-`shell_exec` 适合短命令，默认超时 120 秒，最多 600 秒。长时间构建、安装或数据处理可以使用 `shell_exec_async`：先等待短时间，未完成时返回 `work_id`，命令继续在后台运行。智能体可通过 `work_wait` 查看状态与增量输出，通过 `work_cancel` 取消任务。
+`shell_exec` pour commandes courtes : timeout défaut 120 s, max 600 s. Builds/installs/traitements longs : `shell_exec_async` — courte attente puis `work_id` si toujours en cours. `work_wait` statut/sortie incrémentale ; `work_cancel` annule.
 
-后台命令没有交互式终端，应使用不需要确认输入的命令；不要用 `&` 或 `nohup` 代替任务管理。前端可显示任务进度和输出。后台命令不受同步工具的 600 秒限制，但仍受运行环境、任务取消及所在自动化的执行时长约束。
+Pas de terminal interactif en arrière-plan : commandes sans saisie ; ne pas simuler avec `&` ou `nohup`. UI peut afficher progression. Pas de plafond 600 s des outils sync, mais limites environnement, annulation et durée max de l’automatisation.
 
-### 沙箱可视化面板
+### Panneau visualisation sandbox
 
-使用远程沙箱的对话，右侧「沙箱可视化」面板有三个标签页：
+Conversation avec sandbox distante : panneau « Visualisation sandbox » à droite, trois onglets :
 
-| 标签页 | 内容 | 可用条件 |
+| Onglet | Contenu | Condition |
 | --- | --- | --- |
-| 产物 | 本轮或全部轮次生成的可下载文件，可按文件名搜索 | 所有远程沙箱 |
-| 终端 | 连接本会话沙箱的交互式 Shell（xterm）。Cube、E2B 刷新页面后可重新接上仍在运行的终端；Docker 断开即结束 Shell（nohup 启动的后台任务保留），重连会打开新 Shell | Cube、E2B、Docker |
-| 桌面 | 通过浏览器操作沙箱内的 XFCE 图形桌面，每个会话同时只允许一个连接 | Cube、E2B 的桌面模板，且配置开启 `desktop_enabled` |
+| Livrables | Fichiers téléchargeables tour courant ou tous, recherche par nom | Toutes sandboxes distantes |
+| Terminal | Shell interactif (xterm). Cube/E2B : reconnexion après refresh si terminal encore actif ; Docker : déconnexion = fin shell (tâches nohup conservées), reconnexion = nouveau shell | Cube, E2B, Docker |
+| Bureau | Bureau XFCE dans le navigateur, une connexion à la fois | Templates bureau Cube/E2B et `desktop_enabled` |
 
-打开面板不会创建或唤醒沙箱：沙箱正在运行时终端和桌面会直接连上；沙箱已暂停或尚未创建时，需要点「启动终端」「连接桌面」或「创建并启动」，唤醒或新建的沙箱会按空间配置计费。终端或桌面长时间无操作会自动断开，沙箱随后按提供商 TTL 暂停；断开时间由沙箱配置的「终端 / 桌面空闲断开（秒）」控制，默认 900 秒，范围 60 秒到 24 小时。每会话一台的沙箱若因技能更新而重建，原终端和桌面上未保存的内容会丢失；共用沙箱不会因技能更新而自动重建。
+Ouvrir le panneau ne crée/réveille pas la sandbox : si active, terminal/bureau se connectent ; si pause/absente, « Démarrer terminal », « Connecter bureau » ou « Créer et démarrer » (facturation selon config espace). Inactivité longue → déconnexion puis pause selon TTL fournisseur ; délai « Terminal / bureau idle disconnect (s) », défaut 900 s, 60 s–24 h. Reconstruction sandbox (update skill, une par session) : contenu terminal/bureau non sauvé perdu ; sandbox partagée non reconstruite auto pour update skill.
 
 <Screenshot
   src="/screenshots/sandbox-panel-terminal.png"
-  caption="沙箱可视化面板：在对话旁查看产物、使用终端和桌面"
-  hint="展示一个使用 Cube 或 E2B 沙箱的对话，右侧「沙箱可视化」面板切换到「终端」标签，终端内有带颜色的 user@host 提示符和一条命令输出；面板顶部可见「产物 / 终端 / 桌面」三个标签。" />
+  caption="Panneau sandbox : livrables, terminal et bureau à côté de la conversation"
+  hint="Conversation Cube ou E2B, panneau droit onglet Terminal avec prompt coloré et sortie ; onglets Livrables / Terminal / Bureau visibles." />
 
-## 按用户复用沙箱 {#user-sandbox}
+## Sandbox partagée par utilisateur {#user-sandbox}
 
-远程沙箱（Docker、CubeSandbox、E2B）有两种分配方式。Lite 的本机沙箱不受影响。
+Sandboxes distantes (Docker, CubeSandbox, E2B) : deux modes d’allocation. Sandbox locale Lite non concernée.
 
-| 方式 | 何时使用 | 会话看到什么 |
+| Mode | Quand | Ce que voit la session |
 | --- | --- | --- |
-| 每会话一台（默认） | 配置保持会话模式，或下面任一条件不满足 | 该会话独占一台沙箱，工作目录仍是 `/workspace` |
-| 同一用户共用一台 | 环境变量已开启，配置选了共用，且会话属于可共用的身份 | 同一位所有者、同一份配置上的会话共用一台沙箱。每个会话的目录是 `/workspace/sessions/<12 位短名>`（会话 ID 的 SHA-256 前 12 位，例如 `c812e1edb644`），检查点仓库在 `/var/lib/weknora/sessions/<同一段>.git`。 |
+| Une par session (défaut) | Config en mode session, ou conditions ci-dessous non remplies | Sandbox dédiée, `/workspace` |
+| Une partagée par utilisateur | Variable activée, config en mode partagé, session avec identité partageable | Sessions même propriétaire + même config partagent une machine. Répertoire session `/workspace/sessions/<12 caractères>` (12 premiers hex SHA-256 de l’ID session, ex. `c812e1edb644`), dépôt checkpoint `/var/lib/weknora/sessions/<même>.git`. |
 
-切换只影响还没有用过沙箱的会话。已经钉住沙箱配置、已经有检查点，或分叉后还没完成首次准备的会话，继续用自己原来的那一台。
+Changement n’affecte que sessions sans sandbox déjà utilisée. Sessions ayant déjà épinglé config, checkpoints, ou fork non préparé : conservent leur machine.
 
-共用机器不会因技能镜像更新自动更换，即使旧配置仍存着 `skill_rollout=next_turn`，或机器已被旧版本标记为待重建。之后新增的会话仍复用这台机器；需要使用新镜像时，由用户或管理员主动释放并重新创建沙箱。释放会删除该机器上的文件和运行状态，应先保存需要保留的数据。此策略不改变提供商 TTL、空置回收或机器确实不存在后的重新创建行为。
+Machine partagée non remplacée auto sur update image skill, même si ancienne config `skill_rollout=next_turn` ou marquée rebuild. Nouvelles sessions réutilisent la machine ; pour nouvelle image : libérer/recréer manuellement (supprime fichiers et état). TTL fournisseur, recyclage idle et recréation si machine absente inchangés.
 
 <Screenshot
   src="/screenshots/sandbox-user-skill-rollout.png"
-  alt="共用沙箱模式隐藏技能镜像更新策略，保留空置沙箱保留天数设置"
+  alt="Mode partagé masque stratégie rollout skill, conserve réglage jours rétention sandbox idle"
 />
 
-能进共用机器的只有两类身份：Web 登录账号，以及带外部用户标识的 API 调用。同一把 API Key、但不带外部用户标识的会话仍分别分配沙箱。
+Accès machine partagée : compte Web connecté, ou appels API avec identifiant utilisateur externe. Même clé API sans identifiant externe = sandboxes séparées par session.
 
-共用机器适用于同一用户愿意共享运行环境的任务，需要理解以下边界：
+Partage pour tâches où un utilisateur accepte un environnement commun ; limites :
 
-- 沙箱里的命令以 root 运行，同一台机器上的会话之间没有操作系统级的隔离，工具也不会把读写限制在本会话目录里：本会话的 agent 可以访问这台机器上的其他目录，包括其他会话的目录。
-- 磁盘是共享的，进程互相可见。
-- 一台机器上没有会话数量上限。
+- Commandes en root, pas d’isolation OS entre sessions sur la même machine ; outils ne limitent pas lecture/écriture au répertoire session : un agent peut accéder aux autres répertoires, y compris autres sessions.
+- Disque et processus partagés.
+- Pas de plafond de nombre de sessions sur une machine.
 
-空置保留天数写在沙箱配置上。`0` 表示用默认的 7 天，也可以填 1 到 90。它从「这台机器上已经没有存活会话」开始算，到点后回收任务可以删掉这台机器。它不是机器的最短寿命，也不是会话至少保留这么久：还有会话在用时不会按这个天数拆机，未到天数也不会因为空置就提前删。
+Jours de rétention idle sur la config sandbox. `0` = défaut 7 jours, ou 1–90. Compte à partir de « plus aucune session active sur cette machine » ; tâche de recyclage peut supprimer la machine. Pas durée de vie minimale ni garantie de rétention session : pas de suppression tant qu’il reste des sessions ; pas de suppression anticipée avant le délai idle.
 
-删除一个共用会话会先把暂停的沙箱唤醒，再删掉这个会话的目录和检查点仓库。同一台机器上其他会话的目录还在。
+Supprimer une session partagée réveille d’abord la sandbox en pause, puis supprime répertoire session et dépôt checkpoint. Autres sessions sur la même machine conservent leurs répertoires.
 
-共用机器上的终端不会按客户端传来的进程号重连旧 shell：那个进程可能属于另一个会话。本会话的终端还开着时，把本会话 rewind 到旧检查点会返回忙；同一台机器上其他会话不受影响。
+Terminal sur machine partagée ne reconnecte pas un shell par PID client (processus peut être d’une autre session). Rewind session vers ancien checkpoint pendant terminal ouvert = busy ; autres sessions inchangées.
 
-滚动升级按这个顺序做：
+Upgrade rolling :
 
-1. 把新版本部署到所有实例，先不要设置 `WEKNORA_SANDBOX_USER_ALLOCATION`。新实例会给会话写下 `machine_digest` 为空的分配记录；还没升级的实例不读这张表，行为与升级前一致。
-2. 确认每个实例都是新版本之后，在所有实例上设置 `WEKNORA_SANDBOX_USER_ALLOCATION=enabled` 并滚动重启。需要 Redis。
-3. 再由管理员把某一份沙箱配置改成共用。
-4. 回退到旧版本之前，先确认没有仍在使用的共用机器。分配表没有 `mode` 列，共用与否看 `machine_digest` 是否为空：
+1. Déployer nouvelle version partout sans `WEKNORA_SANDBOX_USER_ALLOCATION`. Nouvelles instances écrivent `machine_digest` vide ; anciennes instances ignorent la table, comportement inchangé.
+2. Toutes instances à jour → `WEKNORA_SANDBOX_USER_ALLOCATION=enabled` partout et rolling restart. Redis requis.
+3. Admin passe une config sandbox en mode partagé.
+4. Avant rollback version : plus de machines partagées actives. Table allocation sans colonne `mode` ; partage = `machine_digest` non vide :
 
 ```sql
 SELECT count(*) FROM session_sandbox_assignments WHERE machine_digest <> '' AND released_at IS NULL;
 ```
 
-结果为 0 只是检查共享分配的必要条件，不代表所有数据库迁移都可无损回退。若仍有共享分配，先改回每会话一台，保存文件并处理现有用户机器，再评估数据库和应用版本回退。
+Résultat 0 = condition nécessaire mais pas suffisante pour rollback migrations DB sans perte. Si allocations partagées restantes : repasser une par session, sauvegarder fichiers, traiter machines utilisateurs, puis évaluer rollback app/DB.
 
-## 部署与排障
+## Déploiement et dépannage
 
-Docker socket/TLS、模板版本、远端网关、多副本 Redis、技能快照磁盘占用、终端与桌面中继以及 Lite 本机沙箱的构建要求见[沙箱部署与排障](../06-development/04-sandbox-deployment.md)。
+Socket/TLS Docker, versions template, passerelles distantes, Redis multi-réplicas, espace disque snapshots skills, relais terminal/bureau et build sandbox locale Lite : [Déploiement et dépannage sandbox](../06-development/04-sandbox-deployment.md).
 
-## 实现参考
+## Référence d’implémentation
 
-- `internal/handler/sandbox_config.go`、`sandbox_skill.go`、`skill_catalog.go`、`me_env_var.go`
-- `internal/application/service/tenant_skill_install.go`、`tenant_skill_runtime_verify.go`、`tenant_skill_steer.go`、`user_env_resolver.go`
-- `internal/types/tenant.go`、`sandbox_network_policy.go`
-- `internal/sandbox/remote_client.go`、`docker_remote_client.go`、`gateway_transport.go`、`terminal.go`
-- `internal/localsandbox/`（Lite 本机沙箱：`core/policy_builder.go`、`seatbelt/`、`adapter/`）
+- `internal/handler/sandbox_config.go`, `sandbox_skill.go`, `skill_catalog.go`, `me_env_var.go`
+- `internal/application/service/tenant_skill_install.go`, `tenant_skill_runtime_verify.go`, `tenant_skill_steer.go`, `user_env_resolver.go`
+- `internal/types/tenant.go`, `sandbox_network_policy.go`
+- `internal/sandbox/remote_client.go`, `docker_remote_client.go`, `gateway_transport.go`, `terminal.go`
+- `internal/localsandbox/` (sandbox locale Lite : `core/policy_builder.go`, `seatbelt/`, `adapter/`)

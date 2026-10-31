@@ -12,6 +12,8 @@ services:
         VITE_FRONTEND_COMMIT: ${VITE_FRONTEND_COMMIT:-unknown}
         NPM_REGISTRY: ${NPM_REGISTRY:-}
         NODE_MAX_OLD_SPACE_SIZE: ${NODE_MAX_OLD_SPACE_SIZE:-4096}
+        VITE_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.global-it-ss.com}
+        VITE_DOCS_BASE_URL: ${DOCS_BASE_URL:-https://www.global-it-ss.com/docs/}
     # Never pull a registry tag for GSMS UI — only ./frontend (avoids wechatopenai/weknora-ui on Hub).
     pull_policy: build
     container_name: WeKnora-frontend
@@ -21,6 +23,8 @@ services:
       - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-50}
       - MAX_SKILL_BUNDLE_SIZE_MB=${MAX_SKILL_BUNDLE_SIZE_MB:-256}
       - DEFAULT_LOCALE=${DEFAULT_LOCALE:-}
+      - PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://www.global-it-ss.com}
+      - DOCS_BASE_URL=${DOCS_BASE_URL:-https://www.global-it-ss.com/docs/}
       - APP_HOST=${APP_HOST:-app}
       # APP_BACKEND_PORT: the port NGINX proxies to (default 8080).
       # For local deployment this is the App container's listening port, independent of host-mapped APP_PORT.
@@ -36,23 +40,21 @@ services:
       - WeKnora-network
     restart: unless-stopped
 
-  landing:
-    # Public marketing site (Next.js standalone). WeKnora UI stays on service `frontend`.
+  site:
+    # Homepage unifiée (Next) + documentation VitePress sous /docs/ — remplace l’ancien service landing/.
     build:
-      context: ./landing
+      context: ./website-docs
+      dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost}
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-    image: gsms-landing:${WEKNORA_VERSION:-latest}
-    # Same as frontend: local ./landing build only — no Hub pull for gsms-landing.
+        WEBSITE_NGINX_PORT: 80
+        WEKNORA_SKIP_SITE_LINK_CHECK: ${WEKNORA_SKIP_SITE_LINK_CHECK:-1}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://app.global-it-ss.com}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.global-it-ss.com}
+    image: gsms-site:${WEKNORA_VERSION:-latest}
     pull_policy: build
-    container_name: gsms-landing
+    container_name: gsms-site
     ports:
-      - "${LANDING_PORT:-3000}:3000"
-    environment:
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
+      - "${SITE_PORT:-8088}:80"
     networks:
       - WeKnora-network
     restart: unless-stopped

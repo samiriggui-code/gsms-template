@@ -1,331 +1,325 @@
-# Wiki 能力
+# Wiki
 
-Wiki 将知识库资料整理为相互链接的 Markdown 页面。文档入库后，模型提取人物、产品和概念等条目，生成带来源引用的页面，便于按主题浏览。
+Le Wiki organise les documents de la base en pages Markdown liées entre elles. Après ingestion, le modèle extrait personnes, produits et concepts et génère des pages avec citations sources pour une navigation thématique.
 
-用户可直接编辑生成的页面，查看历史版本并回滚。智能体也可通过 Wiki 工具读取和维护页面；访问范围仍由知识库权限决定。
+Les utilisateurs peuvent éditer les pages générées, consulter l’historique et revenir en arrière. L’agent peut aussi lire et maintenir le Wiki via des outils dédiés ; la portée reste celle des droits sur la base.
 
 <Screenshot
   src="/screenshots/wiki-browser.png"
-  caption="Wiki 浏览器：左侧目录树，右侧生成的条目页面与出处"
-  hint="展示左侧按类型分组的目录树、一篇实体页正文、页内 wiki 链接与来源文档引用。" />
+  caption="Navigateur Wiki : arborescence à gauche, page d'entrée et sources"
+  hint="Arborescence par type à gauche, corps d'une page entité, liens wiki internes et références aux documents sources." />
 
-## 开启并浏览 Wiki {#怎么开启}
+## Activer et parcourir le Wiki {#activer-parcourir-wiki}
 
-1. 编辑知识库 → 「索引策略」里打开 **Wiki**；
-2. 上传文档（已有文档也会被纳入，无需重传）；
-3. 等待生成。Wiki 生成是异步的，文档多时会持续一段时间，知识库面包屑上有「索引中」提示；
-4. 完成后进入知识库的 **Wiki** 页签浏览，**图谱**页签可以看条目之间的链接关系。
+1. Éditer la base → activer **Wiki** dans « Stratégie d’indexation » ;
+2. Importer des documents (les existants sont inclus, pas besoin de ré-uploader) ;
+3. Attendre la génération (asynchrone ; fil d’Ariane « Indexation en cours » si volumineux) ;
+4. Onglet **Wiki** pour parcourir ; onglet **Graphe** pour les liens entre entrées.
 
-Wiki 生成会增加模型调用，用量取决于文档规模和抽取密度。可在知识库 Wiki 配置中选择 `focused`、`standard` 或 `exhaustive`，详细说明见[抽取粒度](#抽取粒度)。
+La génération Wiki augmente les appels modèle selon volume et densité d’extraction. Granularité `focused`, `standard` ou `exhaustive` dans la config Wiki — voir [Granularité d’extraction](#granularite-extraction).
 
-## 新增资料入库与修订 Wiki 页面 {#ingest-or-edit}
+## Ingestion et révision des pages {#ingest-or-edit}
 
-需要长期保存的新报告、笔记、研究总结或网页，应先作为源文档加入知识库。文档处理管道负责分块、建立已启用的检索索引；知识库开启 Wiki 索引时，还会生成或更新带来源引用的 Wiki 页面及页面间链接。
+Rapports, notes ou pages web à conserver durablement : d’abord documents sources en base. Le pipeline chunking + index ; si Wiki activé, pages Wiki avec sources et liens inter-pages.
 
-使用助手时，按内容选择入口：
+Avec l’assistant :
 
-| 任务 | 入口 |
+| Tâche | Entrée |
 | --- | --- |
-| 保存新的文本或 Markdown 内容 | `knowledge.create_manual`，传入完整正文和 `status: publish` |
-| 导入用户提供的网页或文件 URL | `knowledge.create_from_url` |
-| 修订、合并已存在的 Wiki 页面 | 先读取页面，再使用 `wiki_write_page` 整页更新或 `wiki_replace_text` 局部替换 |
+| Enregistrer texte ou Markdown | `knowledge.create_manual`, corps complet et `status: publish` |
+| Importer URL web ou fichier | `knowledge.create_from_url` |
+| Réviser ou fusionner des pages Wiki | lire la page, puis `wiki_write_page` (page entière) ou `wiki_replace_text` (remplacement local) |
 
-手工文档省略 `status` 时默认为 `draft`，只保存草稿，不启动索引。发布和 URL 导入都是异步处理，通过 `knowledge.get_parse_progress` 查看进度。
+Sans `status`, document manuel = `draft` (pas d’indexation). Publication et import URL : async, progression via `knowledge.get_parse_progress`.
 
-直接写 Wiki 页面仍可维护链接、出现在 Wiki 图谱中并被 Wiki 搜索命中；但不会创建源文档、分块或文档检索索引，不能替代入库。
+Écrire directement une page Wiki maintient les liens, le graphe Wiki et la recherche Wiki ; cela ne crée pas de document source, chunks ni index document — ne remplace pas l’ingestion.
 
-## 浏览 Wiki 图谱 {#wiki-graph}
+## Graphe Wiki {#wiki-graph}
 
 <Screenshot
   src="/screenshots/wiki-graph-groups.png"
-  caption="Wiki 图谱视图：条目之间的链接关系"
-  hint="展示新图谱布局、主题说明及分组聚焦状态，可点击节点打开条目。" />
+  caption="Vue graphe Wiki : liens entre entrées"
+  hint="Nouvelle disposition par groupes, thèmes de groupe, focus sur un groupe ; clic nœud pour ouvrir l'entrée." />
 
-图谱按页面关联组织分组布局，并展示概括组内内容的主题说明。节点与标题会避让重叠，便于从整体关系找到感兴趣的内容。
+Disposition par groupes d’associations et thèmes résumant chaque groupe. Nœuds et titres évitent le chevauchement.
 
-- 点击分组主题可聚焦这组页面，使用分组菜单切换其他组，通过「返回全图」或 Esc 退出聚焦。
-- 可隐藏无关联页面，也可继续通过搜索与页面类型筛选定位条目。
-- 点击节点阅读页面，沿连线查看关联；页面与来源文档的摘要页建立连接，便于追溯资料。
+- Clic sur un thème de groupe pour focus ; menu de groupe ; « Retour vue complète » ou Esc.
+- Masquer les pages isolées ; recherche et filtre par type.
+- Clic nœud pour lire ; suivre les arêtes ; liens vers pages résumé des documents sources.
 
-此图展示 Wiki 页面之间的链接关系，与知识库设置中抽取实体和关系的知识图谱不同。
+Ce graphe = liens entre **pages Wiki**, distinct du graphe entités-relations dans les paramètres de base.
 
-## 编辑和回滚页面
+## Édition et rollback
 
-在 Wiki 页面中编辑正文后，可查看版本历史并比较改动。历史记录区分自动生成、智能体、人工编辑和回滚来源。回滚会以所选历史内容创建新版本，版本号继续递增。
+Après édition, historique des versions et comparaison. Sources : génération auto, agent, humain, rollback. Le rollback crée une nouvelle version (numéro incrémenté).
 
-系统优先清理自动生成的旧版本：达到 50 个历史版本后清理可裁剪快照，达到 200 个时按硬上限清理全部来源。需要长期保存的内容应另行归档。升级前写入的版本或已被清理的版本没有快照：选中这类版本时历史面板显示提示而不是差异；对比基线缺失时直接展示所选版本的全文。其他版本的比较和回滚不受影响。
+Nettoyage prioritaire des versions auto : à 50 versions, snapshots « élagables » ; à 200, plafond dur toutes sources. Archiver ailleurs le contenu à conserver longtemps. Versions antérieures à la mise à niveau ou déjà purgées sans snapshot : panneau d’historique avec message au lieu d’un diff ; comparaison impossible = texte intégral de la version choisie. Autres versions inchangées.
 
-## 查看变更与生成状态
+## Activité et état de génération
 
-页面创建、更新、删除和批量生成的操作记录统一显示在「知识库 → 设置 → 活动」。文档处理期间可查看索引状态；服务重启后，系统会恢复持久化的待处理 Wiki 任务。删除知识库时，其 Wiki 页面、目录、问题和版本历史一并清理。接口兼容与恢复机制见参考部分。
+Créations, mises à jour, suppressions et générations batch : « Base → Paramètres → Activité ». Pendant le traitement document : statut d’indexation ; après redémarrage, reprise des tâches Wiki persistées. Suppression de base = pages Wiki, dossiers, questions et historique supprimés. Compatibilité API et reprise : section référence.
 
-## 版本与运行参考
+## Versions et exploitation
 
-### 人工编辑与版本历史
+### Édition manuelle et historique
 
-Wiki 页面支持人工编辑和版本回滚，用户可修正生成内容，并查看各版本的来源、操作者和时间。版本记录由迁移 `000075` 引入。
+Corrections utilisateur, provenance par version. Migration `000075`.
 
-#### 版本来源与操作者 {#每个版本记的是谁改的}
+#### Source et auteur de chaque version {#source-auteur-version}
 
-`wiki_pages` 上有两个溯源字段，`last_edit_source` 标记**当前版本**的作者类型：
+Sur `wiki_pages`, `last_edit_source` = type d’auteur de **la version courante** :
 
-| `edit_source` | 含义 |
+| `edit_source` | Signification |
 | --- | --- |
-| `pipeline` | Wiki 生成管道写的（历史遗留行为空串，按 `pipeline` 处理） |
-| `agent` | Agent 通过 `wiki_write_page` / `wiki_replace_text` 等工具写的 |
-| `user` | 人工在编辑器里改的 |
-| `revert` | 回滚产生的版本 |
+| `pipeline` | Pipeline de génération Wiki (chaîne vide legacy = `pipeline`) |
+| `agent` | Agent via `wiki_write_page` / `wiki_replace_text`, etc. |
+| `user` | Édition manuelle |
+| `revert` | Version issue d’un rollback |
 
-配套的 `last_editor_id` 记录操作者（后台管道写入时为空）。界面据此展示每个版本的编辑来源。
+`last_editor_id` = opérateur (vide pour le pipeline). Affichage UI par version.
 
-#### 快照与回滚
+#### Snapshots et rollback
 
-- 每次页面被覆盖前，**旧版本**先整份快照进 `wiki_page_revisions`（标题、正文、摘要、页面类型、状态、别名，加上该版本的作者与时间）；当前版本只存在于 `wiki_pages` 里。`(page_id, version)` 上的唯一索引配合 `ON CONFLICT DO NOTHING`，让「先快照再更新」这条写路径在重试下保持幂等；
-- `GET /revisions/*slug` 列历史版本（倒序，不含正文，附当前版本号）；带 `?version=N` 则取该版本全文，用于 diff；
-- `POST /revert` 传 `{slug, version}` 回滚。回滚会使用目标版本的内容创建新版本，版本号继续递增，`edit_source` 记为 `revert`，因此回滚本身也可被回滚。回滚到当前版本会返回 400（通常意味着前端拿的是过期的历史列表）。
+- Avant écrasement, **ancienne version** snapshotée dans `wiki_page_revisions` (titre, corps, résumé, type, statut, alias, auteur/date) ; courante dans `wiki_pages`. Index unique `(page_id, version)` + `ON CONFLICT DO NOTHING` pour idempotence ;
+- `GET /revisions/*slug` : liste (sans corps, numéro courant) ; `?version=N` : corps pour diff ;
+- `POST /revert` `{slug, version}` : contenu cible → nouvelle version, `edit_source` = `revert`. Rollback sur version courante → 400.
 
-#### 历史保留策略
+#### Rétention
 
-版本历史按两级上限清理（`internal/types/wiki_page.go`）：
+Plafonds (`internal/types/wiki_page.go`) :
 
-- **软上限 50 版**：只清理「可裁剪」的快照，即 `pipeline` 写的和历史遗留的空来源；
-- **硬上限 200 版**：不分作者一律裁剪，保证纯人工维护的页面存储也有界。
+- **50 (soft)** : snapshots « élagables » (`pipeline` ou source vide legacy) ;
+- **200 (hard)** : toutes sources, y compris éditions manuelles.
 
-在达到硬上限前，系统优先清理自动生成的历史，保留人工编辑记录。
+Avant le hard cap, priorité au nettoyage auto.
 
 <Screenshot
   src="/screenshots/wiki-revision-history.png"
-  caption="Wiki 页面版本历史：按来源区分的版本列表与回滚入口"
-  hint="展示某个 wiki 页面的历史抽屉，含版本号、编辑来源（管道/人工/Agent/回滚）、编辑者与时间，以及对比/回滚按钮。" />
+  caption="Historique de versions Wiki : liste par source et rollback"
+  hint="Tiroir historique : numéro, source (pipeline / humain / Agent / rollback), auteur, date, comparer / rollback." />
 
-### 操作历史（知识库活动流）
+### Flux d’activité (activité base)
 
-Wiki 曾经维护一份独立的操作日志（`wiki_log_entries` 表 + `GET /wiki/log` 接口 + WikiBrowser 里的日志页签）。这份 feed 与知识库活动流内容重叠，已在 migration `000077_remove_wiki_log` 中整体移除：表被 DROP，历史遗留的 `page_type = 'log'` 页面一并删除，`log` 不再是合法页面类型。
+Ancien journal Wiki (`wiki_log_entries`, `GET /wiki/log`, onglet logs WikiBrowser) retiré en migration `000077_remove_wiki_log` : table DROP, pages `page_type = 'log'` supprimées, `log` plus un type valide.
 
-现在**知识库活动流是唯一的操作历史入口**：
+**Le flux d’activité base est l’unique historique opérationnel** :
 
-- ingest 批次结束时，`wiki_ingest_batch.go` 汇总本批各类动作数量，调用 `service.RecordWikiContentActivity()` 写一条 `wiki_content_changed` 活动；
-- 人工在 WikiBrowser 中创建/更新/删除页面时，`internal/handler/wiki_page.go` 同样把 `manual_create` / `manual_update` / `manual_delete` 投影到活动流；
-- 活动记录落在审计日志体系（`kb_activity.go` → `AuditLogService`），可在「知识库 → 设置 → 活动」查看，保留策略与其它审计日志一致（见[可观测性与审计](16-observability.md)）；
-- 写入是 best-effort：活动记录失败不会让 wiki 编辑本身失败。
+- Fin de batch ingest : `wiki_ingest_batch.go` agrège les comptes → `RecordWikiContentActivity()` → activité `wiki_content_changed` ;
+- CRUD manuel WikiBrowser : `wiki_page.go` projette `manual_create` / `manual_update` / `manual_delete` ;
+- Audit (`kb_activity.go` → `AuditLogService`), visible « Base → Paramètres → Activité », rétention comme les autres logs ([Observabilité et audit](16-observability.md)) ;
+- Best-effort : échec d’activité n’annule pas l’édition wiki.
 
-升级注意：如果外部集成还在调用 `GET /api/v1/knowledgebase/:kb_id/wiki/log`，需要改用知识库活动流接口 `GET /api/v1/knowledge-bases/:id/activity`。
+Migration : remplacer `GET /api/v1/knowledgebase/:kb_id/wiki/log` par `GET /api/v1/knowledge-bases/:id/activity`.
 
-### 失败恢复
+### Reprise après échec
 
-`internal/container/recover_pending_wiki_tasks.go` 在服务启动时闭合 Lite 模式（进程内 `SyncTaskExecutor`）或 Redis 入队中断留下的缺口：
+`internal/container/recover_pending_wiki_tasks.go` au démarrage (Lite `SyncTaskExecutor` ou file Redis interrompue) :
 
-1. 扫描持久化的 `task_pending_ops` 表中 `scope = knowledge_base` 且 `task_type ∈ {wiki:ingest, wiki:finalize}` 的待处理组合；
-2. 清理已删除 KB 或所属租户已被删除的残留行（fail-closed）；
-3. 对每个活跃 KB 重新入队触发任务：`wiki:ingest` 不带 TaskID（允许多批并发），`wiki:finalize` 使用 `"wiki-finalize-" + KB_ID` 去重（同一 KB 只保留一个 finalize）。重复入队无害——ingest 认领互不相交的行，finalize 在 lane 内合并。
+1. Scan `task_pending_ops`, `scope = knowledge_base`, `task_type ∈ {wiki:ingest, wiki:finalize}` ;
+2. Purge lignes orphelines (KB ou locataire supprimé, fail-closed) ;
+3. Ré-enqueue : `wiki:ingest` sans TaskID (lots concurrents), `wiki:finalize` avec `"wiki-finalize-" + KB_ID` (dédoublonnage). Re-enqueue sans danger.
 
-运行期间的其他保护：
+Protections en cours d’exécution :
 
-- **租户已删除**：ingest / finalize 任务在调用模型前检查租户是否存活，租户已删除则丢弃该知识库的队列，不再产生模型请求；
-- **Wiki 无法运行**：触发时发现知识库已关闭 Wiki、没有合成模型或模型已被删除，会清空尚未认领的 ingest 操作并释放对应文档，文档不会一直停在「索引中」；
-- **触发任务丢失**：只有持久化操作、没有触发任务的知识库由后台巡检重新触发，每个知识库每个巡检阈值周期最多一次；
-- **瞬时错误重试**：模型调用遇到 408/429/5xx、超时、连接重置，或带有限流字样（如「调用频率超限」、`rate limit`）的 403 时按指数退避重试；鉴权类 403 不重试；
-- **失败次数优先级**：认领待处理文档时优先处理失败次数少的文档，反复失败的文档不会阻塞新文档。
+- **Locataire supprimé** : ingest/finalize vérifient avant LLM ; file vidée, plus d’appels ;
+- **Wiki inutilisable** : Wiki off, pas de modèle synthèse ou modèle supprimé → purge ops ingest non prises, libération documents (plus bloqués « indexation ») ;
+- **Tâche déclencheur perdue** : patrouille ré-enqueue (max une fois par KB par période) ;
+- **Retry erreurs transitoires** : 408/429/5xx, timeout, reset, 403 rate limit → backoff ; 403 auth non retenté ;
+- **Priorité échecs** : documents avec moins d’échecs pris en premier.
 
-## 页面与接口参考
+## Pages et API
 
-### 页面模型与层级
+### Modèle et hiérarchie
 
-#### 页面类型（PageType）
+#### Types de page (PageType)
 
-`internal/types/wiki_page.go` 定义了 6 种页面类型：
+6 types (`internal/types/wiki_page.go`) :
 
-| 类型 | 说明 |
+| Type | Description |
 | --- | --- |
-| `summary` | 单篇源文档的摘要页（slug 形如 `summary/<knowledge-uuid>`） |
-| `entity` | 实体页（人、组织、产品、技术等） |
-| `concept` | 概念/主题页 |
-| `index` | wiki 级索引页（元数据） |
-| `synthesis` | 综合分析页，**仅由 Agent 通过 `wiki_write_page` 工具创建** |
-| `comparison` | 对比页，**仅由 Agent 通过 `wiki_write_page` 工具创建** |
+| `summary` | Résumé d’un document source (`summary/<knowledge-uuid>`) |
+| `entity` | Entité (personne, org, produit, tech, etc.) |
+| `concept` | Concept / thème |
+| `index` | Page index wiki (métadonnées) |
+| `synthesis` | Synthèse — **Agent uniquement** (`wiki_write_page`) |
+| `comparison` | Comparaison — **Agent uniquement** (`wiki_write_page`) |
 
-页面状态（`WikiPageStatus`）：`draft` / `published`（默认）/ `archived`。
+Statuts (`WikiPageStatus`) : `draft` / `published` (défaut) / `archived`.
 
-#### 目录树（Folder Hierarchy）
+#### Arborescence (Folder Hierarchy)
 
-migration `000061_wiki_page_hierarchy.up.sql` 引入独立的 `wiki_folders` 表（邻接表模型）：
+Migration `000061_wiki_page_hierarchy.up.sql`, table `wiki_folders` (adjacency) :
 
-- `WikiFolder` 以 `ParentID`（空串代表根）+ 物化 `Path`（`/` 连接的名称链）组织树；空文件夹可独立存在，用户可以先搭好骨架；
-- `WikiPage.FolderID` 是页面归属的**唯一事实来源**（FK → `wiki_folders.id`，空串表示 wiki 根）；
-- 页面上的 `CategoryPath` / `WikiPath` / `Depth` / `SortOrder` 是从 folder 链派生的**缓存投影**；
-- 模型生成的分类路径最深 3 级（常量 `WikiCategoryMaxDepth = 3`），`CleanWikiCategoryPath()` 会规范化全角分隔符（`／`、`｜` → `/`）并剔除「实体」「概念」等类型标签；
-- 页面放入用户建立的文件夹时，文件夹路径原样作为分类路径，名为「概念」「Concepts」等的文件夹不会被当作类型标签剔除。
+- `WikiFolder` : `ParentID` (racine = chaîne vide) + `Path` matérialisé ; dossiers vides possibles ;
+- `WikiPage.FolderID` = source de vérité (FK, vide = racine wiki) ;
+- `CategoryPath` / `WikiPath` / `Depth` / `SortOrder` = projection cache ;
+- Chemins modèle max 3 niveaux (`WikiCategoryMaxDepth = 3`), `CleanWikiCategoryPath()` normalise séparateurs et retire labels type « entité » ;
+- Dossier utilisateur : chemin conservé ; dossiers nommés « Concepts » etc. non traités comme tags de type.
 
-#### 关键字段
+#### Champs clés
 
-- `Slug`：页面在 KB 内的唯一标识（见下节）；
-- `SourceRefs`：来源引用，格式 `"<knowledge_id>|<doc_title>"`；`ChunkRefs`：分块级证据引用；
-- `InLinks` / `OutLinks`：wiki-link 反向/正向链接，维护图结构，`GET /graph` 可查询全局或 ego 视图；
-- `Aliases`：别名（用于搜索与去重合并后的旧名指向）；`Version`：版本号。
+- `Slug` : identifiant unique dans la KB ;
+- `SourceRefs` : `"<knowledge_id>|<doc_title>"` ; `ChunkRefs` : preuves chunk ;
+- `InLinks` / `OutLinks` : wiki-links ; `GET /graph` global ou ego ;
+- `Aliases` ; `Version`.
 
-### 发布与访问
+### Publication et accès
 
-所有 Wiki 路由挂在 `/api/v1/knowledgebase/:kb_id/wiki` 之下（`internal/router/routes_knowledge.go`），**没有免登录的公开访问模式**，读写均受 RBAC 与 KB 访问控制约束：
+Routes sous `/api/v1/knowledgebase/:kb_id/wiki` (`routes_knowledge.go`), **pas d’accès public anonyme**, RBAC + contrôle d’accès KB :
 
-#### 读接口（Viewer + KBAccessRead）
+#### Lecture (Viewer + KBAccessRead)
 
-| 方法 | 路径 | 说明 |
+| Méthode | Chemin | Description |
 | --- | --- | --- |
-| GET | `/pages` | 页面列表 |
-| GET | `/pages/*slug` | 按 slug 取单页 |
-| GET | `/folders` | 目录树 |
-| GET | `/index` | 索引页 |
-| GET | `/graph` | 链接图（全局概览 / ego 模式） |
-| GET | `/stats` | 统计 |
-| GET | `/search?q=...` | 搜索 |
-| GET | `/lint` / `/issues` | 质量检查结果 / 问题列表 |
-| GET | `/revisions/*slug` | 版本历史列表；带 `?version=N` 取该版本全文 |
+| GET | `/pages` | Liste |
+| GET | `/pages/*slug` | Page par slug |
+| GET | `/folders` | Arborescence |
+| GET | `/index` | Index |
+| GET | `/graph` | Graphe (global / ego) |
+| GET | `/stats` | Statistiques |
+| GET | `/search?q=...` | Recherche |
+| GET | `/lint` / `/issues` | Qualité / problèmes |
+| GET | `/revisions/*slug` | Historique ; `?version=N` corps |
 
-`KBAccessRead` 覆盖：KB 所有者、组织共享、以及通过共享 Agent 获得的访问。
+`KBAccessRead` : propriétaire KB, partage org, accès via agent partagé.
 
-#### 写接口（OwnedWikiKBOrAdmin + KBAccessWrite）
+#### Écriture (OwnedWikiKBOrAdmin + KBAccessWrite)
 
-| 方法 | 路径 | 说明 |
+| Méthode | Chemin | Description |
 | --- | --- | --- |
-| POST / PUT / DELETE | `/pages`、`/pages/*slug` | 创建 / 更新 / 删除页面 |
-| POST / PUT / DELETE | `/folders`、`/folders/:folder_id` | 目录管理 |
-| PUT | `/move-page` | 移动页面到目录 |
-| POST | `/rebuild-links` | 重建链接图 |
-| POST | `/auto-fix` | 触发自动修复 |
-| PUT | `/issues/:issue_id/status` | 更新问题状态 |
-| POST | `/revert` | 回滚到指定版本（body：`{slug, version}`） |
+| POST / PUT / DELETE | `/pages`, `/pages/*slug` | CRUD pages |
+| POST / PUT / DELETE | `/folders`, `/folders/:folder_id` | Dossiers |
+| PUT | `/move-page` | Déplacer page |
+| POST | `/rebuild-links` | Reconstruire graphe liens |
+| POST | `/auto-fix` | Auto-réparation |
+| PUT | `/issues/:issue_id/status` | Statut problème |
+| POST | `/revert` | Rollback `{slug, version}` |
 
-写权限按 KB 归属判定：贡献者只要拥有该 KB 即可管理其 wiki，否则 403。API Key 场景按 `ingest` / `retrieve` capability 映射。
+Écriture : contributeur propriétaire de la KB, sinon 403. Clé API : capabilities `ingest` / `retrieve`.
 
-前端由 `WikiBrowser.vue` 提供浏览界面；文档解析期间 `wikiStatusRefresh.ts` 轮询 `parse_status`（`pending` / `processing` / `finalizing`），解析完成而摘要仍在生成时继续轮询。目录树的展开状态由 `wikiDirectoryState.ts` 单独维护：新建文件夹或刷新数据后，`expandWikiDirectoryPath()` 会把当前路径上的各级目录标记为「用户已展开」，避免刷新时整棵树塌回默认折叠状态。
+UI : `WikiBrowser.vue` ; `wikiStatusRefresh.ts` poll `parse_status` ; `wikiDirectoryState.ts` conserve l’expansion après refresh via `expandWikiDirectoryPath()`.
 
-### 与 Agent 的关系
+### Relation avec l’agent
 
-智能体可通过以下 9 个 Wiki 工具读取、修改页面并处理问题（回读源文档则复用通用的 `read_document`），工具定义位于 `internal/agent/tools/definitions.go`：
+9 outils Wiki (+ `read_document` pour sources), `internal/agent/tools/definitions.go` :
 
-| 工具 | 作用 | 关键参数 |
+| Outil | Rôle | Paramètres |
 | --- | --- | --- |
-| `wiki_read_page` | 按 slug 批量读取页面全文 | `slugs: string[]` |
-| `wiki_search` | 搜索页面（标题 / slug / 别名 / 摘要 / 内容；`query` 按大小写不敏感的 POSIX 正则解释，不是合法正则的文本如 `C++` 按字面匹配；`regex=false` 强制字面匹配） | `query`、`regex?`、`knowledge_base_ids?`、`limit?`（旧参数 `queries`、`knowledge_base_id` 仍接受） |
-| `wiki_write_page` | 整页修订或合并已有页面；也支持从已入库来源重建缺失衍生页，不执行文档入库 | `slug`、`title`、`summary`、`content`、`page_type`、`aliases?`、`source_refs?` |
-| `wiki_replace_text` | 页内精确文本替换 | `slug`、`old_text`、`new_text` |
-| `wiki_rename_page` | 重命名 slug，自动更新反向链接 | `slug`、`new_slug` |
-| `wiki_delete_page` | 删除页面并清理死链 | `slug` |
-| `read_document` | 回读源文档原文：元数据头 + 分块，可分页或用 `query` 在文档内定位（替代原 `wiki_read_source_doc`；仅 Wiki 的知识库同样可用，因为分块总会落库） | `id`（`dN` / `cN`）、`offset?`、`limit?`、`query?`、`regex?`、`context?` |
-| `wiki_flag_issue` | 标记页面问题 | `slug`、`issue_type ∈ {mixed_entities, contradictory_facts, out_of_date, other}`、`description` |
-| `wiki_read_issue` | 查看问题详情 | 问题 ID |
-| `wiki_update_issue` | 更新问题状态 | 问题 ID、`status ∈ {pending, ignored, resolved}` |
+| `wiki_read_page` | Lire pages par slug | `slugs: string[]` |
+| `wiki_search` | Recherche (titre / slug / alias / résumé / corps ; `query` = regex POSIX insensible à la casse, sinon littéral ex. `C++` ; `regex=false` force littéral) | `query`, `regex?`, `knowledge_base_ids?`, `limit?` (legacy `queries`, `knowledge_base_id`) |
+| `wiki_write_page` | Révision / fusion ; reconstruire page dérivée depuis source indexée, pas d’ingestion doc | `slug`, `title`, `summary`, `content`, `page_type`, `aliases?`, `source_refs?` |
+| `wiki_replace_text` | Remplacement exact | `slug`, `old_text`, `new_text` |
+| `wiki_rename_page` | Renommer slug, met à jour backlinks | `slug`, `new_slug` |
+| `wiki_delete_page` | Supprimer + nettoyer liens morts | `slug` |
+| `read_document` | Source originale : en-tête + chunks paginés ou `query` (remplace `wiki_read_source_doc`) | `id` (`dN` / `cN`), `offset?`, `limit?`, `query?`, `regex?`, `context?` |
+| `wiki_flag_issue` | Signaler problème | `slug`, `issue_type ∈ {mixed_entities, contradictory_facts, out_of_date, other}`, `description` |
+| `wiki_read_issue` | Détail problème | ID |
+| `wiki_update_issue` | Mettre à jour statut | ID, `status ∈ {pending, ignored, resolved}` |
 
-推荐的阅读顺序是 `wiki_search` → `wiki_read_page` → `read_document`：先定位页面，再读整页，需要精确引用时回到原始来源的 `cN` 分块。工具输出为 XML-like 结构（`<wiki_page><metadata>...<summary>...<content>...`），前端用 `frontend/src/utils/wikiToolReferences.ts` 的 `parseWikiToolReferences()` 解析成引用卡片渲染在对话中。
+Ordre recommandé : `wiki_search` → `wiki_read_page` → `read_document`. Sortie XML-like ; `parseWikiToolReferences()` (`wikiToolReferences.ts`) → cartes de citation.
 
-配套机制：
+Mécanismes :
 
-- **Wiki Scope**：Agent 会话内维护 wiki KB 白名单，支持通过 `@mention` 把范围收窄到特定文档/标签，工具执行时自动过滤 `source_refs`（`internal/agent/tools/wiki_tools.go`）；
-- **写权限**：检索范围只需要读权限，而改写类工具（`wiki_write_page`、`wiki_replace_text`、`wiki_rename_page`、`wiki_delete_page`、`wiki_flag_issue`、`wiki_update_issue`）只作用于调用方可编辑的知识库，即本空间的知识库，或通过组织分享获得 editor 及以上权限的知识库。调用方本身还要有写权限：空间角色 Contributor 及以上，受限 API key 需要 `ingest` 能力。以 Viewer 身份运行的 IM、网页嵌入和 MCP 端点因此只读。范围内没有可编辑的 wiki 知识库时，这些工具不会注册。共享智能体始终只读；
-- **Wiki Fixer**：内置 Agent（`types.BuiltinWikiFixerID`），负责自动修复 wiki 问题（死链、实体混淆等）。跨租户访问共享 KB 时要求租户角色 ≥ Editor，并自动提升到源租户上下文（`internal/handler/session/wiki_fixer_scope.go`）。提升后使用内置默认配置，只针对这一个 KB，不启用 MCP、技能、沙箱和联网搜索，模型回退到该 KB 自己的模型，调用方对 fixer 的自定义配置不会带进源空间；
-- **问题闭环**：`wiki_page_issues` 表 + lint 接口 + `auto-fix`，人和 Agent 都可以报告/处理问题。
+- **Wiki Scope** : whitelist KB wiki en session, `@mention` pour restreindre ; filtre `source_refs` (`wiki_tools.go`) ;
+- **Écriture** : lecture = portée recherche ; écriture (`wiki_write_page`, `wiki_replace_text`, `wiki_rename_page`, `wiki_delete_page`, `wiki_flag_issue`, `wiki_update_issue`) = KB éditables (espace ou partage org editor+). Rôle Contributor+ ou clé API `ingest`. IM, embed et MCP en Viewer = lecture seule ; outils d’écriture non enregistrés sans KB wiki éditable. Agent partagé = lecture seule ;
+- **Wiki Fixer** : agent builtin (`types.BuiltinWikiFixerID`), réparation auto (liens morts, confusion entités). KB partagée cross-tenant : rôle locataire ≥ Editor, contexte locataire source (`wiki_fixer_scope.go`). Config par défaut, une KB, pas MCP/skills/sandbox/web ; modèle = modèle de la KB ;
+- **Problèmes** : `wiki_page_issues`, lint, `auto-fix`, humain ou agent.
 
-### 生成流程
+### Pipeline de génération
 
-Wiki 生成由**文档摄入（knowledge ingest）触发**，经 Redis 任务队列异步执行。任务类型定义在 `internal/types/task.go`：
+Déclenché par **ingestion document**, file Redis async. Types (`internal/types/task.go`) :
 
 ```go
 TypeWikiIngest   = "wiki:ingest"
 TypeWikiFinalize = "wiki:finalize"
 ```
 
-整个管道分四个阶段（Map-Reduce 结构）：
+Quatre phases (Map-Reduce) :
 
-| 阶段 | 任务 | 做什么 | LLM 提示词（`internal/agent/prompts_wiki.go`） |
+| Phase | Tâche | Action | Prompts (`prompts_wiki.go`) |
 | --- | --- | --- | --- |
-| Pass 0：候选抽取 | `wiki:ingest` | 从文档抽取候选 slug 骨架（entities + concepts 的 JSON） | `WikiCandidateSlugPrompt` |
-| Pass 1..N：分块引文 | `wiki:ingest` | 逐 chunk 为候选 slug 标注引用，输出 `{ citations: {"slug": ["c001", ...]}, new_slugs: [...] }`；长前缀复用 prefix caching | `WikiChunkCitationPrompt` |
-| Reduce：页面合并 | `wiki:ingest` | 按 slug 增量更新或合并页面，输出 `SUMMARY: ...` + Markdown 正文；严格接地、禁止幻觉、去重、禁止自链接 | `WikiPageModifySystemPrompt` + `WikiPageModifyUserPrompt` |
-| Finalize：收尾 | `wiki:finalize` | 重建索引页、清理死链、补交叉链接、目录修剪——纯 SQL/图算法，**不调用 LLM** | — |
+| Pass 0 : candidats | `wiki:ingest` | Slugs candidats (JSON entities + concepts) | `WikiCandidateSlugPrompt` |
+| Pass 1..N : citations chunks | `wiki:ingest` | Citations par chunk `{ citations, new_slugs }` ; prefix caching | `WikiChunkCitationPrompt` |
+| Reduce : fusion pages | `wiki:ingest` | Mise à jour/incrément par slug, `SUMMARY:` + Markdown ; ancrage strict | `WikiPageModifySystemPrompt` + `WikiPageModifyUserPrompt` |
+| Finalize | `wiki:finalize` | Index, liens morts, cross-links, prune dossiers — SQL/graphe, **sans LLM** | — |
 
-辅助提示词：
+Auxiliaires :
 
-- `WikiTaxonomyPlanPrompt`：为同一批次的所有实体/概念统一规划目录路径（最多 2 级、优先复用已有文件夹），保证目录树连贯；
-- `WikiDeduplicationPrompt`：判断新抽取项是否与既有页面同指一物，核心原则是 **"related ≠ same"**（相关不等于相同），返回 `{ merges: { "entity/new": "entity/existing" } }`。名称与别名双向比对（名称对别名、别名对别名），但共享的别名或缩写本身不足以判定为同一事物。
+- `WikiTaxonomyPlanPrompt` : chemins dossier unifiés (max 2 niveaux, réutiliser dossiers) ;
+- `WikiDeduplicationPrompt` : fusion si même entité — **related ≠ same** ; `{ merges: { "entity/new": "entity/existing" } }`. Alias partagés insuffisants seuls.
 
-去重与写入的其他规则：
+Autres règles :
 
-- **同名跨类型复用**：重新解析时模型可能把同一事物先判为 `concept/X`、后判为 `entity/X`。没有同类型页面时，标题归一化后相同的另一类型页面会被直接更新，而不是再建一个孪生页面；
-- **引用图片带说明**：Reduce 阶段读取被引用分块时，会把图片的 caption / OCR 文本内联进分块内容，模型能判断图片是否与页面相关；
-- **整页重写被截断**：整页重写因输出长度上限被截断时，最多续写 3 轮并无缝拼接；仍未写完则放弃本次写入并记录警告，不会把半页内容写回页面；
-- **单个汉字不自动加链接**：标题只有一个汉字的页面仍可存在，但不会在其他页面正文中自动为该字添加链接，避免把「风沙」「核心」等词误链接。
+- **Réutilisation cross-type** : même titre normalisé, autre type → mise à jour au lieu de page jumelle ;
+- **Images citées** : caption/OCR inline dans Reduce ;
+- **Troncature rewrite** : jusqu’à 3 continuations ; sinon abandon avec warning ;
+- **Liens auto un seul caractère CJK** : pas de wiki-link automatique sur titre d’un seul caractère.
 
-#### 抽取粒度
+#### Granularité d’extraction {#granularite-extraction}
 
-`WikiConfig`（存于 `knowledge_bases.wiki_config` JSONB 列）中的 `WikiExtractionGranularity` 控制抽取密度：
+`WikiExtractionGranularity` dans `WikiConfig` (`knowledge_bases.wiki_config`) :
 
-| 粒度 | 行为 |
+| Granularité | Comportement |
 | --- | --- |
-| `focused` | 仅 3-7 个主要主题 |
-| `standard`（默认） | 主题 + 被实质性讨论（一段/多条/2-3 句以上）的实体概念 |
-| `exhaustive` | 穷举所有命名事物与公认概念 |
+| `focused` | 3–7 thèmes principaux |
+| `standard` (défaut) | Thèmes + entités/concepts discutés substantiellement |
+| `exhaustive` | Toutes entités nommées et concepts reconnus |
 
-#### 并发与批处理
+#### Concurrence et batch
 
-`WikiConfig` 相关参数（`internal/types/wiki_page.go`）：
+Paramètres `WikiConfig` (`wiki_page.go`) :
 
-| 参数 | 默认 | 说明 |
+| Paramètre | Défaut | Description |
 | --- | --- | --- |
-| `IngestBatchSize` | 5 | 单批认领的待处理文档数 |
-| `IngestMapParallel` | 10 | Map 阶段（每文档抽取+引文）errgroup 并发数 |
-| `IngestReduceParallel` | 10 | Reduce 阶段（每 slug 写页面）并发数 |
-| `IngestMaxInflight` | 4 | 同一 KB 最大并发批次（保证跨 KB 公平） |
+| `IngestBatchSize` | 5 | Documents par batch |
+| `IngestMapParallel` | 10 | Concurrence Map |
+| `IngestReduceParallel` | 10 | Concurrence Reduce |
+| `IngestMaxInflight` | 4 | Lots concurrents max / KB |
 
-目录规划阶段计算文件夹与条目的 embedding 时，和其他 embedding 调用一样按 `BATCH_EMBED_SIZE` 分批请求，不会因单次输入过多被模型服务拒绝。
+Embeddings dossier/entrées : batches selon `BATCH_EMBED_SIZE`.
 
-#### 生成流程图
+#### Schéma
 
 ```mermaid
 flowchart TD
-    A["文档入库 (knowledge ingest)"] --> B["任务入队 wiki:ingest (Redis 队列)"]
-    B --> C["Pass 0: 候选 slug 抽取<br/>WikiCandidateSlugPrompt"]
-    C --> D["Taxonomy 规划<br/>WikiTaxonomyPlanPrompt 统一目录路径"]
-    C --> E["Pass 1..N: 分块引文标注<br/>WikiChunkCitationPrompt + prefix caching"]
-    E --> F["去重判定<br/>WikiDeduplicationPrompt (related ≠ same)"]
-    F --> G["Reduce: 按 slug 并发写页面<br/>WikiPageModifySystemPrompt<br/>增量合并 / 新建, 强制引用接地"]
+    A["Ingestion document<br/>(knowledge ingest)"] --> B["Enqueue wiki:ingest (Redis)"]
+    B --> C["Pass 0 : slugs candidats<br/>WikiCandidateSlugPrompt"]
+    C --> D["Taxonomie<br/>WikiTaxonomyPlanPrompt"]
+    C --> E["Pass 1..N : citations chunks<br/>WikiChunkCitationPrompt + prefix caching"]
+    E --> F["Dédoublonnage<br/>WikiDeduplicationPrompt (related ≠ same)"]
+    F --> G["Reduce : écriture pages par slug<br/>WikiPageModifySystemPrompt<br/>fusion incrémentale, citations obligatoires"]
     D --> G
-    G --> H["写入 wiki_pages<br/>变更投影到知识库活动流 (audit)"]
-    H --> I["任务入队 wiki:finalize<br/>(TaskID = wiki-finalize-KBID, 同 KB 去重)"]
-    I --> J["Finalize: 重建索引 / 清理死链 / 交叉链接<br/>纯 SQL 与图算法, 无 LLM"]
-    J --> K["published 页面在 WikiBrowser 可浏览<br/>Agent 工具可读写"]
+    G --> H["Écriture wiki_pages<br/>projection activité base (audit)"]
+    H --> I["Enqueue wiki:finalize<br/>(TaskID = wiki-finalize-KBID, dédoublonnage)"]
+    I --> J["Finalize : index / liens morts / cross-links<br/>SQL et graphe, sans LLM"]
+    J --> K["Pages published dans WikiBrowser<br/>outils Agent lecture/écriture"]
 ```
 
-### Slug 机制
+### Mécanisme Slug
 
-- **格式**：`<type>/<name>`，如 `entity/acme-corp`、`concept/rag`、`summary/<knowledge-uuid>`；小写、连字符分隔，非拉丁文名做罗马化/拼音；
-- **唯一性**：数据库唯一索引（`000037_wiki_and_indexing.up.sql`）：
+- **Format** : `<type>/<name>`, ex. `entity/acme-corp` ; minuscules, tirets ; romanisation hors latin ;
+- **Unicité** :
 
   ```sql
   CREATE UNIQUE INDEX idx_kb_slug ON wiki_pages (knowledge_base_id, slug) WHERE deleted_at IS NULL
   ```
 
-  即 slug 在**单个知识库内唯一**，跨 KB 可以重复；
-- **稳定性**：文档更新重新抽取时，提示词强制模型复用旧 slug——
+  Unique **par KB** ;
+- **Stabilité** : ré-extraction réutilise les slugs existants (prompt) ;
+- **Slug Handle** : slugs à haute entropie → `ref-N` pour le LLM, restauration backend (`wiki_slug_handles.go`) ;
+- **Références** : `[[slug|title]]` ; `wiki_rename_page` met à jour les backlinks.
 
-  > If an entity or concept from the previous extraction still exists in the current document, **reuse its exact slug** from the previous list. Do NOT generate a new slug for the same thing.
+## Référence d’implémentation
 
-  只有新出现的事物才生成新 slug，消失的项不再输出；
-- **Slug Handle（句柄代理）**：ingest 的 LLM 调用中，高熵的真实 slug（尤其含 UUID 的 `summary/...`）会被替换为短句柄（`ref-1`、`ref-2`），模型输出 `[[ref-1|title]]` 后由后端还原为真实 slug，避免模型抄错 UUID（`internal/application/service/wiki_slug_handles.go`）；
-- **引用作用**：Agent 回答中的 wiki 引用以 `[[slug|title]]` 形式出现，`InLinks`/`OutLinks` 依 slug 维护页面图；重命名 slug（`wiki_rename_page` 工具）会自动更新所有反向链接。
-
-## 实现参考
-
-以下路径均相对仓库根目录：
-
-| 层 | 文件 |
+| Couche | Fichier |
 | --- | --- |
-| 数据结构 | `internal/types/wiki_page.go` |
+| Types | `internal/types/wiki_page.go` |
 | HTTP Handler | `internal/handler/wiki_page.go` |
-| 生成管道 | `internal/application/service/wiki_ingest.go`、`wiki_ingest_batch.go`、`wiki_ingest_cite.go`、`wiki_ingest_dedup.go`、`wiki_ingest_taxonomy.go` |
-| 页面服务 | `internal/application/service/wiki_page.go`、`wiki_linkify.go`、`wiki_lint.go`、`wiki_slug_handles.go` |
-| LLM 提示词 | `internal/agent/prompts_wiki.go` |
-| Agent 工具 | `internal/agent/tools/wiki_*.go`（注册于 `internal/agent/tools/definitions.go`） |
-| 失败恢复 | `internal/container/recover_pending_wiki_tasks.go` |
-| 路由 | `internal/router/routes_knowledge.go` 的 `RegisterWikiPageRoutes`（行为测试见 `internal/router/router_wiki_test.go`） |
-| 数据库迁移 | `migrations/versioned/000037_wiki_and_indexing.up.sql`、`000061_wiki_page_hierarchy.up.sql`、`000077_remove_wiki_log.up.sql` |
-| 前端 | `frontend/src/views/knowledge/wiki/WikiBrowser.vue`、`frontend/src/api/wiki/`、`frontend/src/utils/wikiToolReferences.ts` |
+| Pipeline génération | `wiki_ingest.go`, `wiki_ingest_batch.go`, `wiki_ingest_cite.go`, `wiki_ingest_dedup.go`, `wiki_ingest_taxonomy.go` |
+| Service pages | `wiki_page.go`, `wiki_linkify.go`, `wiki_lint.go`, `wiki_slug_handles.go` |
+| Prompts LLM | `internal/agent/prompts_wiki.go` |
+| Outils Agent | `internal/agent/tools/wiki_*.go` (`definitions.go`) |
+| Reprise | `internal/container/recover_pending_wiki_tasks.go` |
+| Routes | `routes_knowledge.go` → `RegisterWikiPageRoutes` (`router_wiki_test.go`) |
+| Migrations | `000037_wiki_and_indexing.up.sql`, `000061_wiki_page_hierarchy.up.sql`, `000077_remove_wiki_log.up.sql` |
+| Frontend | `WikiBrowser.vue`, `frontend/src/api/wiki/`, `wikiToolReferences.ts` |

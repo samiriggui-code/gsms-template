@@ -1,7 +1,29 @@
 import Image from "next/image";
-import { homeAssets } from "../../shared/header";
+import { homeAssets, siteBrand } from "../../shared/header";
+import { company } from "./company/data";
 
-/** Show the complete original artwork; the viewport only trims blank canvas. */
+/** Titres marque en en-tête (lisibles, sans crop du SVG). */
+export function BrandLockup() {
+  return (
+    <span className="wk-brand-lockup">
+      <span className="wk-brand-name">{company.brandName}</span>
+      <span className="wk-brand-tagline">{company.brandTagline}</span>
+    </span>
+  );
+}
+
+/** Logo Global-IT-SS (pied de page). */
 export function BrandLogo({ priority = false }: { priority?: boolean }) {
-  return <span className="wk-logo"><Image src={`${homeAssets}/brand/weknora-original.png`} alt="WeKnora" width={945} height={650} priority={priority} /></span>;
+  return (
+    <span className="wk-logo-gis-mark">
+      <Image
+        src={siteBrand.logoSrc}
+        alt={`${siteBrand.name} — ${siteBrand.tagline}`}
+        width={300}
+        height={149}
+        priority={priority}
+        className="wk-logo-gis-img"
+      />
+    </span>
+  );
 }

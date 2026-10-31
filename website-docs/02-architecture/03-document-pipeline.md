@@ -1,47 +1,47 @@
-# 文档入库流程（Document Ingestion Pipeline）
+# Pipeline d’ingestion documentaire (Document Ingestion Pipeline)
 
-文档通过文件上传、URL 导入或手动创建进入系统。服务端保存内容并提交处理任务，依次完成解析、分块和索引，再按知识库配置生成摘要、问题、图谱及 Wiki。状态和进度随处理阶段更新，失败任务由重试与巡检机制恢复。
+Les documents entrent dans le système par upload de fichier, import d’URL ou création manuelle. Le serveur persiste le contenu et soumet une tâche de traitement qui enchaîne analyse, découpage et indexation, puis — selon la configuration de la base de connaissances — génère résumé, questions, graphe et pages Wiki. État et progression suivent les étapes ; les échecs sont repris par les reprises automatiques et le housekeeping.
 
 
-## 图片处理管线
+## Pipeline de traitement des images
 
-图片保存后，按知识库配置选择 `default` 或 `smartocr` 管线，分别执行手动动作或观察后决策。OCR 预处理默认关闭，可按知识库开启；任务提交时保存本轮管线配置，后续修改不会把已经提交的任务切换到另一条管线。处理轨迹记录实际管线和步骤结果，详见[图片处理](../03-features/03-document-parsing.md#_4-图片处理与多模态分工)。
+Après enregistrement, l’image suit la pipeline `default` ou `smartocr` définie par la KB : actions manuelles ou décision après observation. Le prétraitement OCR est désactivé par défaut et activable par KB ; la configuration de pipeline est figée à la soumission de la tâche — une modification ultérieure ne bascule pas les tâches déjà enfilées. La trace d’exécution enregistre la pipeline réelle et le résultat de chaque étape ; voir [Traitement des images](../03-features/03-document-parsing.md#images-et-multimodal).
 
-## 总体架构 {#_1-总体架构}
+## Architecture globale {#_1-architecture-globale}
 
-WeKnora 的入库链路是一条**基于 Asynq（Redis）的分布式异步管道**。HTTP Handler 只负责落库与入队，所有耗时工作（解析、向量化、LLM 富化）都由独立的 Worker 池消费队列完成。
+La chaîne d’ingestion WeKnora est une **pipeline asynchrone distribuée basée sur Asynq (Redis)**. Le handler HTTP ne fait que persister et enfiler ; tout le travail coûteux (parsing, vectorisation, enrichissement LLM) est consommé par des pools de workers indépendants.
 
 ```mermaid
 flowchart TD
-    subgraph Entry["入口层 (internal/handler/knowledge.go)"]
-        A1["POST /knowledge-bases/:id/knowledge/file<br/>(文件上传)"]
-        A2["POST /knowledge-bases/:id/knowledge/url<br/>(URL 导入)"]
-        A3["POST /knowledge-bases/:id/knowledge/manual<br/>(手动创建)"]
-        A4["POST /knowledge/:id/reparse<br/>(重新解析)"]
+    subgraph Entry["Couche d'entrée (internal/handler/knowledge.go)"]
+        A1["POST /knowledge-bases/:id/knowledge/file<br/>(upload fichier)"]
+        A2["POST /knowledge-bases/:id/knowledge/url<br/>(import URL)"]
+        A3["POST /knowledge-bases/:id/knowledge/manual<br/>(création manuelle)"]
+        A4["POST /knowledge/:id/reparse<br/>(réanalyse)"]
     end
 
-    subgraph Create["创建层 (knowledge_create.go)"]
-        B1["calculateFileHash<br/>(MD5 去重)"]
-        B2["FileService.SaveFile<br/>(写入存储后端)"]
-        B3["创建 Knowledge 记录<br/>parse_status=pending"]
+    subgraph Create["Couche création (knowledge_create.go)"]
+        B1["calculateFileHash<br/>(dédup MD5)"]
+        B2["FileService.SaveFile<br/>(écriture backend stockage)"]
+        B3["Création enregistrement Knowledge<br/>parse_status=pending"]
         B4["Asynq Enqueue<br/>TypeDocumentProcess"]
     end
 
-    subgraph Worker["核心 Worker (knowledge_process.go)"]
-        C1["convert: DocReader 解析<br/>(gRPC/HTTP → docreader)"]
-        C1a["ASR 转写<br/>(音频文件)"]
-        C2["ImageResolver<br/>(图片提取并上传存储)"]
-        C3["chunker.Split /<br/>SplitParentChild (分块)"]
-        C4["processChunks:<br/>CreateChunks (写 DB)"]
-        C5["BatchIndex<br/>(Embedding + 向量/关键词索引)"]
+    subgraph Worker["Worker principal (knowledge_process.go)"]
+        C1["convert : parsing DocReader<br/>(gRPC/HTTP → docreader)"]
+        C1a["Transcription ASR<br/>(fichier audio)"]
+        C2["ImageResolver<br/>(extraction images + upload stockage)"]
+        C3["chunker.Split /<br/>SplitParentChild (découpage)"]
+        C4["processChunks :<br/>CreateChunks (écriture BD)"]
+        C5["BatchIndex<br/>(Embedding + index vectoriel / mots-clés)"]
     end
 
-    subgraph Enrich["富化 Worker (knowledge_post_process.go)"]
-        D1["TypeImageMultimodal<br/>(OCR + VLM Caption)"]
-        D2["TypeSummaryGeneration<br/>(摘要)"]
-        D3["TypeQuestionGeneration<br/>(问题生成, 每批 20 chunk)"]
-        D4["TypeChunkExtract<br/>(图谱抽取, 每 chunk 一任务)"]
-        D5["TypeWikiIngest<br/>(Wiki 页面生成)"]
+    subgraph Enrich["Worker enrichissement (knowledge_post_process.go)"]
+        D1["TypeImageMultimodal<br/>(OCR + légende VLM)"]
+        D2["TypeSummaryGeneration<br/>(résumé)"]
+        D3["TypeQuestionGeneration<br/>(génération questions, lots de 20 chunks)"]
+        D4["TypeChunkExtract<br/>(extraction graphe, 1 tâche/chunk)"]
+        D5["TypeWikiIngest<br/>(génération pages Wiki)"]
     end
 
     A1 --> B1 --> B2 --> B3 --> B4
@@ -55,15 +55,15 @@ flowchart TD
     C5 --> D3
     C5 --> D4
     C5 --> D5
-    D2 -->|"FinalizeSubtask 原子递减"| E["parse_status=completed"]
+    D2 -->|"FinalizeSubtask décrément atomique"| E["parse_status=completed"]
     D3 --> E
     D4 --> E
     D5 --> E
 ```
 
-## 入口层：三种创建方式 {#_2-入口层-三种创建方式}
+## Couche d’entrée : trois modes de création {#_2-couche-dentree-trois-modes-de-creation}
 
-路由注册在 `internal/router/routes_knowledge.go`：
+Les routes sont enregistrées dans `internal/router/routes_knowledge.go` :
 
 ```go
 kb.POST("/file",   g.OwnedKBOrAdmin(), g.KBAccessWrite("id"), handler.CreateKnowledgeFromFile)
@@ -71,16 +71,16 @@ kb.POST("/url",    g.OwnedKBOrAdmin(), g.KBAccessWrite("id"), handler.CreateKnow
 kb.POST("/manual", g.OwnedKBOrAdmin(), g.KBAccessWrite("id"), handler.CreateManualKnowledge)
 ```
 
-配套的管理端点：`POST /knowledge/:id/reparse`（重新解析）、`POST /knowledge/:id/cancel-parse`（取消解析）、`POST /knowledge/batch-reparse`、`POST /knowledge/batch-delete`、`POST /knowledge/move`（跨库移动）。
+Endpoints d’administration associés : `POST /knowledge/:id/reparse` (réanalyse), `POST /knowledge/:id/cancel-parse` (annuler l’analyse), `POST /knowledge/batch-reparse`, `POST /knowledge/batch-delete`, `POST /knowledge/move` (déplacement inter-bases).
 
-### 文件上传（CreateKnowledgeFromFile） {#_2-1-文件上传-createknowledgefromfile}
+### Upload fichier (CreateKnowledgeFromFile) {#_2-1-upload-fichier-createknowledgefromfile}
 
-- 表单参数：`file`、`fileName`、`metadata`、`enable_multimodel`、`tag_ids`、`process_config`（每次上传可覆盖 KB 级处理配置，见 [处理配置：KB 默认值 + 单次上传覆盖](#_5-处理配置-kb-默认值-单次上传覆盖)）。
-- 流程：扩展名校验 → MD5 去重 → `FileService.SaveFile` 存储 → 创建 `Knowledge` 记录 → 入队。
+- Paramètres formulaire : `file`, `fileName`, `metadata`, `enable_multimodel`, `tag_ids`, `process_config` (surcharge possible à chaque upload de la config KB ; voir [Configuration de traitement : défauts KB + surcharge par upload](#_5-configuration-de-traitement-defauts-kb-surcharge-par-upload)).
+- Enchaînement : validation extension → déduplication MD5 → stockage `FileService.SaveFile` → création enregistrement `Knowledge` → enqueue.
 
-### 统一的扩展名闸门 {#_2-1-1-统一的扩展名闸门}
+### Porte d’extensions unifiée {#_2-1-1-porte-dextensions-unifiee}
 
-`internal/application/service/knowledge_util.go` 里的 `supportedImportFileExtensions` 是**所有导入路径的唯一事实来源**——直接上传、文件 URL 下载、以及 worker 下载完成后的复检都查同一张表：
+Dans `internal/application/service/knowledge_util.go`, `supportedImportFileExtensions` est la **source unique de vérité** pour tous les chemins d’import — upload direct, téléchargement URL fichier et recontrôle après téléchargement côté worker utilisent la même liste :
 
 ```
 pdf txt docx doc epub html htm mhtml md markdown xmind
@@ -88,17 +88,17 @@ png jpg jpeg gif csv xlsx xls pptx ppt json
 mp3 wav m4a flac ogg
 ```
 
-此前 URL 导入维护着一份更短的独立白名单，导致「直接上传 xlsx 可以、URL 导入 xlsx 被拒」这类不一致（#2447）；现在统一由 `isSupportedImportExtension()` / `validateImportFileType()` 判定，视频类型会给出「暂不支持上传视频文件」的明确提示。
+Auparavant, l’import URL maintenait une whitelist plus courte, d’où des incohérences du type « xlsx en upload direct OK, xlsx en URL refusé » (#2447) ; tout passe désormais par `isSupportedImportExtension()` / `validateImportFileType()` ; les vidéos reçoivent le message explicite « envoi de fichiers vidéo non pris en charge pour l’instant ».
 
-表格类扩展名（`csv` / `xlsx` / `xls`，`dataTableFileExtensions`）在文档处理任务之后额外挂一个表摘要任务（`enqueueDataTableSummaryIfNeeded`）。
+Les extensions tabulaires (`csv` / `xlsx` / `xls`, `dataTableFileExtensions`) déclenchent en plus, après la tâche document, un résumé de table (`enqueueDataTableSummaryIfNeeded`).
 
-图片、音频类文件的额外前置校验（对象存储配置是否完整、VLM / ASR 模型是否配置）与 `process_config` 校验一起收敛到 `resolveFileImportProcessConfig()`，上传与 URL 导入共用。
+Les contrôles préalables image/audio (stockage objet complet, modèles VLM / ASR configurés) et la validation `process_config` convergent dans `resolveFileImportProcessConfig()`, partagé entre upload et import URL.
 
-### URL 导入（CreateKnowledgeFromURL） {#_2-2-url-导入-createknowledgefromurl}
+### Import URL (CreateKnowledgeFromURL) {#_2-2-import-url-createknowledgefromurl}
 
-- JSON Body：`{url, file_name?, file_type?, enable_multimodel?, title?, tag_ids?, channel?, process_config?}`。
-- `isFileURL()` 按上面的统一扩展名集合判断这是「下载文件」还是「抓取网页」。
-- Handler 与 Service 双层做 SSRF 防护（`internal/handler/knowledge.go` 与 `knowledge_create.go` 均调用）：
+- Corps JSON : `{url, file_name?, file_type?, enable_multimodel?, title?, tag_ids?, channel?, process_config?}`.
+- `isFileURL()` décide, via le même jeu d’extensions, entre « télécharger un fichier » et « capturer une page Web ».
+- Protection SSRF en double couche Handler + Service (`internal/handler/knowledge.go` et `knowledge_create.go`) :
 
 ```go
 if err := secutils.ValidateURLForSSRF(req.URL); err != nil {
@@ -107,15 +107,15 @@ if err := secutils.ValidateURLForSSRF(req.URL); err != nil {
 }
 ```
 
-Worker 侧在真正抓取前会再次校验（`knowledge_process.go` 的 `convert()`），三重防线防止 TOCTOU。
+Côté worker, nouvelle validation avant le fetch réel (`convert()` dans `knowledge_process.go`) — triple barrière anti-TOCTOU.
 
-### 手动创建（CreateManualKnowledge） {#_2-3-手动创建-createmanualknowledge}
+### Création manuelle (CreateManualKnowledge) {#_2-3-creation-manuelle-createmanualknowledge}
 
-- JSON Body 为 `types.ManualKnowledgePayload{Title, Content, Status, TagIDs, Channel, ProcessConfig}`，支持草稿（Draft）状态；发布时走 `triggerManualProcessing()` 进入与文件相同的分块/索引管线（跳过 DocReader 阶段）。
+- Corps JSON : `types.ManualKnowledgePayload{Title, Content, Status, TagIDs, Channel, ProcessConfig}` ; état brouillon (Draft) supporté ; à la publication, `triggerManualProcessing()` rejoint la même pipeline découpage/index que les fichiers (sans étape DocReader).
 
-### 去重机制 {#_2-4-去重机制}
+### Déduplication {#_2-4-deduplication}
 
-`knowledge_create.go` 对上传文件计算 MD5，并按四元组查库：
+`knowledge_create.go` calcule le MD5 des fichiers uploadés et interroge la base sur un quadruplet :
 
 ```go
 hash, err := calculateFileHash(file) // MD5
@@ -132,30 +132,30 @@ if exists {
 }
 ```
 
-命中时不重复入库，返回已有 Knowledge 并附带 `DuplicateFileError`（前端据此提示"文件已存在"）。`parse_status` 为 `failed` 或 `deleting` 的行不参与查重，因此删除尚未完成或卡在删除中的文件可以重新上传。`FileType` 参与判定：重复只在**同一文件类型内**成立，因此内容完全相同的 `notes.md` 与 `notes.txt` 会作为两条独立知识共存（`CheckKnowledgeExists` 在哈希与「文件名 + 大小」两条分支上都追加了 `LOWER(file_type)` 条件）。
+En cas de hit, pas de nouvel enregistrement : retour de la `Knowledge` existante avec `DuplicateFileError` (l’UI affiche « fichier déjà présent »). Les lignes en `parse_status` `failed` ou `deleting` sont exclues de la dédup, ce qui permet de ré-uploader pendant une suppression inachevée ou bloquée. `FileType` entre dans le jugement : la duplication ne vaut qu’**à type identique** — `notes.md` et `notes.txt` au contenu identique coexistent (`CheckKnowledgeExists` ajoute `LOWER(file_type)` sur les branches hash et « nom + taille »).
 
-### 初始状态 {#_2-5-初始状态}
+### État initial {#_2-5-etat-initial}
 
-新建 Knowledge 记录的关键初始字段（`knowledge_create.go`）：
+Champs initiaux clés d’une `Knowledge` neuve (`knowledge_create.go`) :
 
 ```go
 knowledge := &types.Knowledge{
     ID:           uuid.New().String(),
-    Type:         "file",        // 或 "url" / "manual"
-    ParseStatus:  "pending",     // 初始解析状态
-    EnableStatus: "disabled",    // 索引完成前不可检索
+    Type:         "file",        // ou "url" / "manual"
+    ParseStatus:  "pending",     // état d'analyse initial
+    EnableStatus: "disabled",    // non consultable tant que l'indexation n'est pas terminée
     FileHash:     hash,
     ...
 }
 ```
 
-对 CSV/Excel 数据表类知识，创建后还会额外入队 `TypeDataTableSummary`（`datatable:summary`）任务，生成 `table_summary` / `table_column` 类型的 Chunk 用于表格问答。
+Pour les connaissances table CSV/Excel, création suivie d’un enqueue `TypeDataTableSummary` (`datatable:summary`) produisant des chunks `table_summary` / `table_column` pour le Q&R tabulaire.
 
-## 文件存储层（FileService 与存储后端） {#_3-文件存储层-fileservice-与存储后端}
+## Couche stockage fichiers (FileService et backends) {#_3-couche-stockage-fichiers-fileservice-et-backends}
 
-### 接口定义 {#_3-1-接口定义}
+### Définition d’interface {#_3-1-definition-dinterface}
 
-`internal/types/interfaces/file.go`：
+`internal/types/interfaces/file.go` :
 
 ```go
 type FileService interface {
@@ -169,169 +169,169 @@ type FileService interface {
 }
 ```
 
-### 支持的存储后端 {#_3-2-支持的存储后端}
+### Backends de stockage pris en charge {#_3-2-backends-de-stockage-pris-en-charge}
 
-工厂函数 `NewFileServiceFromStorageConfig()`（`internal/application/service/file/factory.go`）根据 `types.StorageEngineConfig.DefaultProvider` 选择后端。实际支持的后端清单：
+La fabrique `NewFileServiceFromStorageConfig()` (`internal/application/service/file/factory.go`) choisit le backend via `types.StorageEngineConfig.DefaultProvider`. Liste effective :
 
-| Provider | 路径前缀 | 实现文件 | 说明 | 关键配置 |
+| Provider | Préfixe chemin | Fichier | Description | Config clé |
 |----------|----------|----------|------|----------|
-| `local` | `local://` | `file/local.go` | 单机本地磁盘 | `LocalEngineConfig.PathPrefix`，基目录取 `LOCAL_STORAGE_BASE_DIR`，外链签名取 `APP_EXTERNAL_URL` |
-| `minio` | `minio://` | `file/minio.go` | MinIO / S3 兼容 | `MinIOEngineConfig`（`mode: docker` 时读环境变量 `MINIO_ENDPOINT` / `MINIO_ACCESS_KEY_ID` / `MINIO_SECRET_ACCESS_KEY` / `MINIO_BUCKET_NAME`；`mode: remote` 时读配置字段） |
-| `cos` | `cos://` | `file/cos.go` | 腾讯云 COS | `SecretID/SecretKey/Region/BucketName/AppID`，支持独立临时桶 `TempBucketName/TempRegion` |
-| `oss` | `oss://` | `file/oss.go` | 阿里云 OSS | `Endpoint/Region/AccessKey/SecretKey/BucketName`，支持临时桶 |
-| `s3` | `s3://` | `file/s3.go` | AWS S3 / 兼容协议 | `Endpoint/Region/AccessKey/SecretKey/BucketName/UseSSL/ForcePathStyle` |
-| `tos` | `tos://` | `file/tos.go` | 火山引擎 TOS | 同上，支持临时桶 |
-| `obs` | `obs://` | `file/obs.go` | 华为云 OBS | `Endpoint/Region/AccessKey/SecretKey/BucketName/UseSSL` |
-| `ks3` | `ks3://` | `file/ks3.go` | 金山云 KS3 | `Endpoint/Region/AccessKey/SecretKey/BucketName` |
-| `dummy` | `dummy://` | `file/dummy.go` | 测试用空实现 | 无 |
+| `local` | `local://` | `file/local.go` | Disque local mono-instance | `LocalEngineConfig.PathPrefix`, répertoire de base `LOCAL_STORAGE_BASE_DIR`, signature URL externe `APP_EXTERNAL_URL` |
+| `minio` | `minio://` | `file/minio.go` | MinIO / compatible S3 | `MinIOEngineConfig` (`mode: docker` → variables `MINIO_ENDPOINT` / `MINIO_ACCESS_KEY_ID` / `MINIO_SECRET_ACCESS_KEY` / `MINIO_BUCKET_NAME` ; `mode: remote` → champs config) |
+| `cos` | `cos://` | `file/cos.go` | Tencent Cloud COS | `SecretID/SecretKey/Region/BucketName/AppID`, bucket temporaire `TempBucketName/TempRegion` |
+| `oss` | `oss://` | `file/oss.go` | Alibaba Cloud OSS | `Endpoint/Region/AccessKey/SecretKey/BucketName`, bucket temporaire |
+| `s3` | `s3://` | `file/s3.go` | AWS S3 / protocole compatible | `Endpoint/Region/AccessKey/SecretKey/BucketName/UseSSL/ForcePathStyle` |
+| `tos` | `tos://` | `file/tos.go` | Volcengine TOS | Idem, bucket temporaire |
+| `obs` | `obs://` | `file/obs.go` | Huawei Cloud OBS | `Endpoint/Region/AccessKey/SecretKey/BucketName/UseSSL` |
+| `ks3` | `ks3://` | `file/ks3.go` | Kingsoft Cloud KS3 | `Endpoint/Region/AccessKey/SecretKey/BucketName` |
+| `dummy` | `dummy://` | `file/dummy.go` | Implémentation vide (tests) | — |
 
-### 对象 Key 组织规则 {#_3-3-对象-key-组织规则}
+### Règles d’organisation des clés objet {#_3-3-regles-dorganisation-des-cles-objet}
 
-- 正式文件：`{tenantID}/{knowledgeID}/{uuid或纳秒时间戳}{ext}`，例如 `local://12345/kb-001/1722045600000000000.pdf`。
-- 导出/临时/克隆产物：`{tenantID}/exports/{fileName}_{timestamp}{ext}`。
-- 路径安全：`secutils.SafePathUnderBase`（防目录穿越）、`secutils.SafeFileName`、对象存储侧 `utils.SafeObjectKey`。
+- Fichiers définitifs : `{tenantID}/{knowledgeID}/{uuid ou horodatage nanosecondes}{ext}`, ex. `local://12345/kb-001/1722045600000000000.pdf`.
+- Export / temporaire / clone : `{tenantID}/exports/{fileName}_{timestamp}{ext}`.
+- Sécurité des chemins : `secutils.SafePathUnderBase` (anti traversal), `secutils.SafeFileName`, côté objet `utils.SafeObjectKey`.
 
-### 两个包装层 {#_3-4-两个包装层}
+### Deux couches d’encapsulation {#_3-4-deux-couches-dencapsulation}
 
-- **`backend_scoped.go`**：多存储后端部署时给路径加实例前缀，形如 `storage://{backendID}/{innerPath}`，`wrap/unwrap` 编解码并拒绝跨后端操作。KB 可通过 `StorageBackendID` 绑定到具体后端实例。
-- **`resource_catalog.go`**：把物理路径注册为稳定的 `resource://{uuid}` 引用，支持 `Bind`（资源与 knowledge 等 owner 关联）、`MarkDeleted`、`CreateAccessGrant`（生成临时访问令牌，产出 `/r/{token}` 形式的 URL）。应用层持有 `resource://` 引用即可无感迁移底层存储。
+- **`backend_scoped.go`** : en déploiement multi-backend, préfixe d’instance `storage://{backendID}/{innerPath}`, encode/décode `wrap/unwrap`, refuse les opérations cross-backend. Une KB peut se lier à une instance via `StorageBackendID`.
+- **`resource_catalog.go`** : enregistre le chemin physique en référence stable `resource://{uuid}` ; `Bind` (ressource ↔ owner knowledge), `MarkDeleted`, `CreateAccessGrant` (jeton temporaire → URL `/r/{token}`). L’application ne tient que des `resource://` pour migrer le stockage sous-jacent sans changement visible.
 
-## 异步任务机制（Asynq + Redis） {#_4-异步任务机制-asynq-redis}
+## Mécanisme de tâches asynchrones (Asynq + Redis) {#_4-mecanisme-de-taches-asynchrones-asynq-redis}
 
-### 入队 {#_4-1-入队}
+### Enfilement {#_4-1-enfilement}
 
-`knowledge_create.go` 组装 `types.DocumentProcessPayload`（含 `TenantID/KnowledgeID/KnowledgeBaseID/FilePath/FileName/FileType/EnableMultimodel/EnableQuestionGeneration/QuestionCount/Language/Attempt` 等），任务选项来自 `knowledge_task_options.go`：
+`knowledge_create.go` assemble `types.DocumentProcessPayload` (`TenantID`, `KnowledgeID`, `KnowledgeBaseID`, `FilePath`, `FileName`, `FileType`, `EnableMultimodel`, `EnableQuestionGeneration`, `QuestionCount`, `Language`, `Attempt`, etc.) ; options depuis `knowledge_task_options.go` :
 
 ```go
 opts := []asynq.Option{
     asynq.Queue(types.QueueDefault),
-    asynq.Timeout(config.DocumentProcessTimeout(cfg)), // 默认 2 小时
-    asynq.MaxRetry(3),                                  // 失败最多重试 3 次
+    asynq.Timeout(config.DocumentProcessTimeout(cfg)), // défaut 2 h
+    asynq.MaxRetry(3),                                  // au plus 3 reprises en échec
 }
 task := asynq.NewTask(types.TypeDocumentProcess, payloadBytes, opts...)
 info, err := s.task.Enqueue(task)
 ```
 
-入队失败时会将 `ParseStatus` 置为 `failed`（文件已保存，可通过 reparse 重新触发）。
+En cas d’échec d’enqueue, `ParseStatus` passe à `failed` (le fichier est déjà enregistré ; relancer via reparse).
 
-### 队列拓扑与 Worker 池 {#_4-2-队列拓扑与-worker-池}
+### Topologie des files et pools worker {#_4-2-topologie-des-files-et-pools-worker}
 
-`internal/types/task.go` 定义的队列：
+Files définies dans `internal/types/task.go` :
 
-| 队列常量 | 名称 | 用途 |
+| Constante | Nom | Usage |
 |----------|------|------|
-| `QueueDefault` | `default` | 核心文档处理（解析/分块/嵌入/索引） |
-| `QueueChatAttachment` | `chat_attachment` | 会话临时文档解析 |
-| `QueuePostProcess` | `postprocess` | 后处理编排任务 |
-| `QueueSummary` | `summary` | 摘要、表格摘要、自动标签、知识库描述 |
-| `QueueMultimodal` | `multimodal` | 图片 OCR / VLM Caption |
-| `QueueQuestion` | `question` | 问题生成 |
-| `QueueGraph` | `graph` | 图谱抽取 |
-| `QueueWiki` | `wiki` | Wiki 生成与收尾 |
-| `QueueMaintenance` | `low` | 维护类任务（FAQ 批量导入、知识库复制/删除、批量删除/重解析、移动等） |
+| `QueueDefault` | `default` | Traitement document cœur (parse / chunk / embed / index) |
+| `QueueChatAttachment` | `chat_attachment` | Documents temporaires de session |
+| `QueuePostProcess` | `postprocess` | Orchestration post-traitement |
+| `QueueSummary` | `summary` | Résumé, résumé table, auto-tag, description KB |
+| `QueueMultimodal` | `multimodal` | OCR image / légende VLM |
+| `QueueQuestion` | `question` | Génération de questions |
+| `QueueGraph` | `graph` | Extraction graphe |
+| `QueueWiki` | `wiki` | Génération et finalisation Wiki |
+| `QueueMaintenance` | `low` | Maintenance (import FAQ, clone/delete KB, delete/reparse batch, move, etc.) |
 
-另有 `sync`（数据源同步）与 `memory`（个人记忆抽取）队列。默认并发数（`internal/types/task.go`）：核心池 `DefaultCoreWorkerConcurrency = 8`、后处理池 `2`、富化池 `12`、维护池 `4`、弹性共享池 `6`、Wiki 池 `8`，完整拓扑见[异步任务系统](05-async-tasks.md#_4-1-六个独立-worker-pool)。
+Files additionnelles `sync` (sync sources) et `memory` (extraction mémoire). Concurrences par défaut (`internal/types/task.go`) : core `DefaultCoreWorkerConcurrency = 8`, postprocess `2`, enrichment `12`, maintenance `4`, shared `6`, wiki `8` — topologie complète dans [Système de tâches asynchrones](05-async-tasks.md#_4-1-six-pools-workers-independants).
 
-### 失败重试语义 {#_4-3-失败重试语义}
+### Sémantique des reprises en échec {#_4-3-semantique-des-reprises-en-echec}
 
-- `TypeDocumentProcess`：`MaxRetry(3)` → 初始 + 3 次重试共 4 次尝试；每次尝试受 `DocumentProcessTimeout`（默认 2 小时，环境变量 `WEKNORA_DOCUMENT_PROCESS_TIMEOUT`）约束，其中单次 docreader 调用另受 `WEKNORA_DOCREADER_CALL_TIMEOUT`（默认 30 分钟）约束。
-- 处理函数内的 panic 会被转换为错误交给重试与死信流程，最后一次失败时文档标为 `failed`；Lite 模式的执行器同样捕获 panic，不会导致进程退出。
-- Payload 携带 `Attempt`（重新解析时取历史最大 attempt+1）；Span Tracker 用 attempt 隔离每轮处理的进度树，新 attempt 会"取代"（supersede）旧任务的收尾动作。
-- 处理函数区分"是否最后一次 asynq 尝试"（`isLastRetry`）：非最后一次的失败直接返回错误让 asynq 重试，最后一次才把 `ParseStatus` 落为 `failed` 并写 `ErrorMessage`。读租户、读知识行或写 `processing` 状态时遇到数据库瞬时错误也返回错误重试，不再直接确认任务；只有知识行确实不存在时才静默结束。
-- 重新解析：只有覆盖配置校验、旧资源清理都通过后才分配新 attempt，被拒绝的重新解析不会影响正在进行的上一轮。上一轮仍在进行（`pending` / `processing` / `finalizing`）时，先取消它排队中的任务并通知运行中的任务停止。属于旧 attempt 的任务一律跳过：`ProcessDocument`、分块写库、后处理、图片多模态任务不再写行、删 chunk 或扣计数；Wiki 操作带着入队时的 attempt，过期后不再释放新一轮的计数；死信回调也不会把新一轮标为 `failed`。
+- `TypeDocumentProcess` : `MaxRetry(3)` → 1 tentative initiale + 3 reprises = 4 essais ; chaque essai limité par `DocumentProcessTimeout` (défaut 2 h, `WEKNORA_DOCUMENT_PROCESS_TIMEOUT`) ; un appel docreader isolé par `WEKNORA_DOCREADER_CALL_TIMEOUT` (défaut 30 min).
+- Les panic du handler deviennent des erreurs pour reprise/dead-letter ; dernier échec → document `failed` ; l’exécuteur Lite capture aussi les panic sans quitter le processus.
+- Payload avec `Attempt` (reparse : max historique + 1) ; Span Tracker isole l’arbre de progression par attempt ; un nouvel attempt **supersede** le finaliseur de l’ancien.
+- Distinction `isLastRetry` : avant-dernier échec → erreur pour asynq ; dernier → `ParseStatus=failed` + `ErrorMessage`. Erreurs DB transitoires (lecture tenant/connaissance, écriture `processing`) → retry, plus d’ack silencieux sauf si la ligne n’existe plus.
+- Reparse : nouvel attempt seulement si validation des overrides et cleanup des anciennes ressources OK ; reparse refusé n’impacte pas la vague en cours. Si la précédente est encore `pending`/`processing`/`finalizing`, annulation des tâches en file et signal d’arrêt aux actives. Tâches d’un ancien attempt ignorées : plus d’écriture ligne/chunk/compteur pour `ProcessDocument`, chunking, post-process, multimodal ; ops Wiki portent l’attempt d’enqueue — expirées, elles ne libèrent plus le compteur de la nouvelle vague ; le dead-letter ne marque pas la nouvelle vague en `failed`.
 
-## 处理配置：KB 默认值 + 单次上传覆盖 {#_5-处理配置-kb-默认值-单次上传覆盖}
+## Configuration de traitement : défauts KB + surcharge par upload {#_5-configuration-de-traitement-defauts-kb-surcharge-par-upload}
 
-`knowledge_process_config.go` 的 `ResolveProcessConfig(kb, overrides)` 把 KB 默认配置与上传时携带的 `process_config`（`types.KnowledgeProcessOverrides`）合并为 `types.EffectiveProcessConfig`：
+`ResolveProcessConfig(kb, overrides)` dans `knowledge_process_config.go` fusionne la config KB et le `process_config` upload (`types.KnowledgeProcessOverrides`) en `types.EffectiveProcessConfig` :
 
-- 可覆盖项：`ChunkingConfig`（chunk 大小/重叠/策略/父子分块等）、`EnableMultimodel`、`VLMConfig`、`ASRConfig`、`QuestionGenerationConfig`、`GraphEnabled`、`ExtractConfig`、`ParserEngineRules`。
-- 约束：`eff.GraphEnabled = eff.GraphEnabled && eff.ExtractConfig.Enabled`（图谱依赖抽取配置开启）。
-- `ValidateProcessOverrides` 会按文件类型前置校验：上传图片必须配 VLM 模型，上传音频必须配 ASR 模型，多模态还要求对象存储配置完整（`validateImageMultimodalConfig`）。
-- 覆盖配置通过 `knowledge.SetProcessOverrides` 持久化在 Knowledge 行上，reparse 时沿用。
+- Surcharges : `ChunkingConfig` (taille/overlap/stratégie/parent-enfant), `EnableMultimodel`, `VLMConfig`, `ASRConfig`, `QuestionGenerationConfig`, `GraphEnabled`, `ExtractConfig`, `ParserEngineRules`.
+- Contrainte : `eff.GraphEnabled = eff.GraphEnabled && eff.ExtractConfig.Enabled` (graphe conditionné à l’extraction).
+- `ValidateProcessOverrides` : image → modèle VLM requis ; audio → ASR ; multimodal → stockage objet complet (`validateImageMultimodalConfig`).
+- Overrides persistés via `knowledge.SetProcessOverrides`, réutilisés au reparse.
 
-哪些管线会跑由 KB 的 `IndexingStrategy`（`internal/types/indexing_strategy.go`）决定：
+Les pipelines exécutés dépendent de `IndexingStrategy` KB (`internal/types/indexing_strategy.go`) :
 
 ```go
 type IndexingStrategy struct {
-    VectorEnabled  bool // 语义向量索引
-    KeywordEnabled bool // BM25 关键词索引
-    WikiEnabled    bool // 自动 Wiki 页面生成
-    GraphEnabled   bool // 知识图谱抽取
+    VectorEnabled  bool // index vectoriel sémantique
+    KeywordEnabled bool // index mots-clés BM25
+    WikiEnabled    bool // génération automatique de pages Wiki
+    GraphEnabled   bool // extraction graphe de connaissances
 }
 ```
 
-`NeedsEmbedding() = Vector || Keyword`，`NeedsChunks() = 任一开启`。默认值为 vector+keyword 开启。
+`NeedsEmbedding() = Vector || Keyword` ; `NeedsChunks() = l’un des flags activé`. Valeurs par défaut : vector et keyword activés.
 
-## 核心处理管线（knowledge_process.go） {#_6-核心处理管线-knowledge-process-go}
+## Pipeline de traitement principal (`knowledge_process.go`) {#_6-pipeline-de-traitement-principal}
 
-Worker 消费 `TypeDocumentProcess` 后按五个规范化阶段推进，每个阶段对应一个 Span（见 [Housekeeping 自愈（knowledge_housekeeping.go）](#_8-housekeeping-自愈-knowledge-housekeeping-go)）：
+Après consommation de `TypeDocumentProcess`, le worker avance en cinq étapes canoniques ; chaque étape correspond à un Span (voir [Housekeeping et auto-réparation (`knowledge_housekeeping.go`)](#_8-housekeeping-et-auto-reparation)) :
 
 `docreader → chunking → embedding → multimodal → postprocess`
 
-### 解析（convert，Stage: docreader） {#_6-1-解析-convert-stage-docreader}
+### Analyse (`convert`, stage : docreader) {#_6-1-analyse-stage-docreader}
 
-1. `beginStage(StageDocReader)` 记录输入（file_name/file_type/is_url）。
-2. URL 模式再次 `ValidateURLForSSRF`，失败即 `failStage` + `ParseStatus=failed`。
-3. 引擎选择：`eff.ChunkingConfig.ResolveParserEngine(fileType)`（URL 用虚拟类型 `"url"`），按 KB 配置的 `ParserEngineRules`（文件类型 → 引擎）路由；`MergeParserEngineOverrides` 合并租户级与上传级引擎参数覆盖。
-4. `resolveDocReader` 返回 `interfaces.DocReader`：
-   - **builtin**：通过 gRPC（`docparser/grpc_parser.go`）或 HTTP（`http_parser.go`）调用 Python **docreader** 服务；
-   - **simple**：Go 原生解析 md/txt/csv/json/图片/音频（`builtin_converter.go`，CSV→Markdown 表格、JSON→递归分割的代码块，图片/音频转占位引用）；
-   - **anydoc**：Go 进程内解析 docx/doc/pptx/ppt/xlsx/xls/odf/rtf/epub/csv/pdf（`anydoc_reader.go`），底层是通过 cgo 链接的 anydoc Rust 库。office 文档的嵌入图按文档模型插回 Markdown 原位；无文字层的扫描件 PDF 在 DocReader 可用时回退到 builtin 整页渲染。启用图片提取时，包含 `ppt/media/*.emf` 或 `*.wmf` 的 PPTX 会交给 DocReader 的 MarkItDown 路径，复用其 ImageMagick 光栅化能力；未连接 DocReader 时明确报错。普通位图 PPTX 和设置 `anydoc_extract_images=false` 的文件仍走 anydoc；此检测不覆盖旧版二进制 PPT。链接了 anydoc 时，未配置规则的复杂格式默认走 anydoc，但 PDF 默认仍走 builtin。仅在带 `anydoc` 构建标签的二进制中可用，其余构建里该引擎在引擎列表中显示为不可用；
-   - **weknoracloud / mineru / mineru_cloud / paddleocr_vl / paddleocr_vl_cloud**：HTTP 转换器（`engines.go` 注册，按 `mineru_endpoint`、`mineru_api_key`、`paddleocr_vl_endpoint` 等配置判定可用性；自建 `mineru` 会自动识别 MinerU 4.0 的 V1 API 与旧版 `/file_parse`，见[文档解析服务](../03-features/03-document-parsing.md#mineru-self-hosted)）。
+1. `beginStage(StageDocReader)` enregistre les entrées (`file_name` / `file_type` / `is_url`).
+2. En mode URL, nouvelle passe `ValidateURLForSSRF` ; en échec → `failStage` + `ParseStatus=failed`.
+3. Choix du moteur : `eff.ChunkingConfig.ResolveParserEngine(fileType)` (type virtuel `"url"` pour les URL), routage via `ParserEngineRules` de la KB (type de fichier → moteur) ; `MergeParserEngineOverrides` fusionne les surcharges moteur au niveau tenant et upload.
+4. `resolveDocReader` renvoie un `interfaces.DocReader` :
+   - **builtin** : appel du service Python **docreader** en gRPC (`docparser/grpc_parser.go`) ou HTTP (`http_parser.go`) ;
+   - **simple** : parsing natif Go pour md/txt/csv/json/images/audio (`builtin_converter.go` : CSV → table Markdown, JSON → blocs de code découpés récursivement, images/audio → références placeholder) ;
+   - **anydoc** : parsing in-process Go pour docx/doc/pptx/ppt/xlsx/xls/odf/rtf/epub/csv/pdf (`anydoc_reader.go`), bibliothèque Rust anydoc liée via cgo. Les images embarquées des documents Office sont réinsérées au bon endroit dans le Markdown ; les PDF scannés sans couche texte basculent vers le rendu page entière **builtin** si DocReader est disponible. Avec extraction d’images activée, les PPTX contenant `ppt/media/*.emf` ou `*.wmf` passent par le chemin MarkItDown de DocReader (rasterisation ImageMagick) ; sans DocReader connecté, erreur explicite. PPTX bitmap classiques et fichiers avec `anydoc_extract_images=false` restent sur anydoc ; cette détection ne couvre pas l’ancien PPT binaire. Si anydoc est lié, les formats complexes sans règle configurée vont par défaut sur anydoc, sauf le PDF qui reste **builtin** par défaut. Disponible uniquement dans les binaires tagués `anydoc` ; sinon le moteur apparaît indisponible dans la liste.
+   - **weknoracloud / mineru / mineru_cloud / paddleocr_vl / paddleocr_vl_cloud** : convertisseurs HTTP (enregistrés dans `engines.go`, disponibilité selon `mineru_endpoint`, `mineru_api_key`, `paddleocr_vl_endpoint`, etc. ; l’instance self-hosted `mineru` détecte automatiquement l’API V1 de MinerU 4.0 et l’ancien `/file_parse`, voir [Service d’analyse documentaire](../03-features/03-document-parsing.md#mineru-self-hosted)).
 
-引擎目录集中在 `internal/infrastructure/docparser/engines.go`：每个引擎同时声明元数据（名称、描述、文件类型、可用性探针）与 `NewReader` 工厂，`docparser.NewReader` 按名字分发，未注册的名字（如只存在于 docreader 的 `markitdown`）落到 docreader 客户端。
-5. 文件模式：从 `FileService.GetFile(payload.FilePath)` 读回字节填入 `ReadRequest.FileContent`。
+Le catalogue moteur est centralisé dans `internal/infrastructure/docparser/engines.go` : chaque moteur déclare métadonnées (nom, description, types de fichiers, sonde de disponibilité) et une fabrique `NewReader` ; `docparser.NewReader` dispatch par nom ; les noms non enregistrés (ex. `markitdown`, présent seulement côté docreader) retombent sur le client docreader.
+5. Mode fichier : lecture des octets via `FileService.GetFile(payload.FilePath)` dans `ReadRequest.FileContent`.
 
-**docreader 服务侧**（`docreader/`，Python gRPC）：proto 定义 `docreader/proto/docreader.proto`，服务方法 `Read` / `ReadStream`（流式：首帧 meta + 每图一帧，避免大扫描件 PDF 触发 gRPC 消息上限）/ `ListEngines`。内置 parser 覆盖 docx/doc/pdf/md/xlsx/xls/pptx/ppt/epub/html/htm/mhtml/xmind/图片/网页（`WebParser` 处理 URL），另注册 `markitdown`（微软 MarkItDown）与 `opendataloader`（PDF 版面分析，需 Java 11+）引擎；引擎列表由 Go 侧 `engine_registry.go` 维护，Go App 不再调用 `ListEngines`。返回统一为 `ReadResult{MarkdownContent, ImageRefs, Metadata, IsAudio, AudioData}` —— **解析产物统一是 Markdown 文本 + 图片字节**，图片持久化由 Go 侧负责。
+**Côté service docreader** (`docreader/`, Python gRPC) : proto `docreader/proto/docreader.proto`, méthodes `Read` / `ReadStream` (flux : meta en première frame + une frame par image, pour éviter la limite de message gRPC sur gros PDF scannés) / `ListEngines`. Parsers intégrés : docx/doc/pdf/md/xlsx/xls/pptx/ppt/epub/html/htm/mhtml/xmind/images/pages web (`WebParser` pour les URL), plus `markitdown` (Microsoft MarkItDown) et `opendataloader` (analyse de mise en page PDF, Java 11+). La liste des moteurs est maintenue côté Go dans `engine_registry.go` ; l’app Go n’appelle plus `ListEngines`. Retour unifié `ReadResult{MarkdownContent, ImageRefs, Metadata, IsAudio, AudioData}` — **le produit d’analyse est toujours du Markdown + octets d’images** ; la persistance des images est assurée côté Go.
 
-### ASR 转写（音频文件） {#_6-2-asr-转写-音频文件}
+### Transcription ASR (fichiers audio) {#_6-2-transcription-asr-fichiers-audio}
 
-`convertResult.IsAudio` 为真时（音频文件解析为占位符 + 原始字节）：
+Lorsque `convertResult.IsAudio` est vrai (fichier audio analysé en placeholder + octets bruts) :
 
 ```go
 asrModel, err := s.modelService.GetASRModel(ctx, eff.ASRConfig.ModelID)
 transcriptionResult, err := asrModel.Transcribe(ctx, convertResult.AudioData, knowledge.FileName)
 ```
 
-转写文本替换 MarkdownContent 后继续走普通文本管线；未配置 ASR 则直接失败。
+Le texte transcrit remplace `MarkdownContent`, puis la pipeline texte standard continue ; sans ASR configuré, échec immédiat.
 
-### 图片提取与上传 {#_6-3-图片提取与上传}
+### Extraction et upload d’images {#_6-3-extraction-et-upload-dimages}
 
-`docparser/image_resolver.go` 的 `ImageResolver.ResolveAndStore`：
+`ImageResolver.ResolveAndStore` dans `docparser/image_resolver.go` :
 
-1. 依次处理 `<!link>` 包装图、`data:` URI、HTML 内联 base64、裸 base64、docreader 返回的 `ImageRefs` 内联字节；
-2. 过滤图标级小图（宽高 < 64px 或 < 512 字节，`IsOriginal=true` 的原始上传件除外）；
-3. `SaveBytes` 上传到当前 KB 的存储后端，`savedRefs` 缓存去重；
-4. 把 Markdown 中的引用重写为存储 URL（`markdown_image_scanner.go` 精确定位 `![alt](target)` 位置）。
+1. Traitement successif des images enveloppées `<!link>`, URI `data:`, base64 inline HTML, base64 nu, octets inline des `ImageRefs` renvoyés par docreader ;
+2. Filtrage des miniatures type icône (largeur/hauteur &lt; 64 px ou &lt; 512 octets, sauf pièce jointe d’origine avec `IsOriginal=true`) ;
+3. `SaveBytes` vers le backend de stockage de la KB courante, déduplication via cache `savedRefs` ;
+4. Réécriture des références Markdown en URL de stockage (`markdown_image_scanner.go` localise précisément `![alt](target)`).
 
-随后 `ResolveRemoteImages` 再把 Markdown 里的外部 `http(s)` 图片下载转存（同样受 SSRF 防护）。产出 `storedImages []docparser.StoredImage` 供多模态阶段使用。
+Ensuite `ResolveRemoteImages` télécharge et stocke les images externes `http(s)` du Markdown (même protection SSRF). Produit `storedImages []docparser.StoredImage` pour la phase multimodale.
 
-### 分块（Stage: chunking） {#_6-4-分块-stage-chunking}
+### Découpage (stage : chunking) {#_6-4-decoupage-stage-chunking}
 
-分块在 **Go 侧**完成（`internal/infrastructure/chunker`，详见《分块机制》一章）：
+Le découpage s’effectue **côté Go** (`internal/infrastructure/chunker`, voir le chapitre sur le mécanisme de découpage) :
 
 ```go
 chunkCfg := buildSplitterConfigFromChunking(eff.ChunkingConfig)
 if eff.ChunkingConfig.EnableParentChild {
     parentCfg, childCfg := buildParentChildConfigs(eff.ChunkingConfig, chunkCfg)
     pcResult := chunker.SplitParentChild(convertResult.MarkdownContent, parentCfg, childCfg)
-    // children → types.ParsedChunk（含 ParentIndex）；parents → ParsedParentChunk
+    // children → types.ParsedChunk (avec ParentIndex) ; parents → ParsedParentChunk
 } else {
     splitChunks := chunker.Split(convertResult.MarkdownContent, chunkCfg)
 }
 ```
 
-### 写库与索引（processChunks，Stage: chunking + embedding） {#_6-5-写库与索引-processchunks-stage-chunking-embedding}
+### Écriture en base et indexation (`processChunks`, stages : chunking + embedding) {#_6-5-ecriture-en-base-et-indexation-stages-chunking-embedding}
 
-`processChunks` 是核心装配函数：
+`processChunks` est la fonction d’assemblage centrale :
 
-1. **父块**（父子分块模式）：为每个 parent 建 `ChunkTypeParentText` 记录，串好 `PreChunkID/NextChunkID` 链表；父块**只入 DB、不进向量索引**（检索命中子块后回捞父块内容）。
-2. **文本块**：每个 `ParsedChunk` 建 `ChunkTypeText` 记录，携带 `StartAt/EndAt`（原文 rune 偏移，可用于还原/高亮）与 `ContextHeader`（标题面包屑，存入 `chunks.context_header`，接口响应不返回）；父子模式下写 `ParentChunkID`。分块前，各解析引擎输出的内联 HTML 表格统一转换为 Markdown 表格（`NormalizeHTMLTables`）。
-3. `chunkService.CreateChunks(ctx, insertChunks)` 批量写库；失败则 `ParseStatus=failed` + `failStage(StageChunking)`。
-4. **向量化与索引**（`kb.NeedsEmbeddingModel()` 时）。Embedding 模型或知识库绑定的向量存储无法解析时（模型被删、凭据失效等），本次尝试直接失败并在 `error_message` 记录原因，不会停留在 `processing`：
+1. **Blocs parent** (mode parent-enfant) : un enregistrement `ChunkTypeParentText` par parent, chaîne `PreChunkID` / `NextChunkID` ; les parents **ne vont qu’en BD, pas dans l’index vectoriel** (le contenu parent est récupéré après hit sur un enfant).
+2. **Blocs texte** : chaque `ParsedChunk` → `ChunkTypeText` avec `StartAt` / `EndAt` (offsets rune dans l’original, pour restitution/surbrillance) et `ContextHeader` (fil d’Ariane de titres, stocké dans `chunks.context_header`, absent des réponses API) ; en mode parent-enfant, `ParentChunkID`. Avant découpage, les tableaux HTML inline des moteurs sont normalisés en tableaux Markdown (`NormalizeHTMLTables`).
+3. `chunkService.CreateChunks(ctx, insertChunks)` en lot ; échec → `ParseStatus=failed` + `failStage(StageChunking)`.
+4. **Vectorisation et index** (si `kb.NeedsEmbeddingModel()`). Si le modèle d’embedding ou le stockage vectoriel lié à la KB est introuvable (modèle supprimé, identifiants invalides, etc.), la tentative échoue avec motif dans `error_message`, sans rester bloquée en `processing` :
 
 ```go
-indexContent := titlePrefix + chunk.EmbeddingContent() // 标题 + 面包屑 + 内容
+indexContent := titlePrefix + chunk.EmbeddingContent() // titre + fil d'Ariane + contenu
 indexInfoList = append(indexInfoList, &types.IndexInfo{
     Content: indexContent, SourceID: chunk.ID, SourceType: types.ChunkSourceType,
     ChunkID: chunk.ID, KnowledgeID: knowledge.ID, KnowledgeBaseID: ..., IsEnabled: true,
@@ -339,234 +339,234 @@ indexInfoList = append(indexInfoList, &types.IndexInfo{
 err = retrieveEngine.BatchIndex(ctx, embeddingModel, indexInfoList)
 ```
 
-   索引失败时执行**补偿回滚**：删除已写入的 chunks（`DeleteChunksByKnowledgeID`）并清向量索引（`DeleteByKnowledgeIDList`），置 `failed`，保证不留半成品。
-5. **图片多模态任务扇出**：`enableMultimodel && len(storedImages) > 0` 时，`enqueueImageMultimodalTasks` 为**每张图片**入队一个 `TypeImageMultimodal` 任务（`QueueMultimodal`），payload 含 `ImageURL/EnableOCR/EnableCaption/Attempt/ImageIndex`。个别图片入队失败时立即释放对应的计数；全部入队失败时直接进入后处理，避免文档卡在 `processing`。
-6. `finalizeIndexedKnowledgeState`：若还有多模态/后处理要跑则保持 `processing`，否则直接 `completed`；同时置 `EnableStatus="enabled"`（此刻文档即可被检索）并累计租户存储用量。
+   En cas d’échec d’indexation, **rollback compensatoire** : suppression des chunks écrits (`DeleteChunksByKnowledgeID`) et de l’index vectoriel (`DeleteByKnowledgeIDList`), passage en `failed`, sans laisser d’état partiel.
+5. **Fan-out tâches multimodales image** : si `enableMultimodel && len(storedImages) > 0`, `enqueueImageMultimodalTasks` enfile un `TypeImageMultimodal` **par image** (`QueueMultimodal`), payload `ImageURL` / `EnableOCR` / `EnableCaption` / `Attempt` / `ImageIndex`. Échec d’enqueue pour une image libère immédiatement le compteur correspondant ; si tout échoue, passage direct au post-traitement pour éviter un blocage en `processing`.
+6. `finalizeIndexedKnowledgeState` : reste en `processing` s’il reste du multimodal/post-traitement, sinon `completed` ; pose `EnableStatus="enabled"` (document consultable dès lors) et cumule l’usage stockage tenant.
 
-### 后处理编排（knowledge_post_process.go，Stage: postprocess） {#_6-6-后处理编排-knowledge-post-process-go-stage-postprocess}
+### Orchestration du post-traitement (`knowledge_post_process.go`, stage : postprocess) {#_6-6-orchestration-du-post-traitement-stage-postprocess}
 
-多模态全部完成（或无多模态）后入队 `TypeKnowledgePostProcess`。该任务是**富化子任务的编排器**，用原子计数器保证终态收敛：
+Une fois le multimodal terminé (ou absent), enqueue de `TypeKnowledgePostProcess`. Cette tâche **orchestre les sous-tâches d’enrichissement** et garantit la convergence de l’état final via un compteur atomique :
 
 ```go
-willSpawnSummary  := eff.SummaryEnabled && len(textChunks) > 0   // 单次上传可关闭摘要
+willSpawnSummary  := eff.SummaryEnabled && len(textChunks) > 0   // résumé désactivable par upload
 willSpawnQuestion := len(textChunks) > 0 && kb.NeedsEmbeddingModel() && eff.QuestionGenerationConfig.Enabled
 willSpawnWiki     := kb.IndexingStrategy.WikiEnabled && len(textChunks) > 0
-graphChunks       := selectGraphChunks(textChunks)                // 见下文
-// questionGenChunkBatchSize = 20：问题生成按每 20 个 chunk 一批（跳过只有图片链接的 chunk）
-expectedSubtasks = summary(0/1) + questionBatchCount + wiki(0/1) + len(graphChunks)(图谱开启时)
+graphChunks       := selectGraphChunks(textChunks)                // voir ci-dessous
+// questionGenChunkBatchSize = 20 : génération de questions par lots de 20 chunks (ignore les chunks avec seulement des liens image)
+expectedSubtasks = summary(0/1) + questionBatchCount + wiki(0/1) + len(graphChunks) (si graphe activé)
 
-// 原子地把 parse_status 从 processing 提升为 finalizing，并写入 pending_subtasks_count
+// Promotion atomique parse_status processing → finalizing et écriture pending_subtasks_count
 promoted, err := s.knowledgeRepo.SetFinalizing(ctx, payload.KnowledgeID, expectedSubtasks)
 ```
 
-- `expectedSubtasks == 0` 走快速路径直接 `completed`。
-- 图谱抽取的输入（`selectGraphChunks`）：有正文的文本块；只有图片链接的文本块（如扫描件 PDF 页）改用其 `image_ocr` 子块；`image_caption` 子块不参与，避免与 OCR 重复。
-- `processing → finalizing` 的状态写入失败时任务返回错误交给 asynq 重试，不会误报成功而让文档停在 `processing`。
-- 每个子任务终态退出时调用 `FinalizeSubtask` 原子递减 `pending_subtasks_count`，减到 0 时自动升级为 `completed`。
-- **短缺协调**：若实际入队数少于计划数（如某队列入队失败），立即补偿递减差额，防止永远卡在 `finalizing`。
-- `finalizeSubtaskDetached`（`knowledge.go`）：递减动作使用 `context.WithoutCancel` + 10 秒超时的**脱离上下文**执行，避免 worker 优雅退出时 ctx 取消导致计数丢失、知识永久滞留 `finalizing`。
+- Si `expectedSubtasks == 0`, chemin rapide vers `completed`.
+- Entrées extraction graphe (`selectGraphChunks`) : blocs texte avec corps ; blocs ne contenant que des liens image (ex. page PDF scannée) utilisent leur sous-bloc `image_ocr` ; les sous-blocs `image_caption` sont exclus pour éviter le doublon avec l’OCR.
+- Si l’écriture `processing → finalizing` échoue, la tâche renvoie une erreur à asynq (retry), sans succès trompeur laissant le document en `processing`.
+- Chaque sous-tâche appelle `FinalizeSubtask` à la sortie pour décrémenter atomiquement `pending_subtasks_count` ; à 0 → `completed`.
+- **Coordination des déficits** : si le nombre réel enfilé est inférieur au plan (échec d’enqueue sur une file), compensation immédiate du delta pour éviter un blocage permanent en `finalizing`.
+- `finalizeSubtaskDetached` (`knowledge.go`) : décrément exécuté **hors contexte** avec `context.WithoutCancel` + timeout 10 s, pour éviter la perte de compteur à l’arrêt gracieux du worker et un `finalizing` permanent.
 
-四类富化子任务：
+Quatre types de sous-tâches d’enrichissement :
 
-| 任务 | 队列 | 粒度 | 说明 |
+| Tâche | File | Granularité | Description |
 |------|------|------|------|
-| `TypeSummaryGeneration` | `summary` | 每知识 1 个 | 生成文档摘要，`summary_status` 独立状态机；上传时 `process_config.summary_enabled=false` 则不生成 |
-| `TypeQuestionGeneration` | question 队列 | 每 20 个 chunk 一批 | 为 chunk 生成检索问题 |
-| `TypeChunkExtract` | graph 队列 | 每 chunk 1 个 | 实体/关系抽取写入图引擎 |
-| `TypeWikiIngest` | wiki 队列 | 防抖批量 | 生成/更新 Wiki 页面 |
+| `TypeSummaryGeneration` | `summary` | 1 par connaissance | Génère le résumé document ; machine d’état `summary_status` séparée ; pas de génération si `process_config.summary_enabled=false` à l’upload |
+| `TypeQuestionGeneration` | file `question` | lot de 20 chunks | Questions de recherche par chunk |
+| `TypeChunkExtract` | file `graph` | 1 par chunk | Extraction entités/relations vers le moteur de graphe |
+| `TypeWikiIngest` | file `wiki` | lot avec anti-rebond | Crée/met à jour les pages Wiki |
 
-#### 文档自动标签
+#### Étiquetage automatique des documents
 
-解析后的后处理会按知识库 auto_tag_config 决定是否入队 knowledge:auto_tag（summary 队列）。处理器从当前 KB 已有标签中选择，模型回退 summary_model_id；max_tags 默认 3、上限 10，默认跳过已有标签文档。它只增量关联标签，不创建新分类，也不删除人工标签；失败不阻断文档入库。配置与新解析/重解析的生效范围见[知识库管理](../03-features/02-knowledge-base.md)。
+Après analyse, le post-traitement peut enfiler `knowledge:auto_tag` (file `summary`) selon `auto_tag_config` de la KB. Le processeur choisit parmi les étiquettes existantes de la KB, repli modèle sur `summary_model_id` ; `max_tags` défaut 3, plafond 10, par défaut ignore les documents déjà étiquetés. Association incrémentale uniquement : pas de nouvelles catégories, pas de suppression d’étiquettes manuelles ; l’échec ne bloque pas l’ingestion. Portée config / nouvelle analyse / réanalyse : voir [Gestion des bases de connaissances](../03-features/02-knowledge-base.md).
 
-#### 知识库描述刷新（knowledgebase_profile.go）
+#### Rafraîchissement du profil de base (`knowledgebase_profile.go`)
 
-摘要任务的每次终态退出、后处理调度完成、文档删除、跨库移动完成，都会调用 `requestKnowledgeBaseProfileRefresh` 入队一次 `kb:profile`（summary 队列）。任务 ID 按知识库和 30 秒窗口分桶，一批上传或删除只触发一次聚合；处理器重算文档画像聚合，哈希未变则不调用模型。只有 `profile_config.enabled` 的文档知识库会入队，手动触发（`POST /knowledge-bases/:id/profile/generate`）不受此限制。
+À chaque fin de tâche de résumé, fin d’orchestration post-traitement, suppression de document ou fin de déplacement inter-KB, `requestKnowledgeBaseProfileRefresh` enfile un `kb:profile` (file `summary`). L’ID de tâche est bucketé par KB et fenêtre de 30 s : un lot d’uploads ou suppressions ne déclenche qu’une agrégation. Le processeur recalcule l’agrégat de profil documentaire ; si le hash est inchangé, pas d’appel modèle. Seules les KB documentaires avec `profile_config.enabled` sont enfilées ; déclenchement manuel (`POST /knowledge-bases/:id/profile/generate`) sans cette limite.
 
-#### 摘要刷新（knowledge_summary_refresh.go）
+#### Rafraîchissement de résumé (`knowledge_summary_refresh.go`)
 
-首次入库之外，分块内容编辑、分块启停、自定义元数据变更都会让已有摘要过期，此时入队一次**摘要刷新**（也可由 `POST /knowledge/:id/regenerate-summary` 手动触发）：
+Hors première ingestion, édition de chunk, activation/désactivation de chunk ou changement de métadonnées personnalisées invalident le résumé existant → enqueue d’un **rafraîchissement de résumé** (ou manuel via `POST /knowledge/:id/regenerate-summary`) :
 
-- 任务开始时记录输入快照：各源分块的 `content_revision` / `is_enabled`，以及 `custom_metadata` 的版本；
-- 生成完成后用 `summarySourceChanged()` 复核快照。若期间又被编辑，返回 `ErrSummaryRefreshStale`，**丢弃本次结果且不改动 `summary_status`**，让更新的那次刷新收尾——否则旧摘要会覆盖新摘要；
-- 数据库读取失败与「输入已变更」分开处理，避免把瞬时读错误当成过期任务静默丢弃；
-- 刷新任务由 Asynq worker 执行，没有 HTTP 中间件注入的租户上下文，因此 `restoreSummaryRefreshTenantInfo()` 会重建完整租户配置——检索引擎工厂需要它。
+- Au démarrage, snapshot d’entrée : `content_revision` / `is_enabled` de chaque chunk source et version de `custom_metadata` ;
+- Après génération, `summarySourceChanged()` revérifie le snapshot. Si réédition entre-temps → `ErrSummaryRefreshStale`, **résultat jeté sans toucher `summary_status`**, pour laisser le rafraîchissement plus récent terminer — sinon un ancien résumé écraserait le nouveau ;
+- Erreurs de lecture BD et « entrée modifiée » sont traitées séparément, pour ne pas jeter silencieusement une tâche périmée à cause d’une erreur transitoire ;
+- La tâche tourne dans un worker Asynq sans contexte tenant injecté par middleware HTTP ; `restoreSummaryRefreshTenantInfo()` reconstruit la config tenant complète — requise par la fabrique de moteur de recherche.
 
-### 图片多模态（image_multimodal.go） {#_6-7-图片多模态-image-multimodal-go}
+### Multimodal image (`image_multimodal.go`) {#_6-7-multimodal-image}
 
-`ImageMultimodalService.Handle` 消费单图任务：
+`ImageMultimodalService.Handle` consomme une tâche par image :
 
-1. `readImageBytes` 从存储/URL 取图；`resolveVLM` 取 KB 的 VLM 配置；
-2. 生成 Caption（VLM，prompt 由 `buildVLMCaptionPrompt` 按 `DescriptionLanguage/CustomInstructions` 组装）与 OCR 文本；
-3. 结果写回所属文本 Chunk 的 `ImageInfo`（JSON），并创建/更新两个**子 Chunk**：`ChunkTypeImageCaption` 与 `ChunkTypeImageOCR`，`ParentChunkID` 指向文本块，随后单独 `indexChunks` 入向量索引 —— 使"搜图片描述也能召回原文块"；
-   - **图片向量**：知识库开启了图片向量（`ImageProcessingConfig.ImageVectorEnabled`，默认关闭，见 `KnowledgeBase.IsImageVectorEnabled`）且向量模型能处理图片时（模型能力 `input` 含 `image`，且厂商协议能传图片，见 `embedding.AsImageEmbedder`），`indexImageVector` 再用该模型直接对图片编码，存为第三个子 Chunk `ChunkTypeImageVector`：索引行的 `SourceType` 为 `ImageSourceType`，向量是图片本身的（经 `CompositeRetrieveEngine.BatchIndexVectors` 写入预先算好的向量），`Content` 复用图片描述（没有描述时用 OCR 文本），供重排与回答上下文使用。图片先经 `imageprep.Prepare` 按厂商限制转格式、压缩；扫描件 PDF 页不做（OCR 更准）。这一步失败只记日志，不影响任务；
-   - `ChunkTypeImageVector` 的向量不能由文本重建：`syncChunkIndex` 对它只同步启用状态，`updateChunkVector` 跳过它；图片描述被修改时只更新它的 `Content`；
-4. `shouldDropOrphanedMultimodal` 检查父块是否已被删除/取代，孤儿任务直接丢弃；
-5. `checkAndFinalizeAllImages`：全部图片处理完毕后，`enqueueKnowledgePostProcessTask` 触发 [后处理编排（knowledge_post_process.go，Stage: postprocess）](#_6-6-后处理编排-knowledge-post-process-go-stage-postprocess) 的后处理编排。后处理任务入队会就地重试 3 次，仍失败时本次任务返回错误交给重试，不会确认任务后让文档停在 `processing`。最后一次尝试时即使读取知识行失败，这张图片也会计入完成数。Lite 模式没有 Redis，计数器保存在进程内存中，所有图片都完成后才进入后处理。
+1. `readImageBytes` lit l’image depuis le stockage ou l’URL ; `resolveVLM` charge la config VLM de la KB ;
+2. Génération de légende (VLM, prompt via `buildVLMCaptionPrompt` selon `DescriptionLanguage` / `CustomInstructions`) et texte OCR ;
+3. Résultats écrits dans `ImageInfo` (JSON) du chunk texte parent, création/mise à jour de deux **sous-chunks** `ChunkTypeImageCaption` et `ChunkTypeImageOCR`, `ParentChunkID` pointant vers le bloc texte, puis `indexChunks` séparé — pour que la recherche sur la description d’image rappelle aussi le bloc source ;
+   - **Vecteur image** : si la KB active les vecteurs image (`ImageProcessingConfig.ImageVectorEnabled`, désactivé par défaut, voir `KnowledgeBase.IsImageVectorEnabled`) et que le modèle d’embedding accepte les images (capacité `input` contenant `image`, protocole fournisseur compatible, voir `embedding.AsImageEmbedder`), `indexImageVector` encode l’image directement en troisième sous-chunk `ChunkTypeImageVector` : `SourceType` = `ImageSourceType`, vecteur de l’image (écrit via `CompositeRetrieveEngine.BatchIndexVectors`), `Content` = description (ou OCR si absent) pour rerank et contexte de réponse. L’image passe par `imageprep.Prepare` (format/compression selon le fournisseur) ; pas pour les pages PDF scannées (OCR préférable). Échec ici : log seulement, tâche non bloquée ;
+   - Le vecteur `ChunkTypeImageVector` n’est pas reconstruisible depuis le texte : `syncChunkIndex` ne synchronise que l’état activé, `updateChunkVector` l’ignore ; modification de la description → mise à jour de `Content` uniquement ;
+4. `shouldDropOrphanedMultimodal` vérifie si le parent a été supprimé/remplacé ; tâche orpheline abandonnée ;
+5. `checkAndFinalizeAllImages` : une fois toutes les images traitées, `enqueueKnowledgePostProcessTask` déclenche l’[orchestration du post-traitement](#_6-6-orchestration-du-post-traitement-stage-postprocess). Enqueue post-traitement : 3 tentatives sur place ; échec persistant → erreur pour retry asynq, sans ack laissant le document en `processing`. Dernière tentative : l’image compte comme terminée même si la lecture de la ligne Knowledge échoue. Mode Lite sans Redis : compteur en mémoire processus ; post-traitement seulement quand toutes les images sont finies.
 
-## 状态机 {#_7-状态机}
+## Machine d’états {#_7-machine-detats}
 
-### Knowledge 主状态（ParseStatus） {#_7-1-knowledge-主状态-parsestatus}
+### État principal Knowledge (`ParseStatus`) {#_7-1-etat-principal-knowledge}
 
-`internal/types/knowledge.go` 定义的完整取值：
+Valeurs complètes définies dans `internal/types/knowledge.go` :
 
-| 值 | 含义 |
+| Valeur | Signification |
 |----|------|
-| `pending` | 已创建，等待 worker 领取 |
-| `processing` | 解析/分块/嵌入/多模态执行中 |
-| `finalizing` | 主流程完成，等待富化子任务（`pending_subtasks_count > 0`） |
-| `completed` | 全部完成 |
-| `failed` | 处理失败（`ErrorMessage` 记录原因） |
-| `deleting` | 删除中（防并发标记；不计入知识库文档数，也不参与重复文件判定） |
-| `cancelled` | 用户取消解析 |
+| `pending` | Créé, en attente de prise en charge par un worker |
+| `processing` | Analyse / découpage / embedding / multimodal en cours |
+| `finalizing` | Pipeline principal terminé, sous-tâches d’enrichissement en attente (`pending_subtasks_count > 0`) |
+| `completed` | Tout terminé |
+| `failed` | Échec de traitement (motif dans `ErrorMessage`) |
+| `deleting` | Suppression en cours (marqueur anti-concurrence ; non compté dans le nombre de documents KB, exclu de la dédup fichier) |
+| `cancelled` | Analyse annulée par l’utilisateur |
 
-辅助状态：`EnableStatus ∈ {enabled, disabled}`（是否可检索，索引成功即 enabled，不等富化）；`SummaryStatus ∈ {none, pending, processing, completed, failed}`。
+États auxiliaires : `EnableStatus ∈ {enabled, disabled}` (consultabilité ; `enabled` dès index OK, sans attendre l’enrichissement) ; `SummaryStatus ∈ {none, pending, processing, completed, failed}`.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pending: 创建 Knowledge 并入队
-    pending --> processing: worker 领取任务
-    processing --> finalizing: SetFinalizing 原子提升<br/>写入 expectedSubtasks
-    processing --> completed: 无富化任务的快速路径
-    finalizing --> completed: pending_subtasks_count 减至 0
-    pending --> failed: 入队失败或前置校验失败
-    processing --> failed: 解析/分块/索引失败<br/>且为最后一次重试
-    processing --> cancelled: 用户 cancel-parse
-    pending --> cancelled: 用户 cancel-parse
+    [*] --> pending: création Knowledge + enqueue
+    pending --> processing: worker prend la tâche
+    processing --> finalizing: SetFinalizing promotion atomique<br/>écrit expectedSubtasks
+    processing --> completed: chemin rapide sans enrichissement
+    finalizing --> completed: pending_subtasks_count → 0
+    pending --> failed: échec enqueue ou validation préalable
+    processing --> failed: échec analyse/découpage/index<br/>et dernière retry
+    processing --> cancelled: utilisateur cancel-parse
+    pending --> cancelled: utilisateur cancel-parse
     failed --> pending: reparse attempt+1
     completed --> pending: reparse attempt+1
     cancelled --> pending: reparse
     completed --> deleting: DeleteKnowledge
     failed --> deleting: DeleteKnowledge
-    processing --> failed: housekeeping 判定卡死<br/>心跳超时且无排队任务
-    finalizing --> failed: housekeeping 判定卡死
-    deleting --> failed: housekeeping 判定删除任务丢失
-    deleting --> [*]: 清理完成后删除 DB 行
+    processing --> failed: housekeeping blocage<br/>heartbeat expiré, plus de tâche en file
+    finalizing --> failed: housekeeping blocage
+    deleting --> failed: housekeeping tâche delete perdue
+    deleting --> [*]: suppression ligne BD après nettoyage
 ```
 
-### 阶段级进度（Span Tracker） {#_7-2-阶段级进度-span-tracker}
+### Progression par phase (Span Tracker) {#_7-2-progression-par-phase-span-tracker}
 
-`knowledge_span_tracker.go` + `internal/types/knowledge_span.go` 提供逐阶段进度树（前端时间线即由此渲染）：
+`knowledge_span_tracker.go` + `internal/types/knowledge_span.go` fournissent l’arbre de progression par étape (timeline UI) :
 
-- 五个规范阶段：`StageDocReader / StageChunking / StageEmbedding / StageMultimodal / StagePostProcess`（`types.AllStages`）。
-- Span 状态：`pending / running / done / failed / skipped / cancelled`。`skipped` 用于主动跳过（如未开启多模态），`cancelled` 用于上游失败连带取消。
-- 每轮处理有独立 `Attempt`（`repo.NextAttempt`），根 Span `name="knowledge_processing"`、`Kind=SpanKindRoot`；阶段以 `beginStage / endStage / failStage / skipStage` 打点，输入输出记录在 `JSONMap`（如 `chunks_planned` / `chunks_written` / `total_text_chars`）。
-- 每次记录进度时，`touchKnowledgeHeartbeat` 同步刷新心跳，供 Housekeeping 区分仍在处理与已停止更新的任务。
+- Cinq étapes canoniques : `StageDocReader / StageChunking / StageEmbedding / StageMultimodal / StagePostProcess` (`types.AllStages`).
+- États de span : `pending / running / done / failed / skipped / cancelled`. `skipped` = saut volontaire (ex. multimodal désactivé) ; `cancelled` = annulation en cascade après échec amont.
+- Chaque cycle a un `Attempt` distinct (`repo.NextAttempt`), span racine `name="knowledge_processing"`, `Kind=SpanKindRoot` ; étapes tracées via `beginStage / endStage / failStage / skipStage`, entrées/sorties dans `JSONMap` (ex. `chunks_planned` / `chunks_written` / `total_text_chars`).
+- À chaque enregistrement de progression, `touchKnowledgeHeartbeat` rafraîchit le heartbeat pour que Housekeeping distingue traitement actif et tâche figée.
 
-## Housekeeping 自愈（knowledge_housekeeping.go） {#_8-housekeeping-自愈-knowledge-housekeeping-go}
+## Housekeeping et auto-réparation (`knowledge_housekeeping.go`) {#_8-housekeeping-et-auto-reparation}
 
-后台每 **5 分钟**一轮（`WEKNORA_HOUSEKEEPING_ENABLED` 可关闭），修复因 worker 崩溃 / Redis 丢任务导致的僵尸状态：
+En arrière-plan, cycle toutes les **5 minutes** (`WEKNORA_HOUSEKEEPING_ENABLED` pour désactiver), corrige les états zombies (crash worker / tâche Redis perdue) :
 
-**Sweep A —— 卡死知识恢复**，三阶段过滤：
+**Sweep A — récupération des connaissances bloquées**, filtrage en trois phases :
 
-1. 粗筛：`parse_status IN (pending, processing, finalizing) AND updated_at < cutoff`；
-2. `filterByLastSpanActivity`：查 `knowledge_processing_spans` 的 `MAX(updated_at)` 心跳，心跳仍在阈值内的保留（仍在处理），无任何 span 的也判为卡死；
-3. `filterOutQueued`：通过 asynq TaskInspector 检查是否仍有排队任务，有则保留（只是在排队）。
+1. Pré-filtre : `parse_status IN (pending, processing, finalizing) AND updated_at < cutoff` ;
+2. `filterByLastSpanActivity` : heartbeat `MAX(updated_at)` sur `knowledge_processing_spans` ; conservé si encore dans le seuil (traitement actif) ; sans span → bloqué ;
+3. `filterOutQueued` : via asynq TaskInspector, conserve s’il reste une tâche en file (simple attente).
 
-判定卡死的知识逐行更新为 `parse_status = 'failed'`、`pending_subtasks_count = 0`，`error_message` 写明停在哪个阶段、最后一次进展时间，例如：
+Les connaissances jugées bloquées passent ligne par ligne en `parse_status = 'failed'`, `pending_subtasks_count = 0`, `error_message` indiquant l’étape et la dernière activité, par ex. :
 
 ```text
 task stuck in processing at docreader stage: no progress since 2026-09-22T09:37:54Z (> 2h10m0s), recovered by housekeeping
 ```
 
-同时关闭该知识最新一次 attempt 中仍处于 `pending`/`running` 的 span，错误码均为 `TASK_STALLED`，并补写 `duration_ms`：卡住的位置标为 `failed`，其余标为 `cancelled`。卡住的位置是正在运行的阶段 span；没有运行中的阶段时（`finalizing` 下后处理阶段已关闭），是最内层仍在运行的子 span，文案会带上它们的名字，如 `at postprocess stage (postprocess.summary)`。span 心跳查询失败时文案不写时间点。这样时间线上会显示卡在哪里，而不是一直转圈。
+Les spans encore `pending` / `running` du dernier attempt sont fermés, code d’erreur `TASK_STALLED`, `duration_ms` complété : l’emplacement bloqué → `failed`, le reste → `cancelled`. Le blocage correspond au span d’étape en cours ; sans étape active (post-traitement déjà clos en `finalizing`), c’est le sous-span le plus interne encore actif, nom inclus dans le message, ex. `at postprocess stage (postprocess.summary)`. Si la requête heartbeat span échoue, pas d’horodatage dans le texte. La timeline indique ainsi où ça coince au lieu de tourner indéfiniment.
 
-前端在服务端判死之前会先给出提示：批量查询与 spans 接口为进行中的知识返回 `last_activity_at`；超过 20 分钟无进展时再返回服务端的判定 `stall_state`（与 Sweep A 的积压判定相同）。`stalled` 在列表、卡片和时间线上显示“疑似卡住”，时间线提供“停止解析”入口；`queued` 显示“排队中”，不提供停止入口；探测失败时没有判定，按普通解析中显示。安静期间轮询间隔放宽到 15 秒。
+Côté UI, avant le verdict serveur : les requêtes batch et l’API spans renvoient `last_activity_at` pour les connaissances en cours ; après 20 minutes sans progrès, `stall_state` serveur (même logique que Sweep A). `stalled` → « suspecté bloqué » (liste, carte, timeline) avec entrée « arrêter l’analyse » ; `queued` → « en file », sans arrêt ; échec de sonde → affichage analyse normale. Polling espacé à 15 s en période calme.
 
-阈值 `staleThreshold() = max(1h, DocumentProcessTimeout) + 10min`。
+Seuil `staleThreshold() = max(1h, DocumentProcessTimeout) + 10min`.
 
-**Sweep B —— 摘要卡死恢复**：`summary_status = 'processing' AND updated_at < 1 小时前` → 置 `failed`。`summary_status = 'pending'` 而解析已结束（`completed` / `failed` / `cancelled`）、超过 1 小时且队列中没有它的任务时，同样置为 `failed`，避免摘要任务提前放弃后前端一直显示"生成摘要中"。Sweep A 回收卡死文档、用户取消解析时，也会一并结束未完成的摘要状态（前者置 `failed`，后者置 `none`）。
+**Sweep B — résumés bloqués** : `summary_status = 'processing' AND updated_at < il y a 1 h` → `failed`. `summary_status = 'pending'` alors que l’analyse est terminée (`completed` / `failed` / `cancelled`), &gt; 1 h et plus de tâche en file → `failed`, pour éviter l’UI bloquée sur « génération du résumé ». Sweep A et annulation utilisateur clôturent aussi les résumés incomplets (`failed` ou `none`).
 
-**Sweep C —— 删除卡死恢复**：`parse_status = 'deleting'` 且超过阈值、队列中也没有覆盖它的 `knowledge:list_delete` 任务时，置为 `failed` 并写明原因，文档重新出现在列表中，用户可以再次删除。探测队列失败时顺延到下一轮，Lite 模式没有排队任务，按实际情况直接恢复。
+**Sweep C — suppressions bloquées** : `parse_status = 'deleting'`, dépassement du seuil et absence de tâche `knowledge:list_delete` couvrante en file → `failed` avec motif, document de nouveau visible, nouvelle suppression possible. Échec sonde file → report au cycle suivant ; mode Lite sans file → récupération directe selon le cas.
 
-**Wiki 队列兜底**：只因 Wiki 持久队列未消费而停在 `finalizing` 的文档，巡检会为对应知识库重新触发一次 Wiki 生成（同一知识库每个阈值周期最多一次）。Wiki 任务触发时若发现知识库已关闭 Wiki、没有合成模型或模型已删除，会清空尚未认领的 Wiki 操作并释放对应文档，使其正常结束 `finalizing`。合成模型存在但无法构建（例如地址被 SSRF 校验拒绝）时，Wiki 任务在最后一次重试也按同样方式释放文档。Wiki 操作最多保护文档 48 小时：超过 48 小时没有任何进展的文档按 Sweep A 回收为 `failed`，它的 Wiki 操作随之删除。
+**File Wiki de secours** : documents bloqués en `finalizing` faute de consommation de la file Wiki persistante → la patrouille relance une génération Wiki pour la KB (au plus une fois par période de seuil et par KB). Si Wiki désactivé, modèle de synthèse absent ou supprimé, les opérations Wiki non prises en charge sont vidées et les documents libérés pour terminer `finalizing`. Modèle présent mais non constructible (ex. URL rejetée SSRF) → même libération au dernier retry Wiki. Protection Wiki max 48 h : sans progrès → Sweep A → `failed`, opérations Wiki supprimées.
 
-## 删除清理链路（knowledge_delete.go） {#_9-删除清理链路-knowledge-delete-go}
+## Chaîne de suppression et nettoyage (`knowledge_delete.go`) {#_9-chaine-de-suppression-et-nettoyage}
 
-`DeleteKnowledge(ctx, id)` 的顺序经过精心设计（**先删行、后删文件**，失败可重试）：
+L’ordre de `DeleteKnowledge(ctx, id)` est volontaire (**ligne BD d’abord, fichiers ensuite**, reprises possibles) :
 
-1. 标记 `ParseStatus = deleting`（阻止并发任务写入）；
-2. 对 `pending/processing` 状态的知识执行 `dequeueKnowledgeTasks()` 取消队列中的下游任务；
-3. **errgroup 并行清理**四类资源：
-   - 向量/关键词索引：`retrieveEngine.DeleteByKnowledgeIDList`（按 embedding 维度与 KB 类型路由）；
-   - Wiki：`cleanupWikiOnKnowledgeDelete`（写 Redis tombstone → 清 pending ingest → reconcile 现有页面 → 入队 WikiRetract）；
-   - Chunks：`chunkService.DeleteChunksByKnowledgeID`；
-   - 图谱：`graphEngine.DelGraph`；
-4. 删除 Tag 关联 → 删除 Knowledge 数据库行；
-5. **最后 best-effort 清理物理文件**：源文件 + 从 `chunk_image_info` 收集的所有提取图片（`collectImageURLs` + `deleteExtractedImages`），并回冲租户存储统计。
+1. `ParseStatus = deleting` (bloque les écritures concurrentes) ;
+2. Pour `pending` / `processing`, `dequeueKnowledgeTasks()` annule les tâches aval en file ;
+3. **Nettoyage parallèle errgroup** de quatre ressources :
+   - Index vectoriel / mots-clés : `retrieveEngine.DeleteByKnowledgeIDList` (routage par dimension embedding et type KB) ;
+   - Wiki : `cleanupWikiOnKnowledgeDelete` (tombstone Redis → purge ingest pending → réconciliation pages → enqueue WikiRetract) ;
+   - Chunks : `chunkService.DeleteChunksByKnowledgeID` ;
+   - Graphe : `graphEngine.DelGraph` ;
+4. Suppression associations Tag → ligne Knowledge en BD ;
+5. **Enfin, nettoyage best-effort des fichiers** : fichier source + images extraites depuis `chunk_image_info` (`collectImageURLs` + `deleteExtractedImages`), ajustement stats stockage tenant.
 
-批量版 `DeleteKnowledgeList` 预加载各 KB 的 FileService、按 KB 分组图片 URL、按 embedding 模型分组删索引，避免 goroutine 内重复查询。
+`DeleteKnowledgeList` précharge FileService par KB, groupe URLs images par KB, suppressions d’index par modèle embedding, pour éviter les requêtes redondantes dans les goroutines.
 
-## FAQ 类知识导入（knowledge_faq.go / knowledge_faq_import.go） {#_10-faq-类知识导入-knowledge-faq-go-knowledge-faq-import-go}
+## Import de connaissances FAQ (`knowledge_faq.go` / `knowledge_faq_import.go`) {#_10-import-de-connaissances-faq}
 
-FAQ 知识库不走文档解析管线：每个 FAQ KB 只有**一个** Knowledge 实例（`ensureFAQKnowledge`），每条问答对是一个 `ChunkTypeFAQ` 的 Chunk，元数据存于 `Chunk.Metadata`：
+Les KB FAQ n’utilisent pas la pipeline documentaire : une KB FAQ n’a qu’**une** instance Knowledge (`ensureFAQKnowledge`) ; chaque paire Q/R est un chunk `ChunkTypeFAQ`, métadonnées dans `Chunk.Metadata` :
 
 ```go
 type FAQChunkMetadata struct {
-    StandardQuestion  string   // 标准问
-    SimilarQuestions  []string // 相似问
-    NegativeQuestions []string // 反例问（负例过滤, 不参与索引）
+    StandardQuestion  string   // question standard
+    SimilarQuestions  []string // questions similaires
+    NegativeQuestions []string // contre-exemples (filtrage négatif, hors index)
     Answers           []string
     AnswerStrategy    AnswerStrategy // "all" | "random"
     ...
 }
 ```
 
-- **单条创建** `CreateFAQEntry`：清洗校验 → 查重（`checkFAQQuestionDuplicate`）→ 构建 Chunk（`buildFAQChunkContent` 按 `FAQIndexMode` 决定是否把答案写进 Content）→ `indexFAQChunks` 同步索引 → `ChunkStatusIndexed`。
-- **索引模式**（KB 级配置）：`FAQIndexModeQuestionOnly`（`question_only`，仅索引问题）/ `FAQIndexModeQuestionAnswer`（`question_answer`，问题+答案）；问题索引又分 `FAQQuestionIndexModeCombined`（标准问+相似问合并一个向量）与 `FAQQuestionIndexModeSeparate`（每个相似问独立向量，source_id 形如 `{chunkID}-{index}`，支持增量索引 `incrementalIndexFAQEntry`）。
-- **批量导入** `UpsertFAQEntries`：
-  - 模式 `append`（追加/合并）或 `replace`（全量替换），支持 `DryRun` 仅校验；
-  - 超过 200 条或 50KB 时条目先 `SaveBytes` 上传对象存储，payload 只带 `EntriesURL`；
-  - 入队 `TypeFAQImport` → `QueueMaintenance`，`MaxRetry 5`（dry-run 3），Timeout 2 小时；同一 KB 同时只允许一个导入任务（Redis 锁）；
-  - 去重基于 `CalculateFAQContentHash`：对标准问/相似问/反例/答案**归一化**（去 URL、转小写、繁转简、全角转半角、智能空格）后 SHA256；
-  - append 模式做四阶段校验（标准问冲突→整条失败；相似问/反例冲突→部分失败仅剔除冲突项；标准问已存在→合并并集）；
-  - 进度写 Redis（`FAQImportProgress`：`pending/processing/completed/failed`、成功/失败/部分失败/跳过计数），失败条目导出为带 UTF-8 BOM 的 CSV 供下载。
+- **Création unitaire** `CreateFAQEntry` : nettoyage/validation → dédup (`checkFAQQuestionDuplicate`) → construction chunk (`buildFAQChunkContent` inclut ou non la réponse dans Content selon `FAQIndexMode`) → `indexFAQChunks` index synchrone → `ChunkStatusIndexed`.
+- **Modes d’index** (config KB) : `FAQIndexModeQuestionOnly` (`question_only`, questions seules) / `FAQIndexModeQuestionAnswer` (`question_answer`, question + réponse) ; sous-modes questions : `FAQQuestionIndexModeCombined` (standard + similaires → un vecteur) et `FAQQuestionIndexModeSeparate` (un vecteur par question similaire, `source_id` `{chunkID}-{index}`, index incrémental `incrementalIndexFAQEntry`).
+- **Import batch** `UpsertFAQEntries` :
+  - Modes `append` (fusion) ou `replace` (remplacement total), `DryRun` pour validation seule ;
+  - &gt; 200 entrées ou 50 Ko → `SaveBytes` objet, payload avec `EntriesURL` uniquement ;
+  - Enqueue `TypeFAQImport` → `QueueMaintenance`, `MaxRetry 5` (dry-run 3), timeout 2 h ; un seul import simultané par KB (verrou Redis) ;
+  - Dédup via `CalculateFAQContentHash` : **normalisation** questions/réponses/contre-exemples (retrait URL, minuscules, trad. simplifiée, pleine → demi-largeur, espaces) puis SHA256 ;
+  - Mode append : validation en quatre phases (conflit question standard → échec ligne entière ; conflit similaire/contre-exemple → échec partiel, retrait des seuls items en conflit ; standard existante → union) ;
+  - Progression Redis (`FAQImportProgress` : `pending/processing/completed/failed`, compteurs succès/échec/partiel/ignoré), export CSV UTF-8 BOM des échecs.
 
-## 知识克隆与移动（knowledge_clone_move.go） {#_11-知识克隆与移动-knowledge-clone-move-go}
+## Clonage et déplacement de connaissances (`knowledge_clone_move.go`) {#_11-clonage-et-deplacement-de-connaissances}
 
-### 克隆（CloneKnowledgeBase / CloneChunk） {#_11-1-克隆-cloneknowledgebase-clonechunk}
+### Clonage (`CloneKnowledgeBase` / `CloneChunk`) {#_11-1-clonage}
 
-- KB 级克隆先复制 KB 配置，再按集合差（`AminusB`）增删 Knowledge，并行处理（删除批 10、克隆逐个）。
-- Chunk 级克隆（批量 100）复制 `Text/ParentText/Summary/ImageCaption/ImageOCR` 五类 chunk：
-  - **图片深拷贝**：`cloneChunkImageInfo` 从源存储读字节 → 写入目标租户 `exports/` 命名空间，`urlCache` 去重；`rewriteContentImageURLs` 将 Content 中旧 URL 全部替换（最长 URL 优先避免部分匹配）；
-  - 标签映射 `getOrCreateTagInTarget`（同名复用，否则新建）；
-  - 重建 `PreChunkID/NextChunkID/ParentChunkID` 映射后批量插入；
-  - 向量索引通过 `retrieveEngine.CopyIndices()` 直接复制，不重算 embedding。
-- FAQ KB 克隆走差量同步：`chunkRepo.FAQChunkDiff` 按 `content_hash` 算出增/删/匹配三组，匹配对仅同步状态（`IsEnabled/Flags/TagID/AnswerStrategy`）。
-- 进度写 Redis（`KBCloneProgress`）。
+- Clonage KB : copie config KB, puis diff d’ensembles (`AminusB`) pour ajouter/supprimer Knowledge en parallèle (suppressions par 10, clonage unitaire).
+- Clonage chunk (lots de 100) : types `Text` / `ParentText` / `Summary` / `ImageCaption` / `ImageOCR` :
+  - **Copie profonde images** : `cloneChunkImageInfo` lit octets source → écrit tenant cible espace `exports/`, dédup `urlCache` ; `rewriteContentImageURLs` remplace toutes les URL dans Content (URL la plus longue en premier) ;
+  - Tags : `getOrCreateTagInTarget` (réutilise même nom, sinon crée) ;
+  - Reconstruction mappings `PreChunkID` / `NextChunkID` / `ParentChunkID`, insertion batch ;
+  - Index vectoriel : `retrieveEngine.CopyIndices()` sans recalcul embedding.
+- Clonage KB FAQ : sync différentielle `chunkRepo.FAQChunkDiff` par `content_hash` (ajouts/suppressions/correspondances) ; paires correspondantes → sync état (`IsEnabled` / `Flags` / `TagID` / `AnswerStrategy`).
+- Progression Redis (`KBCloneProgress`).
 
-### 移动（ProcessKnowledgeMove） {#_11-2-移动-processknowledgemove}
+### Déplacement (`ProcessKnowledgeMove`) {#_11-2-deplacement}
 
-门槛检查：源/目标 KB **类型必须相同**且 **EmbeddingModelID 必须相同**。两种模式：
+Prérequis : KB source et cible **même type** et **même `EmbeddingModelID`**. Deux modes :
 
-- `reuse_vectors`：要求 `sourceKB.SharesStoreWith(targetKB)`（同一向量存储实例），`CopyIndices` 复制索引 → 删源索引 → `MoveChunksByKnowledgeID` 改 chunk 归属 → 清 Tag 关联 → 更新 Knowledge 的 KB ID；
-- `reparse`：跨向量存储时使用。`cleanupKnowledgeResources`（删索引/chunks/图谱/回冲存储统计）→ Knowledge 重置为 `pending` 挂到目标 KB → 重新入队 `TypeDocumentProcess`（manual 类型走 `triggerManualProcessing`）。
+- `reuse_vectors` : `sourceKB.SharesStoreWith(targetKB)` (même instance vectorielle), `CopyIndices` → suppression index source → `MoveChunksByKnowledgeID` → clear tags → mise à jour KB ID sur Knowledge ;
+- `reparse` : stockages vectoriels distincts. `cleanupKnowledgeResources` (index/chunks/graphe/stats stockage) → Knowledge `pending` sur KB cible → re-enqueue `TypeDocumentProcess` (manuel via `triggerManualProcessing`).
 
-## 端到端时序小结 {#_12-端到端时序小结}
+## Synthèse chronologique de bout en bout {#_12-synthese-chronologique-de-bout-en-bout}
 
-一篇启用了多模态、问题生成与图谱的 PDF，完整旅程是：
+Parcours complet d’un PDF avec multimodal, génération de questions et graphe :
 
-1. `POST /knowledge-bases/:id/knowledge/file` → MD5 去重 → `cos://tenant/kb/uuid.pdf` → Knowledge(`pending`) → asynq `document:process`；
-2. Worker：Span attempt=1 开根 → `docreader` 阶段 gRPC 调 Python 服务拿 Markdown+图片字节 → 图片上传存储并重写 URL → `chunking` 阶段 Go chunker 切块 → 写 chunks → `embedding` 阶段 BatchIndex → `EnableStatus=enabled`（此刻已可检索）→ 每图入队 multimodal 任务；
-3. 多模态 worker 逐图 OCR+Caption，生成 image_caption/image_ocr 子 chunk 并索引；全部完成后触发 post-process；
-4. 编排器计算 `expectedSubtasks`（1 摘要 + N/20 问题批 + M 图谱 + 0/1 Wiki）→ `SetFinalizing` → 扇出；每个子任务终态 `FinalizeSubtask` 递减，减到 0 → `completed`；
-5. 期间任一环节僵死，Housekeeping 5 分钟一轮按"updated_at + span 心跳 + 队列检查"三重判据回收为 `failed`，用户可 reparse（attempt+1）重来。
+1. `POST /knowledge-bases/:id/knowledge/file` → dédup MD5 → `cos://tenant/kb/uuid.pdf` → Knowledge(`pending`) → asynq `document:process` ;
+2. Worker : span racine attempt=1 → étape `docreader` gRPC Python → Markdown + octets images → upload images + réécriture URL → `chunking` Go → écriture chunks → `embedding` BatchIndex → `EnableStatus=enabled` (consultable) → une tâche multimodal par image ;
+3. Worker multimodal : OCR + légende par image, sous-chunks `image_caption` / `image_ocr` indexés ; fin → post-process ;
+4. Orchestrateur : `expectedSubtasks` (1 résumé + N/20 lots questions + M graphe + 0/1 Wiki) → `SetFinalizing` → fan-out ; chaque sous-tâche `FinalizeSubtask` → à 0, `completed` ;
+5. Blocage quelconque : Housekeeping toutes les 5 min selon `updated_at` + heartbeat span + file → `failed` ; l’utilisateur peut relancer via reparse (attempt+1).
 
-## 实现参考
+## Références d’implémentation
 
-各环节对应的源码位置：
+Emplacements source par étape :
 
-| 环节 | 源码位置 |
+| Étape | Emplacement source |
 |------|----------|
-| HTTP 入口 | `internal/handler/knowledge.go`、`internal/router/routes_knowledge.go` |
-| 创建与入队 | `internal/application/service/knowledge_create.go`、`knowledge_task_options.go` |
-| 文件存储 | `internal/application/service/file/`（`factory.go`、各后端实现） |
-| 解析基础设施 | `internal/infrastructure/docparser/`、`docreader/`（Python 服务） |
-| 主处理管线 | `internal/application/service/knowledge_process.go` |
-| 处理配置合并 | `internal/application/service/knowledge_process_config.go` |
-| 后处理 | `internal/application/service/knowledge_post_process.go`、`image_multimodal.go` |
-| 进度追踪 | `internal/application/service/knowledge_span_tracker.go`、`internal/types/knowledge_span.go` |
-| 自愈 | `internal/application/service/knowledge_housekeeping.go` |
-| 删除 | `internal/application/service/knowledge_delete.go` |
-| FAQ | `internal/application/service/knowledge_faq.go`、`knowledge_faq_import.go` |
-| 克隆/移动 | `internal/application/service/knowledge_clone_move.go` |
+| Entrée HTTP | `internal/handler/knowledge.go`, `internal/router/routes_knowledge.go` |
+| Création et enqueue | `internal/application/service/knowledge_create.go`, `knowledge_task_options.go` |
+| Stockage fichiers | `internal/application/service/file/` (`factory.go`, implémentations backends) |
+| Infra parsing | `internal/infrastructure/docparser/`, `docreader/` (service Python) |
+| Pipeline principale | `internal/application/service/knowledge_process.go` |
+| Fusion config traitement | `internal/application/service/knowledge_process_config.go` |
+| Post-traitement | `internal/application/service/knowledge_post_process.go`, `image_multimodal.go` |
+| Suivi progression | `internal/application/service/knowledge_span_tracker.go`, `internal/types/knowledge_span.go` |
+| Auto-réparation | `internal/application/service/knowledge_housekeeping.go` |
+| Suppression | `internal/application/service/knowledge_delete.go` |
+| FAQ | `internal/application/service/knowledge_faq.go`, `knowledge_faq_import.go` |
+| Clonage / déplacement | `internal/application/service/knowledge_clone_move.go` |
