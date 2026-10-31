@@ -115,6 +115,7 @@ func (s *Service) ProcessSync(ctx context.Context, t *asynq.Task) error {
 	if payload.TenantID == 0 || payload.KnowledgeBaseID == "" {
 		return fmt.Errorf("invalid tencent meeting sync payload")
 	}
+	ctx = payload.Initiator.Apply(ctx)
 	ctx = context.WithValue(ctx, types.TenantIDContextKey, payload.TenantID)
 
 	status := types.ManualKnowledgeStatusDraft
