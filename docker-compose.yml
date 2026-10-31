@@ -60,7 +60,9 @@ services:
     restart: unless-stopped
 
   app:
-    image: wechatopenai/weknora-app:${WEKNORA_VERSION:-latest}
+    image: gsms-weknora-app:${WEKNORA_VERSION:-latest}
+    # Built from this repo (GSMS changes); never pulled from Docker Hub.
+    pull_policy: build
     build:
       context: .
       dockerfile: docker/Dockerfile.app
@@ -443,7 +445,9 @@ services:
   # Sandbox 镜像：仅用于 build/pull，非常驻。Docker 沙箱默认关闭，需
   # WEKNORA_SANDBOX_DOCKER_ENABLED=true 并挂载 docker.sock 后，app 才会按会话创建容器。
   sandbox:
-    image: wechatopenai/weknora-sandbox:${WEKNORA_VERSION:-latest}
+    image: gsms-weknora-sandbox:${WEKNORA_VERSION:-latest}
+    # Built from this repo (GSMS changes); never pulled from Docker Hub.
+    pull_policy: build
     container_name: WeKnora-sandbox
     build:
       context: .
@@ -455,7 +459,9 @@ services:
     restart: "no"
 
   docreader:
-    image: wechatopenai/weknora-docreader:${WEKNORA_VERSION:-latest}
+    image: gsms-weknora-docreader:${WEKNORA_VERSION:-latest}
+    # Built from this repo (GSMS changes); never pulled from Docker Hub.
+    pull_policy: build
     build:
       context: .
       dockerfile: docker/Dockerfile.docreader
