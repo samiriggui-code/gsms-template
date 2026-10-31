@@ -14,6 +14,16 @@ Clones et notes de veille pour l’adaptation du template — **sans impact sur 
 | [`tencentmeeting-cli/`](./tencentmeeting-cli/) | [TencentCloud/tencentmeeting-cli](https://github.com/TencentCloud/tencentmeeting-cli) | CLI **腾讯会议** (`tmeet`) : OAuth2, réunions, enregistrements, transcripts, comptes-rendus — référence pour intégrations visio / calendrier côté GIS. |
 | [`tencentcloud-speech-sdk-go/`](./tencentcloud-speech-sdk-go/) | [TencentCloud/tencentcloud-speech-sdk-go](https://github.com/TencentCloud/tencentcloud-speech-sdk-go) | SDK Go **ASR + TTS** Tencent ; focus veille **synthèse vocale** dans [`tts/`](./tencentcloud-speech-sdk-go/tts/) (`speechsynthesizer.go`, WebSocket). |
 
+## Licences (vérifiées le 31 oct. 2026, aux commits épinglés)
+
+| Dépôt | Licence | Réutiliser du code dans ce repo (MIT) |
+| --- | --- | --- |
+| `tencentdb-agent-memory` @ `ecc01a5` | **MIT** (fichier `LICENSE`, © 2026 Tencent ; GitHub affiche `NOASSERTION` à cause de l’en-tête Tencent) | Oui. Garder la notice de copyright MIT dans les fichiers portés ou dans `THIRD_PARTY_NOTICES`. |
+| `tencentmeeting-cli` @ `bd9ab53` | **MIT** (même format que ci-dessus) | Oui, mêmes conditions. |
+| `tencentcloud-sdk-go` @ `779c9a6` | **Apache-2.0** (pas de fichier `NOTICE`) | Oui, comme dépendance Go (`go get`) de préférence. Si on copie du code : garder l’en-tête de licence et signaler les modifications. |
+| `tencentcloud-speech-sdk-go` @ `257f9f5` | **Apache-2.0** (pas de fichier `NOTICE`) | Oui, mêmes conditions. |
+| `timsdk` @ `00fb559` | **Aucune licence à la racine** → tous droits réservés par défaut. Seul `iOS/TUIKit/TUIRoomKit/` porte une licence MIT ; les `Pods/` iOS sont des tiers avec leurs propres licences. | **Non.** Lecture seule. Pour un canal TIM dans `internal/im/`, écrire le client à partir de la documentation de l’API REST Tencent Cloud Chat, sans copier de code du dépôt. |
+
 ## Récupérer les clones (PC portable ou nouvelle machine)
 
 Les dossiers `research/*/` **ne sont pas sur GitHub** (`.gitignore`, ~700 Mo). Après `git pull` :
