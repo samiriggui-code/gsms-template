@@ -14,8 +14,8 @@ from docx import Document as WordDocument
 def _load_docx_parser():
     """Load docx_parser without triggering the heavy package __init__.
 
-    ``docreader/parser/__init__.py`` imports doc_parser -> textract, a heavy
-    dependency unrelated to DOCX parsing. Registering the packages as bare
+    ``docreader/parser/__init__.py`` imports every parser and their heavy
+    dependencies, which are unrelated to DOCX parsing. Registering the packages as bare
     namespaces lets us import only the modules docx_parser actually needs.
     Restore the module registry afterwards: later integration tests need the
     real parser package, including its public Parser export.
