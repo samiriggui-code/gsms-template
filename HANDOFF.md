@@ -56,11 +56,13 @@ Ordre prévu par le plan doc 12 : Meeting → SDK → Speech → TIM. Ce plan **
 - Ne jamais écrire de secret dans le repo ou la mémoire.
 - Langues : français principal, anglais secondaire. Les autres locales frontend (ja, ko, ru, zh-TW) existent encore pour l'audit de clés.
 
-## 6. Prochaines étapes proposées
+## 6. Priorités (révisées le 31 oct. 2026)
 
-1. Fusionner #3 et #10, fermer #8, #13 et #16.
-2. Réparer ou désactiver le workflow Docker Hub (secrets manquants, images encore nommées `weknora-*`).
-3. Remplacer le script bootstrap `.env` par un modèle qui réutilise les accès existants.
-4. Ajouter le scan de licences et la SBOM au CI (phase 0 de la feuille de route).
-5. Lancer la phase 1 puis le portage mémoire Agent Memory → Go (L2/L3, scopes équipe/projet, skills), comme décidé en stratégie A.
-6. Vérifier les licences des dépôts `research/`.
+Détail : [docs/gsms-audit/12-integration-plan-tencent-extensions.md §0](docs/gsms-audit/12-integration-plan-tencent-extensions.md).
+
+1. **Finir Tencent Meeting** : client API Go, identifiants chiffrés par tenant, synchro automatique, écran de réglages, doc FR (branche `feat/tencent-meeting-p2`).
+2. **Cœur Agent Memory** (stratégie A) : phases 1 à 4 de la [feuille de route](docs/gsms-audit/09-migration-roadmap.md), soit portées mémoire, L2/L3, Skills, UI.
+3. **Speech** : ASR Tencent comme fournisseur de modèles.
+4. **TIM** : seulement si un besoin métier est validé.
+
+En continu : réparer ou désactiver le workflow Docker Hub, scan de licences + SBOM en CI, remplacer le script bootstrap `.env` par un modèle qui réutilise les accès existants.
