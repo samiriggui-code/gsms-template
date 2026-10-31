@@ -49,7 +49,7 @@ Ajouté sur la branche de PR #24. Les clones ne sont pas versionnés (~700 Mo). 
 | tencentcloud-speech-sdk-go | `257f9f5` | ASR/TTS comme fournisseur dans `internal/models/` |
 | TIMSDK | `00fb559` | Canal chat Tencent dans `internal/im/` (le plus gros chantier) |
 
-Ordre prévu par le plan doc 12 : Meeting → SDK → Speech → TIM. Ce plan **exclut volontairement** le portage mémoire L2/L3, qui reste un chantier séparé. **Licences des 4 nouveaux dépôts non vérifiées** : à faire avant d'en copier du code.
+Ordre prévu par le plan doc 12 : Meeting → SDK → Speech → TIM. Ce plan **exclut volontairement** le portage mémoire L2/L3, qui reste un chantier séparé. **Licences des 4 nouveaux dépôts (SDK Go, Meeting CLI, Speech SDK, TIMSDK) non vérifiées** ; Agent Memory a déjà été audité (composant `tea-component` sans licence dans son panel) : à faire avant d'en copier du code.
 
 ## 5. Règles à respecter
 
