@@ -1448,7 +1448,7 @@ const resizeSidebar = (delta: number, keyboard: boolean) => {
         width: min(320px, 88vw) !important;
         min-width: 0 !important;
         transform: translateX(-100%);
-        transition: transform 0.25s ease, visibility 0.25s;
+        transition: transform var(--app-motion-base) ease, visibility var(--app-motion-base);
         box-shadow: var(--td-shadow-3);
 
         &.aside_box--mobile-open {
