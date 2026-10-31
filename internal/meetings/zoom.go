@@ -31,13 +31,13 @@ func newZoom() *zoom {
 	}
 }
 
-func (z *zoom) ID() string       { return "zoom" }
-func (z *zoom) Configured() bool { return z.creds.configured() }
+func (z *zoom) ID() string                     { return "zoom" }
+func (z *zoom) EnvCredentials() AppCredentials { return z.creds.app() }
 
-func (z *zoom) OAuthConfig(redirectURL string) *oauth2.Config {
+func (z *zoom) OAuthConfig(app AppCredentials, redirectURL string) *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     z.creds.id(),
-		ClientSecret: z.creds.secret(),
+		ClientID:     app.ClientID,
+		ClientSecret: app.ClientSecret,
 		RedirectURL:  redirectURL,
 		// Scopes are chosen on the Zoom app page, not in the request.
 		Endpoint: oauth2.Endpoint{AuthURL: z.authURL, TokenURL: z.tokURL, AuthStyle: oauth2.AuthStyleInHeader},

@@ -32,22 +32,24 @@ func newTeams() *teams {
 	}
 }
 
-func (t *teams) ID() string       { return "teams" }
-func (t *teams) Configured() bool { return t.creds.configured() }
+func (t *teams) ID() string { return "teams" }
 
-// tenant is "organizations" (any work or school account) unless MICROSOFT_TEAMS_TENANT pins one.
-func (t *teams) tenant() string {
-	if v := strings.TrimSpace(os.Getenv("MICROSOFT_TEAMS_TENANT")); v != "" {
-		return v
-	}
-	return "organizations"
+func (t *teams) EnvCredentials() AppCredentials {
+	app := t.creds.app()
+	app.Tenant = strings.TrimSpace(os.Getenv("MICROSOFT_TEAMS_TENANT"))
+	return app
 }
 
-func (t *teams) OAuthConfig(redirectURL string) *oauth2.Config {
-	base := t.loginURL + "/" + t.tenant() + "/oauth2/v2.0"
+func (t *teams) OAuthConfig(app AppCredentials, redirectURL string) *oauth2.Config {
+	// "organizations" accepts any work or school account; a tenant id pins one directory.
+	tenant := strings.TrimSpace(app.Tenant)
+	if tenant == "" {
+		tenant = "organizations"
+	}
+	base := t.loginURL + "/" + url.PathEscape(tenant) + "/oauth2/v2.0"
 	return &oauth2.Config{
-		ClientID:     t.creds.id(),
-		ClientSecret: t.creds.secret(),
+		ClientID:     app.ClientID,
+		ClientSecret: app.ClientSecret,
 		RedirectURL:  redirectURL,
 		Scopes: []string{
 			"offline_access",

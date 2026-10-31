@@ -1,12 +1,16 @@
--- Teams / Zoom / Google Meet transcript connector: one OAuth connection per
--- (tenant, platform), tokens encrypted at rest when SYSTEM_AES_KEY is set, and
--- the transcripts already imported so periodic imports never create duplicates.
+-- Teams / Zoom / Google Meet transcript connector: one connection per
+-- (tenant, platform) holding the OAuth app entered in the UI (client secret and
+-- tokens encrypted at rest when SYSTEM_AES_KEY is set), and the transcripts
+-- already imported so periodic imports never create duplicates.
 DO $$ BEGIN RAISE NOTICE '[Migration 000135] Creating meeting_connections / meeting_imports...'; END $$;
 
 CREATE TABLE IF NOT EXISTS meeting_connections (
     id VARCHAR(36) PRIMARY KEY,
     tenant_id INTEGER NOT NULL,
     provider VARCHAR(32) NOT NULL,
+    client_id VARCHAR(512),
+    client_secret TEXT,
+    app_tenant VARCHAR(128),
     account_id VARCHAR(256),
     account_label VARCHAR(256),
     access_token TEXT,

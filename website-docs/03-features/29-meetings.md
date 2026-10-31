@@ -4,35 +4,29 @@ Le connecteur Réunions importe les transcriptions de vos réunions Microsoft Te
 
 Chaque plateforme se configure une fois sur le serveur (une « application » déclarée chez l'éditeur), puis chaque espace connecte son propre compte depuis **Paramètres → Intégrations → Réunions**.
 
-## Configuration du serveur
+## Ajouter une connexion
 
-Dans le `.env` du serveur, renseignez uniquement les plateformes voulues, puis redémarrez le service `app` :
+Tout se fait dans **Paramètres → Intégrations → Réunions → Ajouter une connexion**, réservé aux administrateurs de l'espace. Un panneau s'ouvre en quatre étapes :
 
-```bash
-# Adresse publique de WeKnora : sert à construire l'adresse de retour OAuth
-MEETINGS_PUBLIC_URL=https://app.example.com
-# Chiffre les jetons de connexion en base (32 caractères exactement)
-SYSTEM_AES_KEY=<clé de 32 caractères>
+1. **Plateforme** : Teams, Zoom ou Google Meet.
+2. **Application** : l'éditeur exige qu'une « application » soit déclarée chez lui une fois (procédures ci-dessous, également rappelées dans le panneau). Copiez l'adresse de retour affichée dans cette application, puis collez ici son identifiant et son secret.
+3. **Compte** : **Se connecter avec…** ouvre une fenêtre de connexion de l'éditeur ; connectez-vous et acceptez l'accès. La fenêtre se ferme seule et WeKnora affiche le compte connecté.
+4. **Import** : base de connaissances, import automatique, publication directe.
 
-MICROSOFT_TEAMS_CLIENT_ID=
-MICROSOFT_TEAMS_CLIENT_SECRET=
-# MICROSOFT_TEAMS_TENANT=organizations
+Le secret et les jetons sont chiffrés en base si `SYSTEM_AES_KEY` (32 caractères) est défini sur le serveur. Un clic sur une connexion rouvre le panneau pour la modifier ; la corbeille la supprime, les documents déjà importés restent.
 
-ZOOM_CLIENT_ID=
-ZOOM_CLIENT_SECRET=
+Facultatif côté serveur : `MEETINGS_PUBLIC_URL` fixe l'adresse publique utilisée pour l'adresse de retour (sinon, celle du navigateur). Une application commune à tous les espaces peut aussi être fournie par variables d'environnement (`MICROSOFT_TEAMS_CLIENT_ID` / `_SECRET` / `_TENANT`, `ZOOM_CLIENT_ID` / `_SECRET`, `GOOGLE_MEET_CLIENT_ID` / `_SECRET`) ; celle saisie dans l'interface est prioritaire.
 
-GOOGLE_MEET_CLIENT_ID=
-GOOGLE_MEET_CLIENT_SECRET=
-```
+L'adresse de retour vaut `<adresse de WeKnora>/api/v1/integrations/meetings-oauth/callback`.
 
-L'adresse de retour à déclarer chez chaque éditeur est affichée en bas de l'écran Réunions. Elle vaut `<MEETINGS_PUBLIC_URL>/api/v1/integrations/meetings-oauth/callback`.
+## Déclarer l'application chez l'éditeur
 
 ### Microsoft Teams
 
 Prérequis : un compte Microsoft 365 professionnel ou scolaire. Les comptes Microsoft personnels ne sont pas pris en charge par Microsoft.
 
 1. Portail Azure → **Microsoft Entra ID → Inscriptions d'applications → Nouvelle inscription**. Type de compte : « Comptes dans un annuaire d'organisation » (multilocataire) ou votre seul annuaire. URI de redirection (Web) : l'adresse de retour ci-dessus.
-2. **Certificats et secrets → Nouveau secret client** : copiez la valeur dans `MICROSOFT_TEAMS_CLIENT_SECRET`, et l'ID d'application dans `MICROSOFT_TEAMS_CLIENT_ID`.
+2. **Certificats et secrets → Nouveau secret client** : copiez sa valeur et l'« ID d'application (client) », à coller à l'étape 2 du panneau.
 3. **Autorisations d'API → Microsoft Graph → Autorisations déléguées** : `User.Read`, `Calendars.Read`, `OnlineMeetings.Read`, `OnlineMeetingTranscript.Read.All`, `offline_access`. Puis **Accorder un consentement administrateur** : `OnlineMeetingTranscript.Read.All` l'exige.
 4. Centre d'administration Teams → **Réunions → Paramètres de réunion → Accès aux transcriptions par API** : activez-le (désactivé par défaut chez Microsoft). Activez aussi l'attribution des intervenants pour avoir leurs noms.
 5. La transcription doit être autorisée par la stratégie de réunion Teams des organisateurs.
@@ -46,7 +40,7 @@ Prérequis : un forfait Zoom Pro ou supérieur, l'enregistrement dans le cloud e
 1. [Zoom App Marketplace](https://marketplace.zoom.us/) → **Develop → Build App → General App**, gérée par l'utilisateur (User-managed).
 2. URL de redirection OAuth et liste d'autorisation : l'adresse de retour ci-dessus.
 3. Scopes : `cloud_recording:read:list_user_recordings` (ou `recording:read` pour une application à scopes classiques) et `user:read:user`.
-4. Copiez le Client ID et le Client Secret dans `ZOOM_CLIENT_ID` et `ZOOM_CLIENT_SECRET`.
+4. Copiez le Client ID et le Client Secret, à coller à l'étape 2 du panneau.
 
 Seules les transcriptions des enregistrements cloud terminés sont importées.
 
@@ -56,15 +50,11 @@ Prérequis : Google Workspace Business Standard ou supérieur (les transcription
 
 1. [Google Cloud Console](https://console.cloud.google.com/) → nouveau projet → **API et services → Bibliothèque** : activez **Google Meet REST API**.
 2. **Écran de consentement OAuth** : scopes `openid`, `email` et `https://www.googleapis.com/auth/meetings.space.readonly`. Ce dernier est « sensible » : pour des comptes hors de votre organisation, Google demande une vérification de l'application. En type « Interne », aucune vérification n'est nécessaire.
-3. **Identifiants → Créer un ID client OAuth → Application Web**, URI de redirection autorisé : l'adresse de retour ci-dessus. Copiez l'ID et le secret dans `GOOGLE_MEET_CLIENT_ID` et `GOOGLE_MEET_CLIENT_SECRET`.
+3. **Identifiants → Créer un ID client OAuth → Application Web**, URI de redirection autorisé : l'adresse de retour ci-dessus. Copiez l'ID et le secret, à coller à l'étape 2 du panneau.
 
 Google supprime les transcriptions de l'API 30 jours après la réunion : gardez l'import automatique activé. Une application en statut « Test » reçoit des jetons valables 7 jours seulement ; publiez-la pour un usage durable.
 
-## Connecter un compte
-
-1. **Paramètres → Intégrations → Réunions**, carte de la plateforme → **Connecter**.
-2. Connectez-vous chez l'éditeur et acceptez l'accès. Vous revenez automatiquement sur WeKnora.
-3. Choisissez la base de connaissances, puis activez l'import automatique si vous le souhaitez.
+## Réglages d'import
 
 | Réglage | Effet |
 | --- | --- |
@@ -75,7 +65,7 @@ Google supprime les transcriptions de l'API 30 jours après la réunion : gardez
 
 Le premier import couvre les 30 derniers jours. Les suivants repartent du précédent, avec une marge de 48 heures pour les transcriptions générées en retard. Une transcription déjà importée ne l'est jamais deux fois.
 
-**Déconnecter** supprime les jetons et les réglages de la plateforme pour cet espace ; les documents déjà importés restent. Si l'éditeur révoque l'accès, l'écran affiche l'erreur et l'import s'arrête jusqu'à une nouvelle connexion.
+Supprimer une connexion efface l'application, les jetons et les réglages de la plateforme pour cet espace ; les documents déjà importés restent. Si l'éditeur révoque l'accès, l'écran affiche l'erreur et l'import s'arrête jusqu'à une nouvelle connexion.
 
 ## API
 
@@ -84,9 +74,10 @@ Routes sous `/api/v1/integrations/meetings`, `{provider}` valant `teams`, `zoom`
 | Méthode | Route | Rôle | Usage |
 | --- | --- | --- | --- |
 | GET | `/status` | Lecteur | Plateformes, connexions et adresse de retour |
+| PUT | `/providers/{provider}/app` | Admin | `{ "client_id", "client_secret", "app_tenant" }` (secret vide : conservé) |
 | POST | `/providers/{provider}/auth/start` | Admin | Renvoie `auth_url`, la page de connexion de l'éditeur |
 | PUT | `/providers/{provider}/settings` | Admin | `{ "knowledge_base_id", "auto_sync", "publish" }` |
 | POST | `/providers/{provider}/pull` | Admin | Import immédiat |
-| DELETE | `/providers/{provider}/connection` | Admin | Déconnexion |
+| DELETE | `/providers/{provider}/connection` | Admin | Suppression de la connexion |
 
 `GET /api/v1/integrations/meetings-oauth/callback` reçoit le retour de l'éditeur ; elle est publique et protégée par un code à usage unique valable 15 minutes.

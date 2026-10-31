@@ -9,7 +9,13 @@ export type MeetingProvider = 'teams' | 'zoom' | 'google_meet'
 
 export interface MeetingProviderStatus {
   provider: MeetingProvider
+  /** True once an admin created this connection in the UI. */
+  added: boolean
+  /** True when a client id and secret are available (UI or server .env). */
   configured: boolean
+  client_id?: string
+  secret_configured: boolean
+  app_tenant?: string
   connected: boolean
   account_label?: string
   knowledge_base_id?: string
@@ -39,7 +45,19 @@ export function getMeetingsStatus() {
   return get<Envelope<MeetingsStatus>>(`${BASE}/status`)
 }
 
-/** Returns the platform consent page; the browser comes back to the settings page afterwards. */
+export interface MeetingApp {
+  client_id: string
+  /** Empty keeps the stored secret. */
+  client_secret: string
+  /** Microsoft Entra tenant (Teams only); empty accepts any work account. */
+  app_tenant: string
+}
+
+export function saveMeetingApp(provider: MeetingProvider, app: MeetingApp) {
+  return put<Envelope<MeetingProviderStatus>>(`${BASE}/providers/${provider}/app`, app)
+}
+
+/** Returns the platform sign-in page, opened in a popup that reports back with postMessage. */
 export function startMeetingAuth(provider: MeetingProvider) {
   return post<Envelope<{ auth_url: string }>>(`${BASE}/providers/${provider}/auth/start`, {})
 }

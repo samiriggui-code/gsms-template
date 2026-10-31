@@ -33,13 +33,13 @@ func newGoogleMeet() *googleMeet {
 	}
 }
 
-func (g *googleMeet) ID() string       { return "google_meet" }
-func (g *googleMeet) Configured() bool { return g.creds.configured() }
+func (g *googleMeet) ID() string                     { return "google_meet" }
+func (g *googleMeet) EnvCredentials() AppCredentials { return g.creds.app() }
 
-func (g *googleMeet) OAuthConfig(redirectURL string) *oauth2.Config {
+func (g *googleMeet) OAuthConfig(app AppCredentials, redirectURL string) *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     g.creds.id(),
-		ClientSecret: g.creds.secret(),
+		ClientID:     app.ClientID,
+		ClientSecret: app.ClientSecret,
 		RedirectURL:  redirectURL,
 		// meetings.space.readonly is "sensitive" (app verification), not "restricted":
 		// entries are read through the API, never from the Docs file in Drive.

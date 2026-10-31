@@ -13,6 +13,8 @@ type MeetingsService interface {
 	// requestBase is the scheme://host of the incoming request, used for the
 	// OAuth redirect URL when MEETINGS_PUBLIC_URL is not set.
 	Status(ctx context.Context, requestBase string) types.MeetingsStatus
+	// SaveApp stores the OAuth app (client id/secret) the admin registered with the platform.
+	SaveApp(ctx context.Context, provider string, req *types.MeetingAppRequest) (types.MeetingProviderStatus, error)
 	StartAuth(ctx context.Context, provider, requestBase string) (*types.MeetingAuthStart, error)
 	// CompleteAuth handles the OAuth callback; it returns the provider that was connected.
 	CompleteAuth(ctx context.Context, state, code, requestBase string) (string, error)

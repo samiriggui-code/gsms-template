@@ -30,12 +30,25 @@ type Account struct {
 	Label string
 }
 
+// AppCredentials is the OAuth app the admin registered with the platform.
+type AppCredentials struct {
+	ClientID     string
+	ClientSecret string
+	// Tenant is the Microsoft Entra tenant (Teams only).
+	Tenant string
+}
+
+// Complete reports whether both the client id and secret are set.
+func (a AppCredentials) Complete() bool {
+	return strings.TrimSpace(a.ClientID) != "" && strings.TrimSpace(a.ClientSecret) != ""
+}
+
 // Provider is one meeting platform.
 type Provider interface {
 	ID() string
-	// Configured reports whether the deployment set the OAuth client id and secret.
-	Configured() bool
-	OAuthConfig(redirectURL string) *oauth2.Config
+	// EnvCredentials returns the optional server-wide app from the environment.
+	EnvCredentials() AppCredentials
+	OAuthConfig(app AppCredentials, redirectURL string) *oauth2.Config
 	AuthCodeOptions() []oauth2.AuthCodeOption
 	Account(ctx context.Context, hc *http.Client) (Account, error)
 	// ListRecordings returns transcripts of meetings that started between since and until.
@@ -49,10 +62,11 @@ type envCredentials struct {
 	idVar, secretVar string
 }
 
-func (e envCredentials) id() string     { return strings.TrimSpace(os.Getenv(e.idVar)) }
-func (e envCredentials) secret() string { return strings.TrimSpace(os.Getenv(e.secretVar)) }
-func (e envCredentials) configured() bool {
-	return e.id() != "" && e.secret() != ""
+func (e envCredentials) app() AppCredentials {
+	return AppCredentials{
+		ClientID:     strings.TrimSpace(os.Getenv(e.idVar)),
+		ClientSecret: strings.TrimSpace(os.Getenv(e.secretVar)),
+	}
 }
 
 // publicURLEnv is the externally reachable base URL used to build the OAuth

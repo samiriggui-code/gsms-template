@@ -76,11 +76,11 @@ type fakeProvider struct {
 	listErr    error
 }
 
-func (f *fakeProvider) ID() string       { return "zoom" }
-func (f *fakeProvider) Configured() bool { return true }
-func (f *fakeProvider) OAuthConfig(redirect string) *oauth2.Config {
+func (f *fakeProvider) ID() string                     { return "zoom" }
+func (f *fakeProvider) EnvCredentials() AppCredentials { return AppCredentials{} }
+func (f *fakeProvider) OAuthConfig(app AppCredentials, redirect string) *oauth2.Config {
 	return &oauth2.Config{
-		ClientID: "id", ClientSecret: "secret", RedirectURL: redirect,
+		ClientID: app.ClientID, ClientSecret: app.ClientSecret, RedirectURL: redirect,
 		Endpoint: oauth2.Endpoint{AuthURL: "https://platform.example/authorize", TokenURL: f.tokenURL, AuthStyle: oauth2.AuthStyleInParams},
 	}
 }
@@ -192,14 +192,17 @@ func pullTask(t *testing.T, tenantID uint64) *asynq.Task {
 	return asynq.NewTask(types.TypeMeetingsPull, raw)
 }
 
-// connect runs StartAuth then CompleteAuth like the browser would.
+// connect saves the app, then runs StartAuth and CompleteAuth like the browser would.
 func connect(t *testing.T, svc *Service, tenantID uint64) {
 	t.Helper()
+	_, err := svc.SaveApp(tenantCtx(tenantID), "zoom", &types.MeetingAppRequest{ClientID: "id", ClientSecret: "secret"})
+	require.NoError(t, err)
 	start, err := svc.StartAuth(tenantCtx(tenantID), "zoom", "http://localhost:5173")
 	require.NoError(t, err)
 	u, err := url.Parse(start.AuthURL)
 	require.NoError(t, err)
 	assert.Equal(t, "http://localhost:5173"+CallbackPath, u.Query().Get("redirect_uri"))
+	assert.Equal(t, "id", u.Query().Get("client_id"), "the app entered in the UI is used")
 	provider, err := svc.CompleteAuth(context.Background(), u.Query().Get("state"), "the-code", "http://localhost:5173")
 	require.NoError(t, err)
 	assert.Equal(t, "zoom", provider)
@@ -275,6 +278,10 @@ func TestRevokedGrantAsksToReconnect(t *testing.T) {
 func TestOAuthStateIsSingleUseAndExpires(t *testing.T) {
 	ts := newTokenServer(t)
 	svc, _, _ := newTestService(t, &fakeProvider{tokenURL: ts.srv.URL})
+	for _, tenant := range []uint64{7, 8} {
+		_, err := svc.SaveApp(tenantCtx(tenant), "zoom", &types.MeetingAppRequest{ClientID: "id", ClientSecret: "secret"})
+		require.NoError(t, err)
+	}
 	start, err := svc.StartAuth(tenantCtx(7), "zoom", "http://localhost")
 	require.NoError(t, err)
 	u, _ := url.Parse(start.AuthURL)
@@ -333,4 +340,34 @@ func TestSettingsValidationAndScheduler(t *testing.T) {
 
 	require.NoError(t, svc.Disconnect(tenantCtx(7), "zoom"))
 	assert.False(t, svc.Status(tenantCtx(7), "").Providers[0].Connected)
+}
+
+func TestSaveApp(t *testing.T) {
+	ts := newTokenServer(t)
+	svc, _, _ := newTestService(t, &fakeProvider{tokenURL: ts.srv.URL})
+
+	_, err := svc.StartAuth(tenantCtx(7), "zoom", "http://localhost")
+	require.Error(t, err, "no app entered yet")
+	assert.False(t, svc.Status(tenantCtx(7), "").Providers[0].Configured)
+
+	_, err = svc.SaveApp(tenantCtx(7), "zoom", &types.MeetingAppRequest{ClientID: "id"})
+	require.Error(t, err, "the first save needs a secret")
+
+	connect(t, svc, 7)
+	st, err := svc.SaveApp(tenantCtx(7), "zoom", &types.MeetingAppRequest{ClientID: "id"})
+	require.NoError(t, err, "an empty secret keeps the stored one")
+	assert.True(t, st.Configured)
+	assert.True(t, st.SecretConfigured)
+	assert.True(t, st.Connected, "same client id keeps the account")
+	assert.Equal(t, "id", st.ClientID)
+
+	var raw struct{ ClientSecret string }
+	require.NoError(t, svc.repo.db.Raw("SELECT client_secret FROM meeting_connections WHERE tenant_id = 7").Scan(&raw).Error)
+	assert.True(t, strings.HasPrefix(raw.ClientSecret, "enc:v1:"), "the client secret is encrypted at rest")
+
+	st, err = svc.SaveApp(tenantCtx(7), "zoom", &types.MeetingAppRequest{ClientID: "other", ClientSecret: "s2"})
+	require.NoError(t, err)
+	assert.False(t, st.Connected, "a new app drops the old account")
+	assert.True(t, svc.Status(tenantCtx(7), "").Providers[0].Added)
+	assert.False(t, svc.Status(tenantCtx(8), "").Providers[0].Added, "apps are per tenant")
 }
