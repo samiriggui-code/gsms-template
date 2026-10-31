@@ -112,7 +112,8 @@ func (s *weKnoraCloudService) CheckStatus(ctx context.Context) (*types.WeKnoraCl
 		return &types.WeKnoraCloudStatusResult{
 			HasModels:   true,
 			NeedsReinit: true,
-			Reason:      "WeKnoraCloud 凭证解密失败（服务重启后加密密钥已变更），请重新填写 APPID 和 APPSECRET",
+			Reason: "Échec du déchiffrement des identifiants WeKnoraCloud (la clé de chiffrement a changé " +
+				"après un redémarrage) ; saisissez de nouveau APPID et APPSECRET",
 		}, nil
 	}
 

@@ -1642,9 +1642,9 @@ func (h *Handler) runVLMAnalysisIfNeeded(streamCtx *sseStreamContext, reqCtx *qa
 	h.analyzeImageAttachments(streamCtx.asyncCtx, reqCtx.images,
 		reqCtx.customAgent.Config.VLMModelID, reqCtx.query)
 
-	outputMsg := "已分析图片内容"
+	outputMsg := "Contenu de l'image analysé"
 	if mode == qaModeAgent {
-		outputMsg = "已查看图片内容"
+		outputMsg = "Contenu de l'image consulté"
 	}
 	streamCtx.eventBus.Emit(streamCtx.asyncCtx, event.Event{
 		Type:      event.EventAgentToolResult,
@@ -1721,13 +1721,13 @@ func (h *Handler) resolveTemporaryAttachments(streamCtx *sseStreamContext, reqCt
 	}
 
 	if toolCallID != "" {
-		output := fmt.Sprintf("已解析 %d 个附件", len(readyIDs))
+		output := fmt.Sprintf("%d pièce(s) jointe(s) analysée(s)", len(readyIDs))
 		if skipped > 0 {
-			output += fmt.Sprintf("，%d 个未完成已跳过", skipped)
+			output += fmt.Sprintf(", %d non terminée(s) ignorée(s)", skipped)
 		}
 		success := resolveErr == nil
 		if resolveErr != nil {
-			output = fmt.Sprintf("附件解析失败: %v", resolveErr)
+			output = fmt.Sprintf("Échec de l'analyse des pièces jointes : %v", resolveErr)
 		}
 		streamCtx.eventBus.Emit(ctx, event.Event{
 			Type:      event.EventAgentToolResult,
@@ -1810,9 +1810,9 @@ func (h *Handler) awaitImageAttachmentsForAgent(streamCtx *sseStreamContext, req
 	}
 	h.waitForAttachments(ctx, tenantID, reqCtx.sessionID, imageIDs, waitTimeout)
 	ready, skipped := h.partitionReadyAttachments(ctx, tenantID, reqCtx.sessionID, imageIDs)
-	output := fmt.Sprintf("已解析 %d 个附件", len(ready))
+	output := fmt.Sprintf("%d pièce(s) jointe(s) analysée(s)", len(ready))
 	if skipped > 0 {
-		output += fmt.Sprintf("，%d 个未完成已跳过", skipped)
+		output += fmt.Sprintf(", %d non terminée(s) ignorée(s)", skipped)
 	}
 	_ = streamCtx.eventBus.Emit(ctx, event.Event{
 		Type:      event.EventAgentToolResult,

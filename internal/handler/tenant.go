@@ -1508,7 +1508,7 @@ func (h *TenantHandler) updateTenantParserEngineConfigInternal(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    types.ParserEngineConfigForResponse(updatedTenant.ParserEngineConfig, true),
-		"message": "解析引擎配置已更新",
+		"message": "Configuration du moteur d'analyse mise à jour",
 	})
 }
 
@@ -1574,7 +1574,7 @@ func (h *TenantHandler) updateTenantStorageEngineConfigInternal(c *gin.Context) 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    types.StorageEngineConfigForResponse(updatedTenant.StorageEngineConfig, true),
-		"message": "存储引擎配置已更新",
+		"message": "Configuration du moteur de stockage mise à jour",
 	})
 }
 

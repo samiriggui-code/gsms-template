@@ -70,7 +70,7 @@ func (s *knowledgeTagService) ListTags(
 	keyword string,
 ) (*types.PageResult, error) {
 	if kbID == "" {
-		return nil, werrors.NewBadRequestError("知识库ID不能为空")
+		return nil, werrors.NewBadRequestError("L'ID de la base de connaissances est obligatoire")
 	}
 	if page == nil {
 		page = &types.Pagination{}
@@ -139,7 +139,7 @@ func (s *knowledgeTagService) CreateTag(
 ) (*types.KnowledgeTag, error) {
 	name = strings.TrimSpace(name)
 	if kbID == "" || name == "" {
-		return nil, werrors.NewBadRequestError("知识库ID和标签名称不能为空")
+		return nil, werrors.NewBadRequestError("L'ID de la base de connaissances et le nom du tag sont obligatoires")
 	}
 	kb, err := s.kbService.GetKnowledgeBaseByID(ctx, kbID)
 	if err != nil {
@@ -153,7 +153,7 @@ func (s *knowledgeTagService) CreateTag(
 	// Check if tag with same name already exists
 	existingTag, err := s.repo.GetByName(ctx, kb.TenantID, kbID, name)
 	if err == nil && existingTag != nil {
-		return nil, werrors.NewConflictError("标签名称已存在")
+		return nil, werrors.NewConflictError("Ce nom de tag existe déjà")
 	}
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -191,11 +191,11 @@ func (s *knowledgeTagService) UpdateTag(
 	sortOrder *int,
 ) (*types.KnowledgeTag, error) {
 	if id == "" {
-		return nil, werrors.NewBadRequestError("标签ID不能为空")
+		return nil, werrors.NewBadRequestError("L'ID du tag est obligatoire")
 	}
 	tenantID, ok := types.TenantIDFromContext(ctx)
 	if !ok || tenantID == 0 {
-		return nil, werrors.NewForbiddenError("无权修改标签")
+		return nil, werrors.NewForbiddenError("Vous n'avez pas le droit de modifier ce tag")
 	}
 	tag, err := s.repo.GetByID(ctx, tenantID, id)
 	if err != nil {
@@ -209,7 +209,7 @@ func (s *knowledgeTagService) UpdateTag(
 	if name != nil {
 		newName := strings.TrimSpace(*name)
 		if newName == "" {
-			return nil, werrors.NewBadRequestError("标签名称不能为空")
+			return nil, werrors.NewBadRequestError("Le nom du tag est obligatoire")
 		}
 		tag.Name = newName
 	}
@@ -233,11 +233,11 @@ func (s *knowledgeTagService) UpdateTag(
 // When contentOnly=true, only deletes the content under the tag but keeps the tag itself.
 func (s *knowledgeTagService) DeleteTag(ctx context.Context, id string, force bool, contentOnly bool, excludeIDs []string) error {
 	if id == "" {
-		return werrors.NewBadRequestError("标签ID不能为空")
+		return werrors.NewBadRequestError("L'ID du tag est obligatoire")
 	}
 	tenantID, ok := types.TenantIDFromContext(ctx)
 	if !ok || tenantID == 0 {
-		return werrors.NewForbiddenError("无权修改标签")
+		return werrors.NewForbiddenError("Vous n'avez pas le droit de modifier ce tag")
 	}
 	tag, err := s.repo.GetByID(ctx, tenantID, id)
 	if err != nil {
@@ -269,7 +269,7 @@ func (s *knowledgeTagService) DeleteTag(ctx context.Context, id string, force bo
 		deletedIDs, err := s.chunkRepo.DeleteChunksByTagID(ctx, tenantID, tag.KnowledgeBaseID, tag.ID, excludeIDs)
 		if err != nil {
 			logger.Errorf(ctx, "Failed to delete chunks by tag ID %s: %v", tag.ID, err)
-			return werrors.NewInternalServerError("删除标签下的数据失败")
+			return werrors.NewInternalServerError("Échec de la suppression des données de ce tag")
 		}
 
 		// Enqueue async index deletion task for the deleted chunks
@@ -290,7 +290,7 @@ func (s *knowledgeTagService) DeleteTag(ctx context.Context, id string, force bo
 		knowledgeIDs, err := s.knowledgeRepo.ListIDsByTagIDs(ctx, tenantID, kb.ID, []string{tag.ID})
 		if err != nil {
 			logger.Errorf(ctx, "Failed to list knowledge IDs by tag ID %s: %v", tag.ID, err)
-			return werrors.NewInternalServerError("获取标签下的文档失败")
+			return werrors.NewInternalServerError("Échec de la lecture des documents de ce tag")
 		}
 		if len(knowledgeIDs) == 0 {
 			return nil
@@ -306,14 +306,14 @@ func (s *knowledgeTagService) DeleteTag(ctx context.Context, id string, force bo
 		payloadBytes, err := json.Marshal(payload)
 		if err != nil {
 			logger.Errorf(ctx, "Failed to marshal knowledge list delete payload: %v", err)
-			return werrors.NewInternalServerError("删除标签下的文档失败")
+			return werrors.NewInternalServerError("Échec de la suppression des documents de ce tag")
 		}
 		task := asynq.NewTask(types.TypeKnowledgeListDelete, payloadBytes,
 			asynq.Queue(types.QueueMaintenance), asynq.MaxRetry(3), asynq.Timeout(2*time.Hour))
 		info, err := s.task.Enqueue(task)
 		if err != nil {
 			logger.Errorf(ctx, "Failed to enqueue knowledge list delete task: %v", err)
-			return werrors.NewInternalServerError("删除标签下的文档失败")
+			return werrors.NewInternalServerError("Échec de la suppression des documents de ce tag")
 		}
 		logger.Infof(ctx, "Enqueued knowledge list delete task %s for %d knowledge files under tag %s", info.ID, len(knowledgeIDs), tag.ID)
 		return nil
@@ -339,7 +339,8 @@ func (s *knowledgeTagService) DeleteTag(ctx context.Context, id string, force bo
 	}
 
 	if !force && (kCount > 0 || cCount > 0) {
-		return werrors.NewBadRequestError("标签仍有知识或FAQ条目引用，无法删除")
+		return werrors.NewBadRequestError("Ce tag est encore utilisé par des connaissances ou des entrées FAQ ; " +
+			"impossible de le supprimer")
 	}
 
 	// When force=true, delete all content under this tag first
@@ -476,7 +477,7 @@ func (s *knowledgeTagService) ProcessIndexDelete(ctx context.Context, t *asynq.T
 func (s *knowledgeTagService) FindOrCreateTagByName(ctx context.Context, kbID string, name string) (*types.KnowledgeTag, error) {
 	name = strings.TrimSpace(name)
 	if kbID == "" || name == "" {
-		return nil, werrors.NewBadRequestError("知识库ID和标签名称不能为空")
+		return nil, werrors.NewBadRequestError("L'ID de la base de connaissances et le nom du tag sont obligatoires")
 	}
 
 	kb, err := s.kbService.GetKnowledgeBaseByID(ctx, kbID)

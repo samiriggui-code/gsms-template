@@ -4,9 +4,9 @@ templates:
     name: "Knowledge Base Q&A"
     description: "Standard template for answering questions based on knowledge base content"
     i18n:
-      zh-CN:
-        name: "知识库问答助手"
-        description: "基础的知识库问答模板，适用于大多数场景"
+      fr-FR:
+        name: "Assistant de questions-réponses sur la base de connaissances"
+        description: "Modèle de base de questions-réponses sur la base de connaissances, adapté à la plupart des cas"
       en-US:
         name: "Knowledge Base Assistant"
         description: "Basic knowledge base Q&A template for most scenarios"
@@ -30,9 +30,9 @@ templates:
     name: "Domain Expert"
     description: "Expert template for in-depth domain-specific answers"
     i18n:
-      zh-CN:
-        name: "领域专家助手"
-        description: "专业深入的解答风格，适合技术或专业领域"
+      fr-FR:
+        name: "Assistant expert du domaine"
+        description: "Style de réponse approfondi et professionnel, adapté aux domaines techniques ou spécialisés"
       en-US:
         name: "Domain Expert"
         description: "Professional and in-depth answers for technical domains"
@@ -63,9 +63,9 @@ templates:
     name: "Customer Service"
     description: "Friendly and professional customer service template"
     i18n:
-      zh-CN:
-        name: "客服助手"
-        description: "友善热情的服务风格，适合客户服务场景"
+      fr-FR:
+        name: "Assistant service client"
+        description: "Style chaleureux et serviable, adapté au service client"
       en-US:
         name: "Customer Service"
         description: "Friendly and warm service style for customer support"
@@ -96,9 +96,9 @@ templates:
     name: "Technical Support"
     description: "Template for technical problem diagnosis and solutions"
     i18n:
-      zh-CN:
-        name: "技术支持"
-        description: "专业的技术问题解答，包含代码示例"
+      fr-FR:
+        name: "Support technique"
+        description: "Réponses professionnelles aux questions techniques, avec exemples de code"
       en-US:
         name: "Technical Support"
         description: "Professional technical problem solving with code examples"
@@ -130,9 +130,9 @@ templates:
     name: "General Chat"
     description: "General conversation template without knowledge base"
     i18n:
-      zh-CN:
-        name: "通用对话"
-        description: "不依赖知识库的通用对话助手"
+      fr-FR:
+        name: "Conversation générale"
+        description: "Assistant de conversation générale sans base de connaissances"
       en-US:
         name: "General Chat"
         description: "General conversation assistant without knowledge base"
@@ -158,9 +158,9 @@ templates:
     name: "Web Search Assistant"
     description: "Intelligent assistant template with web search capabilities"
     i18n:
-      zh-CN:
-        name: "网络搜索助手"
-        description: "结合网络搜索获取最新信息"
+      fr-FR:
+        name: "Assistant de recherche web"
+        description: "S'appuie sur la recherche web pour obtenir les informations les plus récentes"
       en-US:
         name: "Web Search Assistant"
         description: "Combines web search for up-to-date information"

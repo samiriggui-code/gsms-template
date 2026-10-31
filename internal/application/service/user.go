@@ -553,7 +553,7 @@ func (s *userService) LoginWithOIDC(
 
 	return &types.OIDCCallbackResponse{
 		Success:      true,
-		Message:      "登录成功",
+		Message:      "Connexion réussie",
 		User:         user,
 		Tenant:       tenant,
 		Memberships:  memberships,

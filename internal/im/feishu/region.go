@@ -34,8 +34,8 @@ var (
 		Platform:           im.PlatformFeishu,
 		OpenBaseURL:        feishuOpenBaseURL,
 		Label:              "Feishu",
-		ThinkingText:       "正在思考...",
-		ImageFallbackLabel: "图片",
+		ThinkingText:       "Réflexion en cours...",
+		ImageFallbackLabel: "Image",
 	}
 
 	// RegionLark is the international cloud (Lark), addressed in English.

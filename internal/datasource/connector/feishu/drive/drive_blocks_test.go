@@ -273,7 +273,7 @@ func TestDriveFetchStream_DocxImageEmitted(t *testing.T) {
 	if main.ExternalID != driveDocxFileToken {
 		t.Errorf("main ExternalID = %q, want %q", main.ExternalID, driveDocxFileToken)
 	}
-	wantURI := "![图片](data:image/png;base64," + base64.StdEncoding.EncodeToString(png) + ")"
+	wantURI := "![image](data:image/png;base64," + base64.StdEncoding.EncodeToString(png) + ")"
 	if !strings.Contains(string(main.Content), wantURI) {
 		t.Errorf("image not inlined as base64 data URI:\n%s", main.Content)
 	}

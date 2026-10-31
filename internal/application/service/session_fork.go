@@ -750,7 +750,7 @@ func forkTitle(requested, sourceTitle string) string {
 	if requested != "" {
 		return requested
 	}
-	return sourceTitle + "（分支）"
+	return sourceTitle + " (branche)"
 }
 
 func forkSnapshotName(sourceSessionID string) string {

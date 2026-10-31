@@ -31,6 +31,27 @@ function resolveFrontendCommit(): string {
 const FRONTEND_COMMIT = resolveFrontendCommit()
 
 /** Dev parity with nginx: serve embed.html for /embed/:channelId (not the main SPA). */
+const GSMS_SUPPORTED_LOCALES = new Set(['fr-FR', 'en-US'])
+
+function resolveViteDefaultLocaleForHtml(): string {
+  const raw = (process.env.VITE_DEFAULT_LOCALE ?? 'fr-FR').trim()
+  return GSMS_SUPPORTED_LOCALES.has(raw) ? raw : 'fr-FR'
+}
+
+/** Keeps index.html pre-Vue lang/default locale aligned with i18n resolveDefaultLocale + VITE_DEFAULT_LOCALE. */
+function indexHtmlDefaultLocale(): Plugin {
+  const locale = resolveViteDefaultLocaleForHtml()
+  const htmlLang = locale.split('-')[0]?.toLowerCase() || 'fr'
+  return {
+    name: 'index-html-default-locale',
+    transformIndexHtml(html) {
+      return html
+        .replaceAll('__GSMS_VITE_DEFAULT_LOCALE__', locale)
+        .replaceAll('__GSMS_HTML_LANG__', htmlLang)
+    },
+  }
+}
+
 function embedHtmlDevFallback(): Plugin {
   return {
     name: 'embed-html-dev-fallback',
@@ -140,6 +161,7 @@ export default defineConfig({
   plugins: [
     vue(),
     vueJsx(),
+    indexHtmlDefaultLocale(),
     embedHtmlDevFallback(),
     pdfJsWasmAssets(),
   ],

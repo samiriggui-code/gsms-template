@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { BUILT_IN_DEFAULT, resolveDefaultLocale } from './resolveDefaultLocale.ts'
+import { BUILT_IN_DEFAULT, localeToHtmlLang, resolveDefaultLocale } from './resolveDefaultLocale.ts'
 
 test('resolveDefaultLocale prefers runtime over build-time default', () => {
   assert.equal(resolveDefaultLocale('en-US', 'fr-FR'), 'en-US')
@@ -22,4 +22,10 @@ test('resolveDefaultLocale rejects unknown values', () => {
   assert.equal(resolveDefaultLocale('zh-CN'), BUILT_IN_DEFAULT)
   assert.equal(resolveDefaultLocale('en-US"};alert(1);//'), BUILT_IN_DEFAULT)
   assert.equal(resolveDefaultLocale('   '), BUILT_IN_DEFAULT)
+})
+
+test('localeToHtmlLang maps supported tags to primary subtags', () => {
+  assert.equal(localeToHtmlLang('fr-FR'), 'fr')
+  assert.equal(localeToHtmlLang('en-US'), 'en')
+  assert.equal(localeToHtmlLang('  en-US  '), 'en')
 })

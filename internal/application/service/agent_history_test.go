@@ -25,7 +25,7 @@ func TestBuildUserHistoryMessage_IgnoresLegacyRenderedContent(t *testing.T) {
 	}
 	got := buildUserHistoryMessage(msg)
 	assert.Equal(t, "user", got.Role)
-	assert.Equal(t, "what about the chart?\n\n[用户上传图片内容]\na bar chart", got.Content)
+	assert.Equal(t, "what about the chart?\n\n[Contenu de l'image envoyée par l'utilisateur]\na bar chart", got.Content)
 	assert.NotContains(t, got.Content, "[augmented]")
 }
 
@@ -40,7 +40,8 @@ func TestBuildUserHistoryMessage_FallsBackToContentWithCaptions(t *testing.T) {
 	}
 	got := buildUserHistoryMessage(msg)
 	assert.Equal(t, "user", got.Role)
-	assert.Equal(t, "look at this\n\n[用户上传图片内容]\na bar chart\na pie chart", got.Content)
+	assert.Equal(t, "look at this\n\n[Contenu de l'image envoyée par l'utilisateur]\na bar chart\na pie "+
+		"chart", got.Content)
 }
 
 // TestBuildUserHistoryMessage_AppendsAttachmentsWhenNoRenderedContent covers
@@ -122,7 +123,8 @@ func TestBuildAssistantHistoryMessages_StripsThinkBlocks(t *testing.T) {
 
 func TestAssistantHistoryScopesArtifactVersionsToHistoricalTurn(t *testing.T) {
 	for _, labels := range [][2]string{
-		{"本轮生成的文件", "该历史消息生成的文件"},
+		{"Fichier généré lors de ce tour", "Fichier généré par ce message passé"},
+		{"本轮生成的文件", "Fichier généré par ce message passé"},
 		{"File generated this turn", "File generated in that historical turn"},
 	} {
 		body := "Done.\n\n" + labels[0] + ": ![deck](resource://AbCdEfGhIjKlMnOpQrStUv)"
@@ -216,7 +218,7 @@ func TestBuildAssistantHistoryMessages_SkipsPipelineTimelineToolCalls(t *testing
 						ID:     types.PipelineToolCallIDPrefix + "abc",
 						Name:   agenttools.ToolSearchKnowledge,
 						Args:   map[string]interface{}{"query": "你好"},
-						Result: &types.ToolResult{Success: true, Output: "未检索到相关内容"},
+						Result: &types.ToolResult{Success: true, Output: "Aucun contenu pertinent trouvé"},
 					},
 				},
 			},

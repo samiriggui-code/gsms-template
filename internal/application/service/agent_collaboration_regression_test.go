@@ -267,7 +267,7 @@ func TestExpiredParentClosurePreservesTranscriptAndRetriesStream(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, msg.IsCompleted)
 	require.Contains(t, msg.Content, "saved progress")
-	require.Contains(t, msg.Content, "超过执行时限")
+	require.Contains(t, msg.Content, "dépassé son délai d'exécution")
 	require.Len(t, msg.AgentSteps, 1)
 	streams.fail = false
 	require.NoError(t, s.finishInterruptedParent(ctx, b))

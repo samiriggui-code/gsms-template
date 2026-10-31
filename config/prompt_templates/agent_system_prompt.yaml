@@ -5,9 +5,9 @@ templates:
     name: "Pure Agent"
     description: "System prompt for Pure Agent mode (no Knowledge Bases)"
     i18n:
-      zh-CN:
-        name: "纯智能体"
-        description: "纯智能体模式的系统提示词（不使用知识库）"
+      fr-FR:
+        name: "Agent seul"
+        description: "Prompt système du mode agent seul (sans base de connaissances)"
       en-US:
         name: "Pure Agent"
         description: "System prompt for Pure Agent mode (no Knowledge Bases)"
@@ -27,9 +27,9 @@ templates:
     name: "Progressive RAG Agent"
     description: "System prompt for Progressive Agentic RAG mode with Knowledge Bases"
     i18n:
-      zh-CN:
-        name: "渐进式 RAG 智能体"
-        description: "带知识库的渐进式检索增强生成智能体系统提示词"
+      fr-FR:
+        name: "Agent RAG progressif"
+        description: "Prompt système de l'agent de génération augmentée par recherche progressive, avec base de connaissances"
       en-US:
         name: "Progressive RAG Agent"
         description: "System prompt for Progressive Agentic RAG mode with Knowledge Bases"
@@ -54,9 +54,9 @@ templates:
     name: "Data Analyst"
     description: "System prompt for Data Analyst agent with DuckDB SQL analysis"
     i18n:
-      zh-CN:
-        name: "数据分析师"
-        description: "基于 DuckDB SQL 的数据分析智能体系统提示词"
+      fr-FR:
+        name: "Analyste de données"
+        description: "Prompt système de l'agent d'analyse de données basé sur DuckDB SQL"
       en-US:
         name: "Data Analyst"
         description: "System prompt for Data Analyst agent with DuckDB SQL analysis"
@@ -81,9 +81,9 @@ templates:
     name: "Wiki Researcher"
     description: "System prompt for Wiki Researcher agent with knowledge graph traversal"
     i18n:
-      zh-CN:
-        name: "维基研究员"
-        description: "专用于 Wiki 知识库图谱导航与深度阅读的智能体系统提示词"
+      fr-FR:
+        name: "Chercheur wiki"
+        description: "Prompt système de l'agent dédié à la navigation dans le graphe du wiki et à la lecture approfondie"
       en-US:
         name: "Wiki Researcher"
         description: "System prompt for Wiki Researcher agent with knowledge graph traversal"
@@ -108,9 +108,9 @@ templates:
     name: "Wiki Fixer System Prompt"
     description: "System prompt for repairing and optimizing Wiki pages based on linter issues"
     i18n:
-      zh-CN:
-        name: "Wiki 修复系统提示词"
-        description: "用于根据巡检问题修复和优化 Wiki 页面的系统提示词"
+      fr-FR:
+        name: "Prompt système de correction du wiki"
+        description: "Prompt système pour corriger et améliorer les pages wiki à partir des problèmes détectés"
       en-US:
         name: "Wiki Fixer System Prompt"
         description: "System prompt for repairing and optimizing Wiki pages based on linter issues"
@@ -135,9 +135,9 @@ templates:
     name: "WeKnora Assistant System Prompt"
     description: "System prompt for the built-in assistant that inspects and manages WeKnora for the signed-in user"
     i18n:
-      zh-CN:
-        name: "WeKnora 助手系统提示词"
-        description: "内置助手的系统提示词，用于替当前用户查看和管理 WeKnora"
+      fr-FR:
+        name: "Prompt système de l'assistant WeKnora"
+        description: "Prompt système de l'assistant intégré, qui consulte et gère WeKnora pour l'utilisateur connecté"
       en-US:
         name: "WeKnora Assistant System Prompt"
         description: "System prompt for the built-in assistant that inspects and manages WeKnora for the signed-in user"
@@ -217,9 +217,9 @@ templates:
     name: "Hybrid RAG + Wiki Agent"
     description: "System prompt for agents working on KBs where BOTH Wiki and chunk (vector/keyword) indexes are enabled."
     i18n:
-      zh-CN:
-        name: "Wiki + RAG 混合智能体"
-        description: "同时启用 Wiki 与向量/关键词索引的知识库场景下使用的系统提示词"
+      fr-FR:
+        name: "Agent Wiki + RAG"
+        description: "Prompt système pour les bases de connaissances avec le wiki et l'index vectoriel ou par mots-clés activés"
       en-US:
         name: "Hybrid RAG + Wiki Agent"
         description: "System prompt for KBs with BOTH Wiki and chunk-level retrieval enabled"
@@ -246,9 +246,9 @@ templates:
     name: "Skill Installer System Prompt"
     description: "System prompt for installing an uploaded skill and its dependencies into the sandbox image"
     i18n:
-      zh-CN:
-        name: "技能安装系统提示词"
-        description: "用于把上传的技能及其依赖装进沙箱镜像的系统提示词"
+      fr-FR:
+        name: "Prompt système d'installation de compétences"
+        description: "Prompt système pour installer les compétences envoyées et leurs dépendances dans l'image du bac à sable"
       en-US:
         name: "Skill Installer System Prompt"
         description: "System prompt for installing an uploaded skill and its dependencies into the sandbox image"

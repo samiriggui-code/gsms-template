@@ -222,7 +222,7 @@ func TestGolden_RichDocxAllCapabilities(t *testing.T) {
 	// Baseline re-recorded (2026-09-20, orthodox image flow): image blocks
 	// render inline base64 data URIs (stored to provider:// URLs by the
 	// doc-process image resolver), and file blocks render as
-	// `- 文件名` list entries (whitelisted) or `> [附件: …](链接)` references
+	// `- 文件名` list entries (whitelisted) or `> [Pièce jointe : …](链接)` references
 	// (non-whitelisted), replacing the old `📎 附件：…` placeholder.
 	fragments := []string{
 		"# 季度报告",
@@ -235,15 +235,15 @@ func TestGolden_RichDocxAllCapabilities(t *testing.T) {
 		"- [ ] 完成复盘",
 		"> 注意风险",
 		"---",
-		"| 列A | 列B |",                  // native docx table header
-		"| 1 | 2 |",                    // native docx table row
-		"| 名称 | 数量 |",                  // embedded sheet header
-		"| 苹果 | 3 |",                   // embedded sheet row
-		"| 任务 | 状态 |",                  // embedded bitable header
-		"| 写码 | 完成 |",                  // embedded bitable row
-		"![图片](data:image/png;base64,", // image inlined as base64 data URI
+		"| 列A | 列B |",                     // native docx table header
+		"| 1 | 2 |",                       // native docx table row
+		"| 名称 | 数量 |",                     // embedded sheet header
+		"| 苹果 | 3 |",                      // embedded sheet row
+		"| 任务 | 状态 |",                     // embedded bitable header
+		"| 写码 | 完成 |",                     // embedded bitable row
+		"![image](data:image/png;base64,", // image inlined as base64 data URI
 		"- 手册.pdf",
-		"> [附件: logo.png](",
+		"> [Pièce jointe : logo.png](",
 		"- small.pdf",
 	}
 	for _, f := range fragments {

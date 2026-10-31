@@ -1,0 +1,54 @@
+# Hostinger GSMS VPS — Traefik companion (merge after deploy/docker-compose.traefik.yml).
+#
+# Same edge pattern as gsms-logistics-landing: external network `gsms`, entrypoint
+# websecure, certresolver letsencrypt, middleware gsms-secure on routers.
+#
+# global-it-ss: also clears fixed `container_name` from docker-compose.yml so
+# COMPOSE_PROJECT_NAME=globalitss yields project-prefixed names (e.g. globalitss-frontend-1),
+# and unpublishes `app` on the host (API via Traefik + internal `app:8080` only).
+# Requires Docker Compose 2.24+ for `!reset`.
+#
+# In .env on the VPS:
+#   COMPOSE_PROJECT_NAME=globalitss
+#   TRAEFIK_NETWORK=gsms
+#   TRAEFIK_ROUTER_MIDDLEWARES=gsms-secure
+#
+#   docker compose -f docker-compose.yml \
+#     -f deploy/docker-compose.traefik.yml \
+#     -f deploy/docker-compose.traefik.gsms.yml up -d
+
+services:
+  landing:
+    container_name: !reset null
+    ports: !reset []
+    labels:
+      - traefik.http.routers.gsms-landing.middlewares=gsms-secure
+      - traefik.http.routers.gsms-landing.service=gsms-landing
+      - traefik.http.services.gsms-landing.loadbalancer.server.port=3000
+
+  frontend:
+    container_name: !reset null
+    ports: !reset []
+    labels:
+      - traefik.http.routers.gsms-app.middlewares=gsms-secure
+      - traefik.http.routers.gsms-app.service=gsms-app
+      - traefik.http.services.gsms-app.loadbalancer.server.port=80
+
+  app:
+    container_name: !reset null
+    ports: !reset []
+
+  postgres:
+    container_name: !reset null
+
+  redis:
+    container_name: !reset null
+
+  docreader:
+    container_name: !reset null
+
+  sandbox:
+    container_name: !reset null
+
+  odl-hybrid:
+    container_name: !reset null

@@ -305,7 +305,7 @@ func TestParseCallbackMessage_RichTextKeepsFirstPictureAndHints(t *testing.T) {
 	if got.Extra["rich_text_picture_count"] != "3" {
 		t.Errorf("rich_text_picture_count = %q, want 3", got.Extra["rich_text_picture_count"])
 	}
-	if !strings.Contains(got.Content, "对比这几张图") || !strings.Contains(got.Content, "共 3 张图片") {
+	if !strings.Contains(got.Content, "对比这几张图") || !strings.Contains(got.Content, "contient 3 images") {
 		t.Errorf("Content = %q, want text plus dropped-picture hint", got.Content)
 	}
 }

@@ -1904,15 +1904,15 @@ const parseCSVFile = async (file: File): Promise<FAQEntryPayload[]> => {
               record[key] = String(row[key] || '').trim()
             })
 
-            const isDisabled = parseBooleanField(record['是否停用'], false)
+            const isDisabled = parseBooleanField(record['désactivé'] || record['是否停用'], false)
             payloads.push(
               normalizePayload({
                 standard_question: record['问题'] || record['standard_question'] || record['question'] || '',
-                answers: splitByDelimiter(record['机器人回答'] || record['answers']),
-                similar_questions: splitByDelimiter(record['相似问题'] || record['similar_questions']),
-                negative_questions: splitByDelimiter(record['反例问题'] || record['negative_questions']),
+                answers: splitByDelimiter(record['réponses'] || record['机器人回答'] || record['answers']),
+                similar_questions: splitByDelimiter(record['questions similaires'] || record['相似问题'] || record['similar_questions']),
+                negative_questions: splitByDelimiter(record['questions exclues'] || record['反例问题'] || record['negative_questions']),
                 tag_id: record['tag_id'] ? Number(record['tag_id']) : undefined,
-                tag_name: record['标签'] || record['分类'] || record['tag_name'] || '',
+                tag_name: record['catégorie'] || record['标签'] || record['分类'] || record['tag_name'] || '',
                 is_enabled: isDisabled !== undefined ? !isDisabled : undefined, // 是否停用：FALSE表示启用，TRUE表示停用，所以取反
               }),
             )
@@ -1952,14 +1952,14 @@ const parseExcelFile = async (file: File): Promise<FAQEntryPayload[]> => {
       normalizedRow[finalKey] = String(row[key] || '').trim()
     })
 
-    const isDisabled = parseBooleanField(normalizedRow['是否停用'], false)
+    const isDisabled = parseBooleanField(normalizedRow['désactivé'] || normalizedRow['是否停用'], false)
     return normalizePayload({
       standard_question: normalizedRow['问题'] || normalizedRow['standard_question'] || normalizedRow['question'] || '',
-      answers: splitByDelimiter(normalizedRow['机器人回答'] || normalizedRow['answers']),
-      similar_questions: splitByDelimiter(normalizedRow['相似问题'] || normalizedRow['similar_questions']),
-      negative_questions: splitByDelimiter(normalizedRow['反例问题'] || normalizedRow['negative_questions']),
+      answers: splitByDelimiter(normalizedRow['réponses'] || normalizedRow['机器人回答'] || normalizedRow['answers']),
+      similar_questions: splitByDelimiter(normalizedRow['questions similaires'] || normalizedRow['相似问题'] || normalizedRow['similar_questions']),
+      negative_questions: splitByDelimiter(normalizedRow['questions exclues'] || normalizedRow['反例问题'] || normalizedRow['negative_questions']),
       tag_id: normalizedRow['tag_id'] ? Number(normalizedRow['tag_id']) : undefined,
-      tag_name: normalizedRow['标签'] || normalizedRow['分类'] || normalizedRow['tag_name'] || '',
+      tag_name: normalizedRow['catégorie'] || normalizedRow['标签'] || normalizedRow['分类'] || normalizedRow['tag_name'] || '',
       is_enabled: isDisabled !== undefined ? !isDisabled : undefined, // 是否停用：FALSE表示启用，TRUE表示停用，所以取反
     })
   })
@@ -1987,10 +1987,10 @@ const splitByDelimiter = (value?: string) => {
 const parseBooleanField = (value?: string, defaultValue: boolean = true): boolean | undefined => {
   if (!value) return undefined
   const normalized = value.trim().toUpperCase()
-  if (normalized === 'TRUE' || normalized === '1' || normalized === '是' || normalized === 'YES') {
+  if (normalized === 'TRUE' || normalized === '1' || normalized === '是' || normalized === 'YES' || normalized === 'OUI') {
     return true
   }
-  if (normalized === 'FALSE' || normalized === '0' || normalized === '否' || normalized === 'NO') {
+  if (normalized === 'FALSE' || normalized === '0' || normalized === '否' || normalized === 'NO' || normalized === 'NON') {
     return false
   }
   return defaultValue
@@ -2382,18 +2382,18 @@ const downloadExampleOptions = computed(() => [
 // 示例数据
 const exampleData: FAQEntryPayload[] = [
   {
-    standard_question: '什么是 WeKnora？',
-    answers: ['WeKnora 是一个智能知识库管理系统', '它支持多种知识库类型和导入方式'],
-    similar_questions: ['WeKnora 是什么？', '介绍一下 WeKnora'],
-    negative_questions: ['这不是 WeKnora', '与 WeKnora 无关'],
-    tag_name: '产品介绍',
+    standard_question: "Qu'est-ce que Global-IT-SS AI Engine ?",
+    answers: ['Global-IT-SS AI Engine est un système intelligent de gestion des connaissances', 'Il prend en charge plusieurs types de bases de connaissances et modes d\'import'],
+    similar_questions: ["C'est quoi Global-IT-SS AI Engine ?", 'Présente-moi Global-IT-SS AI Engine'],
+    negative_questions: ["Ce n'est pas Global-IT-SS AI Engine", 'Sans rapport avec Global-IT-SS AI Engine'],
+    tag_name: 'Présentation du produit',
   },
   {
-    standard_question: '如何创建知识库？',
-    answers: ['点击"新建知识库"按钮', '选择知识库类型并填写相关信息', '完成创建后即可开始使用'],
-    similar_questions: ['怎么创建知识库？', '如何新建知识库？'],
+    standard_question: 'Comment créer une base de connaissances ?',
+    answers: ['Cliquez sur le bouton « Nouvelle base de connaissances »', 'Choisissez le type de base et remplissez les informations', 'Une fois créée, elle est prête à l\'emploi'],
+    similar_questions: ['Comment faire une base de connaissances ?', 'Comment ajouter une base de connaissances ?'],
     negative_questions: [],
-    tag_name: '使用指南',
+    tag_name: "Guide d'utilisation",
   },
 ]
 
@@ -2429,7 +2429,7 @@ const downloadJSONExample = () => {
 
 // 下载 CSV 示例
 const downloadCSVExample = () => {
-  const headers = ['标签(必填)', '问题(必填)', '相似问题(选填-多个用##分隔)', '反例问题(选填-多个用##分隔)', '机器人回答(必填-多个用##分隔)', '是否全部回复(选填-默认FALSE)', '是否停用(选填-默认FALSE)', '是否禁止被推荐(选填-默认False 可被推荐)']
+  const headers = ['Catégorie(obligatoire)', 'Question(obligatoire)', 'Questions similaires(facultatif - séparer par ##)', 'Questions exclues(facultatif - séparer par ##)', 'Réponses(obligatoire - séparer par ##)', 'Toutes les réponses(facultatif - FALSE par défaut)', 'Désactivé(facultatif - FALSE par défaut)', 'Non recommandable(facultatif - FALSE par défaut)']
   const rows = exampleData.map((item) => {
     return [
       item.tag_name || '', // 标签
@@ -2467,14 +2467,14 @@ const downloadCSVExample = () => {
 const downloadExcelExample = () => {
   const worksheet = XLSX.utils.json_to_sheet(
     exampleData.map((item) => ({
-      '标签(必填)': item.tag_name || '',
-      '问题(必填)': item.standard_question,
-      '相似问题(选填-多个用##分隔)': item.similar_questions.join('##'),
-      '反例问题(选填-多个用##分隔)': item.negative_questions.join('##'),
-      '机器人回答(必填-多个用##分隔)': item.answers.join('##'),
-      '是否全部回复(选填-默认FALSE)': 'FALSE',
-      '是否停用(选填-默认FALSE)': 'FALSE',
-      '是否禁止被推荐(选填-默认False 可被推荐)': 'FALSE',
+      'Catégorie(obligatoire)': item.tag_name || '',
+      'Question(obligatoire)': item.standard_question,
+      'Questions similaires(facultatif - séparer par ##)': item.similar_questions.join('##'),
+      'Questions exclues(facultatif - séparer par ##)': item.negative_questions.join('##'),
+      'Réponses(obligatoire - séparer par ##)': item.answers.join('##'),
+      'Toutes les réponses(facultatif - FALSE par défaut)': 'FALSE',
+      'Désactivé(facultatif - FALSE par défaut)': 'FALSE',
+      'Non recommandable(facultatif - FALSE par défaut)': 'FALSE',
     })),
   )
   const workbook = XLSX.utils.book_new()

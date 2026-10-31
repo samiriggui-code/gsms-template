@@ -146,9 +146,10 @@ func respondSandboxesStillLive(c *gin.Context, inv service.SandboxInventory) {
 	c.JSON(http.StatusConflict, gin.H{
 		"success": false,
 		"error": gin.H{
-			"code":    "sandboxes_still_live",
-			"message": "该配置仍有运行中或已暂停的沙箱，请先结束或删除相关会话，或新建一份配置",
-			"data":    inv,
+			"code": "sandboxes_still_live",
+			"message": "Cette configuration a encore des bacs à sable en cours ou en pause ; terminez ou " +
+				"supprimez les sessions concernées, ou créez une nouvelle configuration",
+			"data": inv,
 		},
 	})
 }
@@ -158,7 +159,7 @@ func respondSandboxInventoryUnverifiable(c *gin.Context) {
 		"success": false,
 		"error": gin.H{
 			"code":    "sandbox_inventory_unverifiable",
-			"message": "无法连接该后端核实是否仍有沙箱",
+			"message": "Impossible de joindre ce backend pour vérifier s'il reste des bacs à sable",
 		},
 	})
 }
@@ -167,9 +168,10 @@ func respondSkillSnapshotReleaseFailed(c *gin.Context, remaining []string) {
 	c.JSON(http.StatusConflict, gin.H{
 		"success": false,
 		"error": gin.H{
-			"code":    "skill_snapshot_release_failed",
-			"message": "无法销毁该配置下的技能快照，已中止删除以免快照继续计费",
-			"data":    gin.H{"snapshot_ids": remaining},
+			"code": "skill_snapshot_release_failed",
+			"message": "Impossible de détruire les instantanés de compétences de cette configuration ; " +
+				"suppression annulée pour éviter qu'ils restent facturés",
+			"data": gin.H{"snapshot_ids": remaining},
 		},
 	})
 }
@@ -178,8 +180,10 @@ func respondSkillSnapshotBlocksTemplate(c *gin.Context) {
 	c.JSON(http.StatusConflict, gin.H{
 		"success": false,
 		"error": gin.H{
-			"code":    "skill_snapshot_blocks_template",
-			"message": "该配置已安装 Skill，不能更换连接、DNS 或重建运行模板。请新建一份沙箱后再装 Skill。",
+			"code": "skill_snapshot_blocks_template",
+			"message": "Des compétences sont installées sur cette configuration : impossible de changer la " +
+				"connexion, le DNS ou de reconstruire le modèle d'exécution. Créez un nouveau bac à sable avant " +
+				"d'installer des compétences.",
 		},
 	})
 }
@@ -189,7 +193,7 @@ func respondSandboxConfigCordoned(c *gin.Context) {
 		"success": false,
 		"error": gin.H{
 			"code":    "sandbox_config_cordoned",
-			"message": "该配置正在被其他人修改，请稍后重试",
+			"message": "Cette configuration est en cours de modification par quelqu'un d'autre ; réessayez plus tard",
 		},
 	})
 }

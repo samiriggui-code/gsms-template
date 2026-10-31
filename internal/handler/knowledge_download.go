@@ -60,7 +60,7 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 64*1024)
 	var req BatchDownloadKnowledgeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(errors.NewBadRequestError("请选择 1～200 个文档进行批量下载"))
+		_ = c.Error(errors.NewBadRequestError("Sélectionnez entre 1 et 200 documents pour le téléchargement groupé"))
 		return
 	}
 
@@ -76,13 +76,14 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 	ctx := types.WithExecutionTenant(c.Request.Context(), tenantID)
 	ids := uniqueKnowledgeDownloadIDs(req.IDs)
 	if len(ids) == 0 {
-		_ = c.Error(errors.NewBadRequestError("文档 ID 不能为空"))
+		_ = c.Error(errors.NewBadRequestError("L'ID du document est obligatoire"))
 		return
 	}
 
 	items, err := h.kgService.GetKnowledgeBatch(ctx, tenantID, ids)
 	if err != nil {
-		_ = c.Error(errors.NewInternalServerError("无法获取待下载文档，请稍后重试"))
+		_ = c.Error(errors.NewInternalServerError("Impossible de récupérer les documents à télécharger ; " +
+			"réessayez plus tard"))
 		return
 	}
 	byID := make(map[string]*types.Knowledge, len(items))
@@ -96,7 +97,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 	for _, id := range ids {
 		item := byID[id]
 		if item == nil {
-			_ = c.Error(errors.NewNotFoundError("部分文档不存在或不属于当前知识库，请刷新列表后重试"))
+			_ = c.Error(errors.NewNotFoundError("Certains documents n'existent pas ou n'appartiennent pas à cette " +
+				"base de connaissances ; actualisez la liste et réessayez"))
 			return
 		}
 		if !item.IsManual() && item.FilePath == "" {
@@ -105,12 +107,13 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 		entries = append(entries, knowledgeDownloadEntry{ID: id, FolderPath: item.FolderPath})
 	}
 	if len(entries) == 0 {
-		_ = c.Error(errors.NewBadRequestError("所选文档没有可下载的原始文件，请取消选择后重试"))
+		_ = c.Error(errors.NewBadRequestError("Les documents sélectionnés n'ont pas de fichier original " +
+			"téléchargeable ; désélectionnez-les et réessayez"))
 		return
 	}
 
 	if !tryAcquireBatchDownloadSlot() {
-		_ = c.Error(errors.NewTooManyRequestsError("当前批量下载过多，请稍后重试"))
+		_ = c.Error(errors.NewTooManyRequestsError("Trop de téléchargements groupés en cours ; réessayez plus tard"))
 		return
 	}
 	defer releaseBatchDownloadSlot()
@@ -118,7 +121,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 	// 先在临时文件中完整生成压缩包，避免读取失败时向用户返回残缺 ZIP。
 	archive, err := os.CreateTemp("", "weknora-download-*.zip")
 	if err != nil {
-		_ = c.Error(errors.NewInternalServerError("无法创建下载压缩包，请稍后重试"))
+		_ = c.Error(errors.NewInternalServerError("Impossible de créer l'archive de téléchargement ; réessayez " +
+			"plus tard"))
 		return
 	}
 	archivePath := archive.Name()
@@ -137,7 +141,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 		return
 	}
 	if _, err := archive.Seek(0, io.SeekStart); err != nil {
-		_ = c.Error(errors.NewInternalServerError("无法读取下载压缩包，请稍后重试"))
+		_ = c.Error(errors.NewInternalServerError("Impossible de lire l'archive de téléchargement ; réessayez " +
+			"plus tard"))
 		return
 	}
 	filename := "knowledge-files-" + time.Now().Format("20060102-150405") + ".zip"
@@ -186,7 +191,7 @@ func mapKnowledgeDownloadError(err error) error {
 		return err
 	}
 	if isKnowledgeDownloadCanceled(err) {
-		return errors.NewBadRequestError("下载已取消")
+		return errors.NewBadRequestError("Téléchargement annulé")
 	}
 	return err
 }
@@ -212,7 +217,8 @@ func writeKnowledgeDownloadArchive(
 			if isKnowledgeDownloadCanceled(err) {
 				return err
 			}
-			return errors.NewInternalServerError("部分文件无法读取，未生成压缩包，请检查文档后重试").WithDetails(
+			return errors.NewInternalServerError("Certains fichiers sont illisibles, l'archive n'a pas été créée " +
+				"; vérifiez les documents et réessayez").WithDetails(
 				gin.H{"knowledge_id": entry.ID},
 			)
 		}
@@ -221,7 +227,8 @@ func writeKnowledgeDownloadArchive(
 		zipEntry, err := writer.CreateHeader(&zip.FileHeader{Name: name, Method: zip.Store})
 		if err != nil {
 			_ = file.Close()
-			return errors.NewInternalServerError("无法写入下载压缩包，请稍后重试")
+			return errors.NewInternalServerError("Impossible d'écrire l'archive de téléchargement ; réessayez " +
+				"plus tard")
 		}
 		n, copyErr := io.Copy(zipEntry, io.LimitReader(
 			&knowledgeDownloadReader{ctx: ctx, reader: file}, limit-total+1,
@@ -229,19 +236,22 @@ func writeKnowledgeDownloadArchive(
 		closeErr := file.Close()
 		total += n
 		if total > limit {
-			return errors.NewBadRequestError("所选文件合计超过 512 MiB，请分批下载")
+			return errors.NewBadRequestError("Les fichiers sélectionnés dépassent 512 Mio au total ; " +
+				"téléchargez-les en plusieurs fois")
 		}
 		if isKnowledgeDownloadCanceled(copyErr) {
 			return copyErr
 		}
 		if copyErr != nil || closeErr != nil {
-			return errors.NewInternalServerError("部分文件读取失败，未生成压缩包，请稍后重试").WithDetails(
+			return errors.NewInternalServerError("La lecture de certains fichiers a échoué, l'archive n'a pas été " +
+				"créée ; réessayez plus tard").WithDetails(
 				gin.H{"knowledge_id": entry.ID},
 			)
 		}
 	}
 	if err := writer.Close(); err != nil {
-		return errors.NewInternalServerError("无法完成下载压缩包，请稍后重试")
+		return errors.NewInternalServerError("Impossible de finaliser l'archive de téléchargement ; réessayez " +
+			"plus tard")
 	}
 	return nil
 }

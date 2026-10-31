@@ -1,5 +1,21 @@
 import { defineStore } from 'pinia'
 import { clampSidebarWidth, SIDEBAR_COLLAPSED_WIDTH, SIDEBAR_COLLAPSE_THRESHOLD } from '../utils/sidebarWidth'
+import { platformMobileMediaQuery } from '../utils/responsive'
+
+function initialPlatformMobile(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return false
+  return window.matchMedia(platformMobileMediaQuery()).matches
+}
+
+function createSidebarState() {
+  const storedCollapsed = localStorage.getItem('sidebar_collapsed') === 'true'
+  const platformMobile = initialPlatformMobile()
+  return {
+    platformMobile,
+    desktopSidebarBeforeMobile: platformMobile ? storedCollapsed : null as boolean | null,
+    sidebarCollapsed: platformMobile ? true : storedCollapsed,
+  }
+}
 
 export const useUIStore = defineStore('ui', {
   state: () => ({
@@ -23,7 +39,7 @@ export const useUIStore = defineStore('ui', {
     manualEditorInitialContent: '',
     manualEditorInitialStatus: 'draft' as 'draft' | 'publish',
     manualEditorOnSuccess: null as null | ((payload: { kbId: string; knowledgeId: string; status: 'draft' | 'publish' }) => void),
-    sidebarCollapsed: localStorage.getItem('sidebar_collapsed') === 'true',
+    ...createSidebarState(),
     sidebarWidth: clampSidebarWidth(Number(localStorage.getItem('sidebar_width'))),
     sidebarResizing: false,
     sidebarBrowserStatus: localStorage.getItem('sidebar_browser_status') !== 'false',
@@ -140,6 +156,36 @@ export const useUIStore = defineStore('ui', {
     setSidebarBrowserStatus(visible: boolean) {
       this.sidebarBrowserStatus = visible
       localStorage.setItem('sidebar_browser_status', String(visible))
+    },
+
+    setPlatformMobile(isMobile: boolean) {
+      if (this.platformMobile === isMobile) return
+      if (isMobile) {
+        this.desktopSidebarBeforeMobile = this.sidebarCollapsed
+        this.platformMobile = true
+        this.sidebarCollapsed = true
+        return
+      }
+      this.platformMobile = false
+      const restoreCollapsed = this.desktopSidebarBeforeMobile
+      this.desktopSidebarBeforeMobile = null
+      if (restoreCollapsed === null) return
+      this.sidebarCollapsed = restoreCollapsed
+      localStorage.setItem('sidebar_collapsed', String(restoreCollapsed))
+    },
+
+    openMobileSidebar() {
+      if (this.platformMobile) {
+        this.sidebarCollapsed = false
+        return
+      }
+      this.toggleSidebar()
+    },
+
+    closeMobileSidebar() {
+      if (this.platformMobile) {
+        this.sidebarCollapsed = true
+      }
     },
 
     toggleSidebar() {

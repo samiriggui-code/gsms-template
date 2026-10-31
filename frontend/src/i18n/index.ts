@@ -1,7 +1,8 @@
+import { watch } from 'vue'
 import { createI18n } from 'vue-i18n'
 import frFR from './locales/fr-FR.ts'
 import enUS from './locales/en-US.ts'
-import { isSupportedLocale, resolveDefaultLocale } from './resolveDefaultLocale.ts'
+import { isSupportedLocale, resolveDefaultLocale, syncDocumentHtmlLang } from './resolveDefaultLocale.ts'
 import { pluralRules } from './pluralizationRules.ts'
 
 const messages = {
@@ -27,6 +28,11 @@ const i18n = createI18n({
   // to avoid flooding the console and slowing renders during history loads.
   warnHtmlMessage: false,
   messages
+})
+
+syncDocumentHtmlLang(savedLocale)
+watch(i18n.global.locale, (next) => {
+  syncDocumentHtmlLang(typeof next === 'string' ? next : String(next))
 })
 
 export default i18n

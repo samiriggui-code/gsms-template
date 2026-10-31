@@ -371,7 +371,7 @@ func userNameResolver(ctx context.Context, client *Client) func(string) string {
 		}
 		name, err := client.UserName(ctx, userID)
 		if err != nil {
-			logger.Debugf(ctx, "[Feishu] resolve mention user %s: %v (degrading to @成员)", userID, err)
+			logger.Debugf(ctx, "[Feishu] resolve mention user %s: %v (degrading to @membre)", userID, err)
 			name = ""
 		}
 		cache.Store(userID, name)
@@ -494,7 +494,7 @@ func FetchDocxWithBlocks(ctx context.Context, client *Client, in DocxFetchInput)
 	// ![图片]() placeholder or a degrade note on failure. Markers are unique
 	// per N, and N is assigned once per image/board block.
 	patchMarker := func(n int, replacement string) {
-		needle := fmt.Sprintf("![图片](weknora-img://%d-%s)", n, imageMarkerNonce(in.URL))
+		needle := fmt.Sprintf("![image](weknora-img://%d-%s)", n, imageMarkerNonce(in.URL))
 		md = strings.Replace(md, needle, replacement, 1)
 	}
 
@@ -532,9 +532,9 @@ func FetchDocxWithBlocks(ctx context.Context, client *Client, in DocxFetchInput)
 				if displayName == "" {
 					displayName = a.FileToken
 				}
-				note := "> [附件: " + displayName + "]"
+				note := "> [Pièce jointe : " + displayName + "]"
 				if in.URL != "" {
-					note = "> [附件: " + displayName + "](" + escapeURL(in.URL) + ")"
+					note = "> [Pièce jointe : " + displayName + "](" + escapeURL(in.URL) + ")"
 				}
 				patchAtt(note)
 				continue
@@ -619,7 +619,7 @@ func FetchDocxWithBlocks(ctx context.Context, client *Client, in DocxFetchInput)
 	for _, pi := range imgs {
 		if pi.Token == "" {
 			// Malformed block: degrade the marker to a plain placeholder.
-			patchMarker(pi.N, "![图片]()")
+			patchMarker(pi.N, "![image]()")
 			continue
 		}
 
@@ -637,7 +637,7 @@ func FetchDocxWithBlocks(ctx context.Context, client *Client, in DocxFetchInput)
 			// failure: degrade inline, never fail the document.
 			logger.Warnf(ctx, "[Feishu] doc %s: %s %s download failed: %v",
 				in.ObjToken, pi.Kind, pi.Token, derr)
-			patchMarker(pi.N, "![图片]()")
+			patchMarker(pi.N, "![image]()")
 			continue
 		}
 		ext, contentType, ok := SupportedImageExt(data)
@@ -646,7 +646,7 @@ func FetchDocxWithBlocks(ctx context.Context, client *Client, in DocxFetchInput)
 			// dimensions; compressed diagrams can be well below 2 KB.
 			logger.Infof(ctx, "[Feishu] doc %s: %s %s not a usable image (type=%q bytes=%d)",
 				in.ObjToken, pi.Kind, pi.Token, contentType, len(data))
-			patchMarker(pi.N, "![图片]()")
+			patchMarker(pi.N, "![image]()")
 			continue
 		}
 		if len(data) > maxInlineImageBytes {
@@ -656,12 +656,12 @@ func FetchDocxWithBlocks(ctx context.Context, client *Client, in DocxFetchInput)
 			// Degrade here instead — same handling as an oversized attachment.
 			logger.Warnf(ctx, "[Feishu] doc %s: %s %s (%d bytes) over inline image cap, degrading to placeholder",
 				in.ObjToken, pi.Kind, pi.Token, len(data))
-			patchMarker(pi.N, "![图片]()")
+			patchMarker(pi.N, "![image]()")
 			continue
 		}
 
 		dataURI := "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(data)
-		patchMarker(pi.N, "![图片]("+dataURI+")")
+		patchMarker(pi.N, "![image]("+dataURI+")")
 		_ = ext // ext is implied by contentType in the data URI
 	}
 

@@ -8,9 +8,9 @@ templates:
     name: "Standard Fallback"
     description: "Standard fallback response template"
     i18n:
-      zh-CN:
-        name: "标准兜底"
-        description: "友好告知无法回答并提供建议"
+      fr-FR:
+        name: "Repli standard"
+        description: "Indique aimablement l'absence de réponse et propose des pistes"
       en-US:
         name: "Standard Fallback"
         description: "Friendly message with suggestions when unable to answer"
@@ -38,9 +38,9 @@ templates:
     name: "Polite Fallback"
     description: "More polite and friendly fallback response"
     i18n:
-      zh-CN:
-        name: "礼貌兜底"
-        description: "更加礼貌详细的无法回答提示"
+      fr-FR:
+        name: "Repli courtois"
+        description: "Message d'absence de réponse plus courtois et détaillé"
       en-US:
         name: "Polite Fallback"
         description: "More polite and detailed unable-to-answer message"
@@ -69,9 +69,9 @@ templates:
     name: "Brief Fallback"
     description: "Short fallback response"
     i18n:
-      zh-CN:
-        name: "简洁兜底"
-        description: "简短的无法回答提示"
+      fr-FR:
+        name: "Repli concis"
+        description: "Message court d'absence de réponse"
       en-US:
         name: "Brief Fallback"
         description: "Short unable-to-answer message"
@@ -88,9 +88,9 @@ templates:
     name: "Model Fallback"
     description: "Fallback prompt that delegates to the model for generation"
     i18n:
-      zh-CN:
-        name: "模型兜底提示"
-        description: "引导模型基于通用知识回答的提示词"
+      fr-FR:
+        name: "Prompt de repli du modèle"
+        description: "Prompt qui guide le modèle pour répondre avec ses connaissances générales"
       en-US:
         name: "Model Fallback Prompt"
         description: "Prompt to guide model to answer with general knowledge"
@@ -121,9 +121,9 @@ templates:
     name: "Standard Fallback Prompt"
     description: "Default prompt that delegates to the model when KB has no relevant results"
     i18n:
-      zh-CN:
-        name: "标准兜底 Prompt"
-        description: "知识库无相关结果时引导模型回答的默认提示词"
+      fr-FR:
+        name: "Prompt de repli standard"
+        description: "Prompt par défaut qui guide le modèle quand la base de connaissances ne renvoie rien de pertinent"
       en-US:
         name: "Standard Fallback Prompt"
         description: "Default prompt that delegates to the model when KB has no relevant results"

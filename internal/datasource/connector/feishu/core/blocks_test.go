@@ -312,7 +312,7 @@ func TestReadBitableRecords_SplitsTokenAndBuildsTable(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{"code": 0, "tenant_access_token": "t", "expire": 7200})
 		case strings.HasSuffix(r.URL.Path, "/fields"):
 			_ = json.NewEncoder(w).Encode(map[string]any{"code": 0, "data": map[string]any{
-				"items": []map[string]any{{"field_name": "任务"}, {"field_name": "状态"}},
+				"items": []map[string]any{{"field_name": "Tâche"}, {"field_name": "状态"}},
 			}})
 		case strings.HasSuffix(r.URL.Path, "/records/search"):
 			// Must use the current Search-records endpoint (POST), not the
@@ -326,7 +326,7 @@ func TestReadBitableRecords_SplitsTokenAndBuildsTable(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{"code": 0, "data": map[string]any{
 				"has_more": false,
 				"items": []map[string]any{
-					{"fields": map[string]any{"任务": "写文档", "状态": "进行中"}},
+					{"fields": map[string]any{"Tâche": "写文档", "状态": "进行中"}},
 				},
 			}})
 		}
@@ -341,7 +341,7 @@ func TestReadBitableRecords_SplitsTokenAndBuildsTable(t *testing.T) {
 	if truncated {
 		t.Errorf("did not expect truncation")
 	}
-	if len(rows) != 2 || rows[0][0] != "任务" || rows[0][1] != "状态" || rows[1][0] != "写文档" || rows[1][1] != "进行中" {
+	if len(rows) != 2 || rows[0][0] != "Tâche" || rows[0][1] != "状态" || rows[1][0] != "写文档" || rows[1][1] != "进行中" {
 		t.Errorf("rows = %+v", rows)
 	}
 }

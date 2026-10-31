@@ -750,7 +750,7 @@ func approvalGrant(
 	if summary == "" {
 		summary = op.ID
 	}
-	zh := strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "zh")
+	fr := strings.HasPrefix(types.LanguageFromContextOrDefault(ctx), "fr")
 	switch {
 	case len(kbIDs) > 0:
 		name := ""
@@ -760,12 +760,12 @@ func approvalGrant(
 		slices.Sort(kbIDs)
 		grant = op.ID + " knowledge_base:" + strings.Join(kbIDs, ",")
 		switch {
-		case name != "" && zh:
-			return grant, fmt.Sprintf("%s（仅限知识库「%s」）", summary, name)
+		case name != "" && fr:
+			return grant, fmt.Sprintf("%s (uniquement dans la base de connaissances « %s »)", summary, name)
 		case name != "":
 			return grant, fmt.Sprintf("%s (only in knowledge base %q)", summary, name)
-		case zh:
-			return grant, summary + "（仅限这次涉及的知识库）"
+		case fr:
+			return grant, summary + " (uniquement dans les bases de connaissances concernées par cet appel)"
 		default:
 			return grant, summary + " (only in the knowledge bases this call touches)"
 		}
@@ -776,12 +776,12 @@ func approvalGrant(
 		}
 		grant = op.ID + " agent:" + agentID
 		switch {
-		case name != "" && zh:
-			return grant, fmt.Sprintf("%s（仅限智能体「%s」）", summary, name)
+		case name != "" && fr:
+			return grant, fmt.Sprintf("%s (uniquement pour l'agent « %s »)", summary, name)
 		case name != "":
 			return grant, fmt.Sprintf("%s (only for agent %q)", summary, name)
-		case zh:
-			return grant, summary + "（仅限这个智能体）"
+		case fr:
+			return grant, summary + " (uniquement pour cet agent)"
 		default:
 			return grant, summary + " (only for this agent)"
 		}

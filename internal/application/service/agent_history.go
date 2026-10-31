@@ -490,7 +490,7 @@ func (r *historyReplay) openingUserMessage(m *types.Message) chat.Message {
 func buildUserHistoryMessage(m *types.Message) chat.Message {
 	content := m.Content
 	if captions := extractImageCaptionsFromMessage(m.Images); captions != "" {
-		content += "\n\n[用户上传图片内容]\n" + captions
+		content += "\n\n[Contenu de l'image envoyée par l'utilisateur]\n" + captions
 	}
 	if len(m.Attachments) > 0 {
 		content += m.Attachments.BuildAgentPrompt()
@@ -588,7 +588,8 @@ func finalAnswerHistoryMessage(m *types.Message) *chat.Message {
 	finalContent := agentHistoryThinkTagRegex.ReplaceAllString(m.Content, "")
 	// Version clarification was written for that message's turn, not this one.
 	finalContent = strings.NewReplacer(
-		"\n\n本轮生成的文件: ![", "\n\n该历史消息生成的文件: ![",
+		"\n\nFichier généré lors de ce tour: ![", "\n\nFichier généré par ce message passé: ![",
+		"\n\n本轮生成的文件: ![", "\n\nFichier généré par ce message passé: ![",
 		"\n\nFile generated this turn: ![", "\n\nFile generated in that historical turn: ![",
 	).Replace(finalContent)
 	finalContent = strings.TrimSpace(finalContent)

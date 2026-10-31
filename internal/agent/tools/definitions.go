@@ -115,60 +115,76 @@ type AvailableTool struct {
 // with registered tools in this package.
 func AvailableToolDefinitions() []AvailableTool {
 	return []AvailableTool{
-		{Name: ToolThinking, Label: "思考", Description: "动态和反思性的问题解决思考工具", Group: ToolGroupBase},
-		{Name: ToolTodoWrite, Label: "制定计划", Description: "创建结构化的研究计划", Group: ToolGroupBase},
-		{Name: ToolAskUser, Label: "向用户提问", Description: "需要用户补充信息或做选择时，弹出卡片等待回答", Group: ToolGroupBase},
+		{Name: ToolThinking, Label: "Réflexion", Description: "Outil de réflexion dynamique pour résoudre les " +
+			"problèmes", Group: ToolGroupBase},
+		{Name: ToolTodoWrite, Label: "Établir un plan", Description: "Créer un plan de recherche " +
+			"structuré", Group: ToolGroupBase},
+		{Name: ToolAskUser, Label: "Poser une question à l'utilisateur", Description: "Affiche une carte et " +
+			"attend la réponse quand il faut un complément d'information ou un choix de " +
+			"l'utilisateur", Group: ToolGroupBase},
 		{
 			Name:        ToolSearchConversations,
-			Label:       "回顾历史对话",
-			Description: "在用户自己的历史会话中查找之前聊过的内容",
+			Label:       "Revoir les conversations passées",
+			Description: "Retrouver ce qui a déjà été abordé dans les conversations passées de l'utilisateur",
 			Group:       ToolGroupBase,
 		},
-		{Name: ToolSearchKnowledge, Label: "检索知识库", Description: "语义、关键词或混合检索知识库分块", Group: ToolGroupRAG},
-		{Name: ToolReadDocument, Label: "阅读文档", Description: "读取文档元数据与分块内容，支持分页和文内查找", Group: ToolGroupRAG},
-		{Name: ToolListDocuments, Label: "浏览文档列表", Description: "分页列出知识库中的文档", Group: ToolGroupRAG},
-		{Name: ToolQueryKnowledgeGraph, Label: "查询知识图谱", Description: "从知识图谱中查询关系", Group: ToolGroupRAG},
-		{Name: ToolDatabaseQuery, Label: "查询数据库", Description: "查询数据库中的信息", Group: ToolGroupRAG},
-		{Name: ToolWikiSearch, Label: "搜索Wiki", Description: "在Wiki中搜索页面", Group: ToolGroupWikiRead},
-		{Name: ToolWikiReadPage, Label: "读取Wiki页面", Description: "读取指定的Wiki页面内容", Group: ToolGroupWikiRead},
+		{Name: ToolSearchKnowledge, Label: "Rechercher dans la base de connaissances", Description: "Recherche " +
+			"sémantique, par mots-clés ou hybride dans les fragments de la base de " +
+			"connaissances", Group: ToolGroupRAG},
+		{Name: ToolReadDocument, Label: "Lire un document", Description: "Lit les métadonnées et les fragments " +
+			"d'un document, avec pagination et recherche dans le texte", Group: ToolGroupRAG},
+		{Name: ToolListDocuments, Label: "Parcourir la liste des documents", Description: "Liste les documents de " +
+			"la base de connaissances, page par page", Group: ToolGroupRAG},
+		{Name: ToolQueryKnowledgeGraph, Label: "Interroger le graphe de connaissances", Description: "Interroge " +
+			"les relations du graphe de connaissances", Group: ToolGroupRAG},
+		{Name: ToolDatabaseQuery, Label: "Interroger la base de données", Description: "Interroge les " +
+			"informations de la base de données", Group: ToolGroupRAG},
+		{Name: ToolWikiSearch, Label: "Rechercher dans le wiki", Description: "Recherche des pages dans le " +
+			"wiki", Group: ToolGroupWikiRead},
+		{Name: ToolWikiReadPage, Label: "Lire une page wiki", Description: "Lit le contenu d'une page wiki " +
+			"donnée", Group: ToolGroupWikiRead},
 		{
 			Name:        ToolWikiFlagIssue,
-			Label:       "标记Wiki问题",
-			Description: "标记页面中存在的事实错误或合并冲突问题",
+			Label:       "Signaler un problème wiki",
+			Description: "Signale une erreur factuelle ou un conflit de fusion dans une page",
 			Group:       ToolGroupWikiRead,
 		},
 		{
 			Name:        ToolWikiWritePage,
-			Label:       "创建/覆盖Wiki",
-			Description: "创建新页面或完全覆盖已有页面",
+			Label:       "Créer/écraser une page wiki",
+			Description: "Crée une nouvelle page ou écrase entièrement une page existante",
 			Group:       ToolGroupWikiEdit,
 			Danger:      true,
 		},
 		{
 			Name:        ToolWikiReplaceText,
-			Label:       "局部替换Wiki",
-			Description: "替换Wiki页面中的特定文本",
+			Label:       "Remplacement partiel wiki",
+			Description: "Remplace un passage précis d'une page wiki",
 			Group:       ToolGroupWikiEdit,
 			Danger:      true,
 		},
 		{
 			Name:        ToolWikiRenamePage,
-			Label:       "重命名Wiki",
-			Description: "重命名Wiki页面并自动更新关联链接",
+			Label:       "Renommer une page wiki",
+			Description: "Renomme une page wiki et met à jour automatiquement les liens associés",
 			Group:       ToolGroupWikiEdit,
 			Danger:      true,
 		},
 		{
 			Name:        ToolWikiDeletePage,
-			Label:       "删除Wiki",
-			Description: "删除Wiki页面并自动清理关联死链",
+			Label:       "Supprimer une page wiki",
+			Description: "Supprime une page wiki et nettoie automatiquement les liens morts associés",
 			Group:       ToolGroupWikiEdit,
 			Danger:      true,
 		},
-		{Name: ToolWikiReadIssue, Label: "查看Wiki问题", Description: "查看特定的Wiki页面问题详情", Group: ToolGroupWikiIssue},
-		{Name: ToolWikiUpdateIssue, Label: "更新Wiki问题状态", Description: "更新特定的Wiki页面问题状态", Group: ToolGroupWikiIssue},
-		{Name: ToolDataAnalysis, Label: "数据分析", Description: "理解数据文件并进行数据分析", Group: ToolGroupData},
-		{Name: ToolDataSchema, Label: "查看数据元信息", Description: "获取表格文件的元信息", Group: ToolGroupData},
+		{Name: ToolWikiReadIssue, Label: "Voir les problèmes wiki", Description: "Affiche le détail d'un problème " +
+			"sur une page wiki", Group: ToolGroupWikiIssue},
+		{Name: ToolWikiUpdateIssue, Label: "Mettre à jour un problème wiki", Description: "Met à jour l'état d'un " +
+			"problème sur une page wiki", Group: ToolGroupWikiIssue},
+		{Name: ToolDataAnalysis, Label: "Analyse de données", Description: "Comprend un fichier de données et en " +
+			"fait l'analyse", Group: ToolGroupData},
+		{Name: ToolDataSchema, Label: "Voir les métadonnées des données", Description: "Obtient les métadonnées " +
+			"d'un fichier tableur", Group: ToolGroupData},
 	}
 }
 

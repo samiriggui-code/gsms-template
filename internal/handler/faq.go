@@ -89,7 +89,7 @@ func (h *FAQHandler) ListEntries(c *gin.Context) {
 	var page types.Pagination
 	if err := c.ShouldBindQuery(&page); err != nil {
 		logger.Error(ctx, "Failed to bind pagination query", err)
-		c.Error(errors.NewBadRequestError("分页参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de pagination non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -100,7 +100,7 @@ func (h *FAQHandler) ListEntries(c *gin.Context) {
 		var err error
 		legacyTagSeqID, err = strconv.ParseInt(tagIDStr, 10, 64)
 		if err != nil {
-			c.Error(errors.NewBadRequestError("tag_id 必须是整数"))
+			_ = c.Error(errors.NewBadRequestError("tag_id doit être un entier"))
 			return
 		}
 	}
@@ -168,7 +168,7 @@ func (h *FAQHandler) UpsertEntries(c *gin.Context) {
 	var req types.FAQBatchUpsertPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind FAQ upsert payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -209,7 +209,7 @@ func (h *FAQHandler) CreateEntry(c *gin.Context) {
 	var req types.FAQEntryPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind FAQ entry payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -249,13 +249,13 @@ func (h *FAQHandler) UpdateEntry(c *gin.Context) {
 	var req types.FAQEntryPayload
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind FAQ entry payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
 	entrySeqID, err := strconv.ParseInt(c.Param("entry_id"), 10, 64)
 	if err != nil {
-		c.Error(errors.NewBadRequestError("entry_id 必须是整数"))
+		_ = c.Error(errors.NewBadRequestError("entry_id doit être un entier"))
 		return
 	}
 
@@ -292,7 +292,7 @@ func (h *FAQHandler) UpdateEntryTagBatch(c *gin.Context) {
 	var req faqEntryTagBatchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind FAQ entry tag batch payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 	if err := h.knowledgeService.UpdateFAQEntryTagBatch(ctx, kbID, req.Updates); err != nil {
@@ -325,7 +325,7 @@ func (h *FAQHandler) UpdateEntryFieldsBatch(c *gin.Context) {
 	var req types.FAQEntryFieldsBatchUpdate
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind FAQ entry fields batch payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 	if err := h.knowledgeService.UpdateFAQEntryFieldsBatch(ctx, kbID, &req); err != nil {
@@ -360,7 +360,7 @@ func (h *FAQHandler) DeleteEntries(c *gin.Context) {
 	var req faqDeleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Errorf(ctx, "Failed to bind FAQ delete payload: %s", secutils.SanitizeForLog(err.Error()))
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -395,7 +395,7 @@ func (h *FAQHandler) SearchFAQ(c *gin.Context) {
 	var req types.FAQSearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind FAQ search payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 	req.QueryText = secutils.SanitizeForLog(req.QueryText)
@@ -486,7 +486,7 @@ func (h *FAQHandler) GetEntry(c *gin.Context) {
 
 	entrySeqID, err := strconv.ParseInt(c.Param("entry_id"), 10, 64)
 	if err != nil {
-		c.Error(errors.NewBadRequestError("entry_id 必须是整数"))
+		_ = c.Error(errors.NewBadRequestError("entry_id doit être un entier"))
 		return
 	}
 
@@ -557,7 +557,7 @@ func (h *FAQHandler) UpdateLastImportResultDisplayStatus(c *gin.Context) {
 	var req updateLastFAQImportResultDisplayStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind display status update payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -595,14 +595,14 @@ func (h *FAQHandler) AddSimilarQuestions(c *gin.Context) {
 
 	entrySeqID, err := strconv.ParseInt(c.Param("entry_id"), 10, 64)
 	if err != nil {
-		c.Error(errors.NewBadRequestError("entry_id 必须是整数"))
+		_ = c.Error(errors.NewBadRequestError("entry_id doit être un entier"))
 		return
 	}
 
 	var req addSimilarQuestionsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind add similar questions payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 

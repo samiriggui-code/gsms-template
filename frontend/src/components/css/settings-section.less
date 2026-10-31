@@ -81,6 +81,9 @@
   gap: 8px;
 }
 
+// Applied globally via platform-viewport-mobile.less inside .settings-modal-shell.
+// Keep mixin defaults desktop-first; mobile stacking lives in one place.
+
 // 改即存设置项的行内反馈（替代 toast）
 .setting-save-state() {
   display: inline-flex;

@@ -10,12 +10,9 @@ builtin_agents:
       default:
         name: "Quick Answer"
         description: "Knowledge base RAG Q&A for fast and accurate answers"
-      zh-CN:
-        name: "快速问答"
-        description: "基于知识库的 RAG 问答，快速准确地回答问题"
-      zh-TW:
-        name: "快速問答"
-        description: "基於知識庫的 RAG 問答，快速準確地回答問題"
+      fr-FR:
+        name: "Réponse rapide"
+        description: "Questions-réponses RAG sur la base de connaissances, pour des réponses rapides et précises"
       ja-JP:
         name: "クイック回答"
         description: "ナレッジベース RAG Q&A による迅速で正確な回答"
@@ -53,12 +50,9 @@ builtin_agents:
       default:
         name: "Smart Reasoning"
         description: "ReAct reasoning framework with multi-step thinking and tool calling"
-      zh-CN:
-        name: "智能推理"
-        description: "ReAct 推理框架，支持多步思考与工具调用"
-      zh-TW:
-        name: "智能推理"
-        description: "ReAct 推理框架，支援多步思考與工具呼叫"
+      fr-FR:
+        name: "Raisonnement intelligent"
+        description: "Cadre de raisonnement ReAct, avec réflexion en plusieurs étapes et appels d'outils"
       ja-JP:
         name: "スマート推論"
         description: "ReAct 推論フレームワーク、マルチステップ思考とツール呼び出し対応"
@@ -100,12 +94,9 @@ builtin_agents:
       default:
         name: "Data Analyst"
         description: "Professional data analysis agent with SQL query and statistical analysis for CSV/Excel files"
-      zh-CN:
-        name: "数据分析师"
-        description: "专业的数据分析智能体，支持对 CSV/Excel 文件进行 SQL 查询和统计分析"
-      zh-TW:
-        name: "數據分析師"
-        description: "專業的數據分析智能體，支援對 CSV/Excel 檔案進行 SQL 查詢和統計分析"
+      fr-FR:
+        name: "Analyste de données"
+        description: "Agent d'analyse de données : requêtes SQL et analyses statistiques sur des fichiers CSV/Excel"
       ja-JP:
         name: "データアナリスト"
         description: "CSV/Excel ファイルの SQL クエリと統計分析に対応するプロフェッショナルなデータ分析エージェント"
@@ -145,12 +136,9 @@ builtin_agents:
       default:
         name: "Wiki Questioner"
         description: "Specialized agent for answering questions based on Wiki knowledge bases"
-      zh-CN:
-        name: "维基问答"
-        description: "专注于在 Wiki 知识库中回答问题的智能体"
-      zh-TW:
-        name: "維基問答"
-        description: "專注於在 Wiki 知識庫中回答問題的智能體"
+      fr-FR:
+        name: "Questions-réponses wiki"
+        description: "Agent spécialisé dans les réponses à partir d'une base de connaissances wiki"
       ja-JP:
         name: "Wiki 問答"
         description: "Wikiナレッジベースでの回答問題に特化したエージェント"
@@ -188,12 +176,9 @@ builtin_agents:
       default:
         name: "Wiki Fixer"
         description: "Specialized agent for revising Wiki pages based on inspection issues"
-      zh-CN:
-        name: "维基修订"
-        description: "专门用于根据巡检问题修订 Wiki 页面的智能体"
-      zh-TW:
-        name: "維基修訂"
-        description: "專門用於根據巡檢問題修訂 Wiki 頁面的智能體"
+      fr-FR:
+        name: "Révision du wiki"
+        description: "Agent dédié à la correction des pages wiki à partir des problèmes détectés"
       ja-JP:
         name: "Wiki 修訂"
         description: "検査の問題に基づいてWikiページを修復および最適化するための専用エージェント"
@@ -237,12 +222,9 @@ builtin_agents:
       default:
         name: "Skill Installer"
         description: "Internal agent that installs an uploaded skill and its dependencies into the sandbox image"
-      zh-CN:
-        name: "技能安装器"
-        description: "把上传的技能及其依赖装进沙箱镜像的内部智能体"
-      zh-TW:
-        name: "技能安裝器"
-        description: "把上傳的技能及其相依套件裝進沙箱鏡像的內部智能體"
+      fr-FR:
+        name: "Installateur de compétences"
+        description: "Agent interne qui installe les compétences envoyées et leurs dépendances dans l'image du bac à sable"
       ja-JP:
         name: "スキルインストーラー"
         description: "アップロードされたスキルとその依存関係をサンドボックスイメージにインストールする内部エージェント"
@@ -280,12 +262,9 @@ builtin_agents:
       default:
         name: "WeKnora Assistant"
         description: "Answers how WeKnora works and manages your workspace: document parsing, knowledge base activity, Wiki health and repairs"
-      zh-CN:
-        name: "WeKnora 助手"
-        description: "解答 WeKnora 用法，查看和管理你的空间：文档解析、知识库动态、Wiki 健康与修订"
-      zh-TW:
-        name: "WeKnora 助手"
-        description: "解答 WeKnora 用法，檢視和管理你的空間：文件解析、知識庫動態、Wiki 健康與修訂"
+      fr-FR:
+        name: "Assistant WeKnora"
+        description: "Répond aux questions sur WeKnora et gère votre espace : analyse des documents, activité des bases de connaissances, santé et révision du wiki"
       ja-JP:
         name: "WeKnora アシスタント"
         description: "WeKnora の使い方に答え、ワークスペースを確認・管理：ドキュメント解析、ナレッジベースの履歴、Wiki の健全性と修正"
