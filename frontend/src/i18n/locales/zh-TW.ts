@@ -752,6 +752,39 @@ export default {
     confirmRemove: '確認移除'
   },
   integrations: {
+    meetings: {
+      title: 'Meetings (Teams, Zoom, Google Meet)',
+      subtitle: 'Automatically import your meeting transcripts into a knowledge base.',
+      providers: {
+        teams: 'Microsoft Teams',
+        zoom: 'Zoom',
+        google_meet: 'Google Meet',
+      },
+      notConfigured: 'Not configured on this server yet: the administrator must set the app client id and secret in .env.',
+      notConnected: 'No account connected.',
+      connectedAs: 'Connected: {account}',
+      connect: 'Connect',
+      disconnect: 'Disconnect',
+      disconnectConfirm: 'Disconnect this account? Documents already imported are kept.',
+      connectedToast: '{provider} account connected.',
+      connectFailed: 'The {provider} connection failed. Try again.',
+      knowledgeBase: 'Knowledge base',
+      knowledgeBaseDesc: 'Imported transcripts are added to it as documents.',
+      chooseKnowledgeBase: 'Choose a knowledge base',
+      autoSync: 'Automatic import',
+      autoSyncDesc: 'Checks for new transcripts every hour.',
+      publish: 'Publish directly',
+      publishDesc: 'Otherwise documents are created as drafts and are not searchable yet.',
+      importNow: 'Import now',
+      importNowButton: 'Import',
+      importedCount: '{count} transcript(s) imported',
+      lastSync: 'last import on {date}',
+      importQueued: 'Import started. Documents will appear in a few minutes.',
+      saved: 'Settings saved.',
+      encryptionWarning: 'SYSTEM_AES_KEY is not set: connection tokens will be stored unencrypted.',
+      redirectHint: 'Redirect URL to register in each platform\'s app:',
+      genericError: 'Something went wrong.',
+    },
     cli: {
       title: 'WeKnora CLI',
       subtitle: '在終端中管理知識庫和文件、檢索內容併發起問答，也可透過指令碼或 MCP 接入 AI 工具。',
@@ -1166,7 +1199,8 @@ export default {
       chrome: 'Chrome 外掛',
       cli: 'CLI',
       claw: 'Claw Skill',
-      mcpserver: 'MCP Server'
+      mcpserver: 'MCP Server',
+      meetings: 'Meetings'
     }
   },
   datasource: {

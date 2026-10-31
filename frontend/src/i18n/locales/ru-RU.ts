@@ -752,6 +752,39 @@ export default {
     confirmRemove: 'Подтвердить удаление'
   },
   integrations: {
+    meetings: {
+      title: 'Meetings (Teams, Zoom, Google Meet)',
+      subtitle: 'Automatically import your meeting transcripts into a knowledge base.',
+      providers: {
+        teams: 'Microsoft Teams',
+        zoom: 'Zoom',
+        google_meet: 'Google Meet',
+      },
+      notConfigured: 'Not configured on this server yet: the administrator must set the app client id and secret in .env.',
+      notConnected: 'No account connected.',
+      connectedAs: 'Connected: {account}',
+      connect: 'Connect',
+      disconnect: 'Disconnect',
+      disconnectConfirm: 'Disconnect this account? Documents already imported are kept.',
+      connectedToast: '{provider} account connected.',
+      connectFailed: 'The {provider} connection failed. Try again.',
+      knowledgeBase: 'Knowledge base',
+      knowledgeBaseDesc: 'Imported transcripts are added to it as documents.',
+      chooseKnowledgeBase: 'Choose a knowledge base',
+      autoSync: 'Automatic import',
+      autoSyncDesc: 'Checks for new transcripts every hour.',
+      publish: 'Publish directly',
+      publishDesc: 'Otherwise documents are created as drafts and are not searchable yet.',
+      importNow: 'Import now',
+      importNowButton: 'Import',
+      importedCount: '{count} transcript(s) imported',
+      lastSync: 'last import on {date}',
+      importQueued: 'Import started. Documents will appear in a few minutes.',
+      saved: 'Settings saved.',
+      encryptionWarning: 'SYSTEM_AES_KEY is not set: connection tokens will be stored unencrypted.',
+      redirectHint: 'Redirect URL to register in each platform\'s app:',
+      genericError: 'Something went wrong.',
+    },
     cli: {
       title: 'WeKnora CLI',
       subtitle: 'Управляйте базами знаний и документами, ищите информацию и задавайте вопросы из терминала. Подключайте скрипты и инструменты ИИ через CLI или MCP.',
@@ -1166,7 +1199,8 @@ export default {
       chrome: 'Расширение Chrome',
       cli: 'CLI',
       claw: 'Claw Skill',
-      mcpserver: 'MCP-сервер'
+      mcpserver: 'MCP-сервер',
+      meetings: 'Meetings'
     }
   },
   datasource: {

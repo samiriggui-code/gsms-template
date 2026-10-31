@@ -8481,6 +8481,39 @@ export default {
     }
   },
   integrations: {
+    meetings: {
+      title: 'Réunions (Teams, Zoom, Google Meet)',
+      subtitle: 'Importe automatiquement les transcriptions de vos réunions dans une base de connaissances.',
+      providers: {
+        teams: 'Microsoft Teams',
+        zoom: 'Zoom',
+        google_meet: 'Google Meet',
+      },
+      notConfigured: 'Pas encore configuré sur ce serveur : l\'administrateur doit renseigner l\'identifiant et le secret de l\'application dans le .env.',
+      notConnected: 'Aucun compte connecté.',
+      connectedAs: 'Connecté : {account}',
+      connect: 'Connecter',
+      disconnect: 'Déconnecter',
+      disconnectConfirm: 'Déconnecter ce compte ? Les documents déjà importés sont conservés.',
+      connectedToast: 'Compte {provider} connecté.',
+      connectFailed: 'La connexion {provider} a échoué. Réessayez.',
+      knowledgeBase: 'Base de connaissances',
+      knowledgeBaseDesc: 'Les transcriptions importées y sont ajoutées comme documents.',
+      chooseKnowledgeBase: 'Choisir une base',
+      autoSync: 'Import automatique',
+      autoSyncDesc: 'Vérifie les nouvelles transcriptions toutes les heures.',
+      publish: 'Publier directement',
+      publishDesc: 'Sinon, les documents sont créés en brouillon et ne sont pas encore recherchables.',
+      importNow: 'Importer maintenant',
+      importNowButton: 'Importer',
+      importedCount: '{count} transcription(s) importée(s)',
+      lastSync: 'dernier import le {date}',
+      importQueued: 'Import lancé. Les documents apparaîtront dans quelques minutes.',
+      saved: 'Réglages enregistrés.',
+      encryptionWarning: 'SYSTEM_AES_KEY n\'est pas configurée : les jetons de connexion seront stockés sans chiffrement.',
+      redirectHint: 'Adresse de retour à déclarer dans l\'application de chaque plateforme :',
+      genericError: 'Une erreur est survenue.',
+    },
     cli: {
       title: 'CLI WeKnora',
       subtitle: 'Gérez les bases de connaissances et les documents, recherchez du contenu et posez des questions depuis votre terminal. Connectez des scripts et des outils d\'IA via la CLI ou MCP.',
@@ -8614,7 +8647,8 @@ export default {
       chrome: 'Extension Chrome',
       cli: 'CLI',
       claw: 'Claw Skill',
-      mcpserver: 'Serveur MCP'
+      mcpserver: 'Serveur MCP',
+      meetings: 'Réunions'
     },
     api: {
       title: 'Intégration API',

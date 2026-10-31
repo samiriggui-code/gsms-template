@@ -2,7 +2,7 @@
 
 Pour les changements WeKnora / extensions Tencent :
 
-1. **Branche** : une feature par connecteur (`feat/tencent-meeting-connector`, etc.).
+1. **Branche** : une feature par connecteur (`feat/meetings-connectors`, etc.).
 2. **Avant PR / merge** : lancer CodeRabbit sur les changements locaux :
 
    ```bash
@@ -12,7 +12,7 @@ Pour les changements WeKnora / extensions Tencent :
    Pour tout le connecteur Meeting :
 
    ```bash
-   coderabbit review --agent --dir internal/tencentmeeting
+   coderabbit review --agent --dir internal/meetings
    ```
 
 3. **Corriger** au minimum les findings **critical** et **major** ; documenter les exceptions.

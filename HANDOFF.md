@@ -4,7 +4,7 @@ Dépôt de travail : **samiriggui-code/gsms-template** (fork WeKnora). Forks sou
 
 ## 1. En bref
 
-- **Fait (dans main, commit `082a128`)** : base WeKnora importée, audit, interface et serveur en **français par défaut / anglais en second** (#25), connecteur Tencent Meeting P1 derrière flag (#23), homepage unifiée dans `website-docs/` avec suppression de `landing/`, workflow `deploy-vps.yml` et script `clone-research.sh` (#27, remplace #24), retrait de `textract` et d'ebooklib (#28), images `app`, `docreader`, `frontend` et `site` toujours construites depuis ce repo (#29), infos de build sur la page système (#30).
+- **Fait (dans main, commit `082a128`)** : base WeKnora importée, audit, interface et serveur en **français par défaut / anglais en second** (#25), homepage unifiée dans `website-docs/` avec suppression de `landing/`, workflow `deploy-vps.yml` et script `clone-research.sh` (#27, remplace #24), retrait de `textract` et d'ebooklib (#28), images `app`, `docreader`, `frontend` et `site` toujours construites depuis ce repo (#29), infos de build sur la page système (#30).
 - **Déployé** : le VPS (`/opt/global-it-ss`, projet Compose `globalitss`) tourne sur `082a128` ; www, /docs/ et app.global-it-ss.com répondent 200.
 - **Pas commencé** : le cœur de la stratégie A, c'est-à-dire porter en Go la mémoire d'équipe/projet (L2/L3) et l'apprentissage de skills de TencentDB Agent Memory (aucun paquet `internal/gis/` pour l'instant).
 - **Points de vigilance** : le workflow GitHub « Build and Push Docker Image » échoue faute de secrets Docker Hub (sans effet sur le VPS, qui construit ses images lui-même) ; le workflow `deploy-vps.yml` n'a jamais tourné et n'a pas de secrets, le déploiement restant fait depuis le PC de samir.
@@ -43,7 +43,7 @@ Arrivé dans main avec #27. Les clones ne sont pas versionnés (~700 Mo). On les
 | --- | --- | --- |
 | TencentDB Agent Memory | `ecc01a5` | Mémoire L0→L3, skills, offload Mermaid → **cœur stratégie A** |
 | tencentcloud-sdk-go | `779c9a6` | Appels API Tencent Cloud en Go (wrapper `internal/tencentcloud/`) |
-| tencentmeeting-cli | `bd9ab53` | Modèle pour le client Go Meeting (OAuth, transcripts → KB) |
+| tencentmeeting-cli | `bd9ab53` | Plus utilisé : le connecteur Tencent Meeting a été retiré (ADR 002) |
 | tencentcloud-speech-sdk-go | `257f9f5` | ASR/TTS comme fournisseur dans `internal/models/` |
 | TIMSDK | `00fb559` | Canal chat Tencent dans `internal/im/` (le plus gros chantier) |
 
@@ -60,7 +60,7 @@ Ordre prévu par le plan doc 12 : Meeting → SDK → Speech → TIM. Ce plan **
 
 Détail : [docs/gsms-audit/12-integration-plan-tencent-extensions.md §0](docs/gsms-audit/12-integration-plan-tencent-extensions.md).
 
-1. **Finir Tencent Meeting** : client API Go, identifiants chiffrés par tenant, synchro automatique, écran de réglages, doc FR (branche `feat/tencent-meeting-p2`).
+1. **Connecteurs Réunions** Teams / Zoom / Google Meet, à la place de Tencent Meeting (branche `feat/meetings-connectors`, [ADR 002](docs/adr/002-meetings-connectors.md)). Reste : créer les applications chez Microsoft, Zoom et Google, et tester avec de vrais comptes.
 2. **Cœur Agent Memory** (stratégie A) : phases 1 à 4 de la [feuille de route](docs/gsms-audit/09-migration-roadmap.md), soit portées mémoire, L2/L3, Skills, UI.
 3. **Speech** : ASR Tencent comme fournisseur de modèles.
 4. **TIM** : seulement si un besoin métier est validé.

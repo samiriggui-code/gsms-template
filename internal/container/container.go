@@ -91,6 +91,7 @@ import (
 	"github.com/Tencent/WeKnora/internal/logger"
 	"github.com/Tencent/WeKnora/internal/mcp"
 	"github.com/Tencent/WeKnora/internal/mcpserver"
+	"github.com/Tencent/WeKnora/internal/meetings"
 	"github.com/Tencent/WeKnora/internal/models/api"
 	"github.com/Tencent/WeKnora/internal/models/embedding"
 	"github.com/Tencent/WeKnora/internal/models/limiter" // register built-in vendors
@@ -100,7 +101,6 @@ import (
 	"github.com/Tencent/WeKnora/internal/sandbox/admission"
 	"github.com/Tencent/WeKnora/internal/storageallowlist"
 	"github.com/Tencent/WeKnora/internal/stream"
-	"github.com/Tencent/WeKnora/internal/tencentmeeting"
 	"github.com/Tencent/WeKnora/internal/tracing/langfuse"
 	"github.com/Tencent/WeKnora/internal/types"
 	"github.com/Tencent/WeKnora/internal/types/interfaces"
@@ -549,7 +549,8 @@ func BuildContainer(container *dig.Container) *dig.Container {
 	must(container.Provide(datasource.NewScheduler))
 	must(container.Provide(service.NewDataSourceService))
 	must(container.Invoke(startDataSourceScheduler))
-	must(container.Provide(tencentmeeting.NewService))
+	must(container.Provide(meetings.NewService))
+	must(container.Invoke(startMeetingsScheduler))
 	logger.Debugf(ctx, "[Container] Data source sync framework registered")
 	must(container.Invoke(startAuditLogRetention))
 	logger.Debugf(ctx, "[Container] Audit log retention runner registered")
@@ -775,7 +776,7 @@ func BuildContainer(container *dig.Container) *dig.Container {
 
 	// Data source handler
 	must(container.Provide(handler.NewDataSourceHandler))
-	must(container.Provide(handler.NewTencentMeetingHandler))
+	must(container.Provide(handler.NewMeetingsHandler))
 	// Wiki page handler
 	must(container.Provide(handler.NewWikiPageHandler))
 	// IM integration
@@ -2137,6 +2138,18 @@ func startDataSourceScheduler(scheduler *datasource.Scheduler, cleaner interface
 
 	cleaner.RegisterWithName("DataSourceScheduler", func() error {
 		scheduler.StopWithin(cleanupStepTimeout)
+		return nil
+	})
+}
+
+// startMeetingsScheduler starts the hourly Teams / Zoom / Google Meet import
+// and registers its cleanup.
+func startMeetingsScheduler(svc interfaces.MeetingsService, cleaner interfaces.ResourceCleaner) {
+	if err := svc.StartScheduler(context.Background()); err != nil {
+		logger.Warnf(context.Background(), "[Container] meetings scheduler start failed: %v", err)
+	}
+	cleaner.RegisterWithName("MeetingsScheduler", func() error {
+		svc.StopScheduler(cleanupStepTimeout)
 		return nil
 	})
 }

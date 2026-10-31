@@ -17,7 +17,7 @@ var DeploymentCapabilityKeys = []string{
 	"integrations.embed",
 	"integrations.api",
 	"integrations.mcpserver",
-	"integrations.tencent_meeting",
+	"integrations.meetings",
 	"settings.mcp",
 	"settings.websearch",
 	"settings.vectorstore",
@@ -49,7 +49,7 @@ type DeploymentFeatureAvailability struct {
 	Embed                 bool
 	API                   bool
 	MCPServer             bool
-	TencentMeeting        bool
+	Meetings              bool
 	MCP                   bool
 	WebSearch             bool
 	VectorStore           bool
@@ -124,7 +124,7 @@ func BuildDeploymentCapabilities(
 			"integrations.embed":               supportedDeploymentCapability(available.Embed),
 			"integrations.api":                 supportedDeploymentCapability(available.API),
 			"integrations.mcpserver":           supportedDeploymentCapability(available.MCPServer),
-			"integrations.tencent_meeting":     supportedDeploymentCapability(available.TencentMeeting),
+			"integrations.meetings":            supportedDeploymentCapability(available.Meetings),
 			"settings.mcp":                     supportedDeploymentCapability(available.MCP),
 			"settings.websearch":               supportedDeploymentCapability(available.WebSearch),
 			"settings.vectorstore":             supportedDeploymentCapability(available.VectorStore),

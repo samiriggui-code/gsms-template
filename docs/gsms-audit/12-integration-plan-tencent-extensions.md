@@ -11,11 +11,13 @@
 
 ## 0. Priorités révisées (31 oct. 2026)
 
-Ordre décidé par samir : **finir Meeting, puis le cœur Agent Memory**. Le SDK cloud, la voix et TIM passent après.
+Ordre décidé par samir : **connecteurs de réunions, puis le cœur Agent Memory**. Le SDK cloud, la voix et TIM passent après.
+
+**Révision du 31 oct. 2026 (soir)** : Tencent Meeting est retiré. C'est un service chinois que ni samir ni ses clients n'utilisent. Il est remplacé par Microsoft Teams, Zoom et Google Meet, les outils de visio des entreprises clientes ([ADR 002](../adr/002-meetings-connectors.md), `internal/meetings/`). Le reste de ce document décrit le plan Tencent d'origine.
 
 | Rang | Chantier | Pourquoi ce rang | Référence |
 |------|----------|------------------|-----------|
-| 1 | **Tencent Meeting complet** (P2 : OAuth, client API Go, synchro automatique, écran de réglages, doc FR) | Déjà à moitié fait, livrable démontrable le plus proche | §3.1 |
+| 1 | **Réunions : Teams, Zoom, Google Meet** (OAuth, import horaire, écran de réglages, doc FR/EN) | Outils réellement utilisés par les clients ; remplace Tencent Meeting | ADR 002 |
 | 2 | **Cœur Agent Memory** (phases 1 à 4 de la [feuille de route](./09-migration-roadmap.md) : portées, L2/L3, Skills, UI) | C'est la valeur principale du projet selon la [synthèse](./01-executive-summary.md) | 09 |
 | 3 | **Speech** (ASR Tencent comme fournisseur, TTS ensuite) | Petit, indépendant, utile à Meeting si un enregistrement n'a pas de transcript | §3.3 |
 | — | **tencentcloud-sdk-go** | Pas un chantier : on ajoute un module seulement quand un rang ci-dessus en a besoin | §3.2 |
