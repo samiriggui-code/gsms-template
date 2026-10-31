@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	werrors "github.com/Tencent/WeKnora/internal/errors"
 	"github.com/Tencent/WeKnora/internal/logger"
 	"github.com/Tencent/WeKnora/internal/types"
 	"github.com/Tencent/WeKnora/internal/types/interfaces"
-	werrors "github.com/Tencent/WeKnora/internal/errors"
 	"github.com/hibiken/asynq"
 )
 
@@ -36,10 +36,12 @@ func NewService(
 	}
 }
 
+// Enabled reports whether WEKNORA_TENCENT_MEETING_ENABLED turned the connector on.
 func (s *Service) Enabled() bool {
 	return s.cfg.Enabled
 }
 
+// Status describes the connector state for the settings UI.
 func (s *Service) Status(ctx context.Context) types.TencentMeetingStatus {
 	_ = ctx
 	if !s.Enabled() {
@@ -55,6 +57,7 @@ func (s *Service) Status(ctx context.Context) types.TencentMeetingStatus {
 	}
 }
 
+// EnqueueSync validates the request and queues one async ingestion task for kbID.
 func (s *Service) EnqueueSync(
 	ctx context.Context,
 	kbID string,
@@ -100,6 +103,7 @@ func (s *Service) EnqueueSync(
 	return &types.TencentMeetingSyncResult{TaskID: info.ID, Queued: len(req.Items)}, nil
 }
 
+// ProcessSync is the asynq handler: it writes each transcript as a manual knowledge entry.
 func (s *Service) ProcessSync(ctx context.Context, t *asynq.Task) error {
 	if !s.Enabled() {
 		return fmt.Errorf("tencent meeting connector disabled")
@@ -128,11 +132,8 @@ func (s *Service) ProcessSync(ctx context.Context, t *asynq.Task) error {
 		if title == "" {
 			title = fmt.Sprintf("Tencent Meeting %s", item.MeetingID)
 		}
-		_, err := s.knowledgeService.CreateKnowledgeFromManual(ctx, payload.KnowledgeBaseID, &types.ManualKnowledgePayload{
-			Title:   title,
-			Content: content,
-			Status:  status,
-		}, IngestionChannel)
+		manual := &types.ManualKnowledgePayload{Title: title, Content: content, Status: status}
+		_, err := s.knowledgeService.CreateKnowledgeFromManual(ctx, payload.KnowledgeBaseID, manual, IngestionChannel)
 		if err != nil {
 			return err
 		}

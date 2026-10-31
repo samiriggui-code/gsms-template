@@ -29,28 +29,28 @@ type AsynqTaskParams struct {
 	// enrichment, maintenance, and Wiki work. SharedServer is the elastic tier:
 	// it also subscribes to core/enrichment queues so either stage can borrow
 	// otherwise-idle capacity without consuming the other stage's guarantee.
-	CoreServer           *asynq.Server `name:"coreAsynqServer"`
-	PostProcessServer    *asynq.Server `name:"postProcessAsynqServer"`
-	EnrichmentServer     *asynq.Server `name:"enrichmentAsynqServer"`
-	MaintenanceServer    *asynq.Server `name:"maintenanceAsynqServer"`
-	SharedServer         *asynq.Server `name:"sharedAsynqServer"`
-	WikiServer           *asynq.Server `name:"wikiAsynqServer"`
-	KnowledgeService     interfaces.KnowledgeService
-	KnowledgeBaseService interfaces.KnowledgeBaseService
-	TagService           interfaces.KnowledgeTagService
-	DataSourceService      interfaces.DataSourceService
-	TencentMeetingService  interfaces.TencentMeetingService
-	ChunkExtractor         interfaces.TaskHandler `name:"chunkExtractor"`
-	DataTableSummary     interfaces.TaskHandler `name:"dataTableSummary"`
-	ImageMultimodal      interfaces.TaskHandler `name:"imageMultimodal"`
-	KnowledgePostProcess interfaces.TaskHandler `name:"knowledgePostProcess"`
-	KnowledgeAutoTag     interfaces.TaskHandler `name:"knowledgeAutoTag"`
-	KnowledgeBaseProfile interfaces.TaskHandler `name:"knowledgeBaseProfile"`
-	WikiIngest           interfaces.TaskHandler `name:"wikiIngest"`
-	TemporaryDocument    interfaces.TemporaryDocumentService
-	MemoryService        interfaces.MemoryService
-	DeadLetterRepo       interfaces.TaskDeadLetterRepository
-	SpanTracker          service.SpanTracker
+	CoreServer            *asynq.Server `name:"coreAsynqServer"`
+	PostProcessServer     *asynq.Server `name:"postProcessAsynqServer"`
+	EnrichmentServer      *asynq.Server `name:"enrichmentAsynqServer"`
+	MaintenanceServer     *asynq.Server `name:"maintenanceAsynqServer"`
+	SharedServer          *asynq.Server `name:"sharedAsynqServer"`
+	WikiServer            *asynq.Server `name:"wikiAsynqServer"`
+	KnowledgeService      interfaces.KnowledgeService
+	KnowledgeBaseService  interfaces.KnowledgeBaseService
+	TagService            interfaces.KnowledgeTagService
+	DataSourceService     interfaces.DataSourceService
+	TencentMeetingService interfaces.TencentMeetingService
+	ChunkExtractor        interfaces.TaskHandler `name:"chunkExtractor"`
+	DataTableSummary      interfaces.TaskHandler `name:"dataTableSummary"`
+	ImageMultimodal       interfaces.TaskHandler `name:"imageMultimodal"`
+	KnowledgePostProcess  interfaces.TaskHandler `name:"knowledgePostProcess"`
+	KnowledgeAutoTag      interfaces.TaskHandler `name:"knowledgeAutoTag"`
+	KnowledgeBaseProfile  interfaces.TaskHandler `name:"knowledgeBaseProfile"`
+	WikiIngest            interfaces.TaskHandler `name:"wikiIngest"`
+	TemporaryDocument     interfaces.TemporaryDocumentService
+	MemoryService         interfaces.MemoryService
+	DeadLetterRepo        interfaces.TaskDeadLetterRepository
+	SpanTracker           service.SpanTracker
 }
 
 // defaultRedisOpTimeout is the previous hard-coded read timeout. The 100ms

@@ -1,7 +1,6 @@
 package tencentmeeting
 
 import (
-	"os"
 	"testing"
 
 	"github.com/Tencent/WeKnora/internal/types"
@@ -21,6 +20,6 @@ func TestBuildDocumentMarkdown(t *testing.T) {
 func TestEnabledFromEnv(t *testing.T) {
 	t.Setenv(envEnabled, "true")
 	assert.True(t, LoadConfigFromEnv().Enabled)
-	os.Unsetenv(envEnabled)
+	t.Setenv(envEnabled, "")
 	assert.False(t, LoadConfigFromEnv().Enabled)
 }

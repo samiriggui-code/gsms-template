@@ -220,22 +220,22 @@ func (e *SyncTaskExecutor) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asy
 type SyncTaskParams struct {
 	dig.In
 
-	Executor             *SyncTaskExecutor
-	KnowledgeService     interfaces.KnowledgeService
-	KnowledgeBaseService interfaces.KnowledgeBaseService
-	TagService           interfaces.KnowledgeTagService
+	Executor              *SyncTaskExecutor
+	KnowledgeService      interfaces.KnowledgeService
+	KnowledgeBaseService  interfaces.KnowledgeBaseService
+	TagService            interfaces.KnowledgeTagService
 	DataSourceService     interfaces.DataSourceService
 	TencentMeetingService interfaces.TencentMeetingService
 	SpanTracker           service.SpanTracker
-	ChunkExtractor       interfaces.TaskHandler `name:"chunkExtractor"`
-	DataTableSummary     interfaces.TaskHandler `name:"dataTableSummary"`
-	ImageMultimodal      interfaces.TaskHandler `name:"imageMultimodal"`
-	KnowledgePostProcess interfaces.TaskHandler `name:"knowledgePostProcess"`
-	KnowledgeAutoTag     interfaces.TaskHandler `name:"knowledgeAutoTag"`
-	KnowledgeBaseProfile interfaces.TaskHandler `name:"knowledgeBaseProfile"`
-	WikiIngest           interfaces.TaskHandler `name:"wikiIngest"`
-	TemporaryDocument    interfaces.TemporaryDocumentService
-	MemoryService        interfaces.MemoryService
+	ChunkExtractor        interfaces.TaskHandler `name:"chunkExtractor"`
+	DataTableSummary      interfaces.TaskHandler `name:"dataTableSummary"`
+	ImageMultimodal       interfaces.TaskHandler `name:"imageMultimodal"`
+	KnowledgePostProcess  interfaces.TaskHandler `name:"knowledgePostProcess"`
+	KnowledgeAutoTag      interfaces.TaskHandler `name:"knowledgeAutoTag"`
+	KnowledgeBaseProfile  interfaces.TaskHandler `name:"knowledgeBaseProfile"`
+	WikiIngest            interfaces.TaskHandler `name:"wikiIngest"`
+	TemporaryDocument     interfaces.TemporaryDocumentService
+	MemoryService         interfaces.MemoryService
 }
 
 // RegisterSyncHandlers registers all task handlers on the SyncTaskExecutor.

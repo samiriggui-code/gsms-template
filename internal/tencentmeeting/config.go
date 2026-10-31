@@ -1,3 +1,4 @@
+// Package tencentmeeting imports Tencent Meeting transcripts into knowledge bases.
 package tencentmeeting
 
 import (
