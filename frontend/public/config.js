@@ -6,6 +6,8 @@ window.__RUNTIME_CONFIG__ = {
   EMBED_BASE_URL: '',
   // Optional: default UI locale for first-time visitors (fr-FR | en-US)
   DEFAULT_LOCALE: '',
-  // Optional: marketing / landing site linked from auth (e.g. https://www.global-it-ss.com)
-  LANDING_URL: '',
+  // Optional: public site (homepage) linked from auth, e.g. 'https://www.global-it-ss.com'
+  PUBLIC_SITE_URL: '',
+  // Optional: product docs base, e.g. 'https://www.global-it-ss.com/docs/'
+  DOCS_BASE_URL: '',
 };

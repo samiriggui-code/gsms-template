@@ -1,11 +1,4 @@
-declare global {
-  interface Window {
-    __RUNTIME_CONFIG__?: {
-      PUBLIC_SITE_URL?: string
-      DOCS_BASE_URL?: string
-    }
-  }
-}
+// Window.__RUNTIME_CONFIG__ is declared in ./index.ts.
 
 const DEFAULT_PUBLIC_SITE = 'https://www.global-it-ss.com'
 const DEFAULT_DOCS_BASE = 'https://www.global-it-ss.com/docs/'
@@ -22,7 +15,7 @@ function pickUrl(...candidates: (string | undefined)[]): string {
 export function publicSiteUrl(): string {
   const raw = pickUrl(
     typeof window !== 'undefined' ? window.__RUNTIME_CONFIG__?.PUBLIC_SITE_URL : undefined,
-    import.meta.env.VITE_PUBLIC_SITE_URL,
+    import.meta.env?.VITE_PUBLIC_SITE_URL,
     DEFAULT_PUBLIC_SITE,
   )
   return raw.replace(/\/$/, '')
@@ -32,7 +25,7 @@ export function publicSiteUrl(): string {
 export function docsBaseUrl(): string {
   const raw = pickUrl(
     typeof window !== 'undefined' ? window.__RUNTIME_CONFIG__?.DOCS_BASE_URL : undefined,
-    import.meta.env.VITE_DOCS_BASE_URL,
+    import.meta.env?.VITE_DOCS_BASE_URL,
     DEFAULT_DOCS_BASE,
   )
   return raw.endsWith('/') ? raw : `${raw}/`
