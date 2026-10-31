@@ -22,13 +22,13 @@ import (
 // Categories are the documentation's sidebar groups, in site order. They
 // mirror the sections list in website-docs/.vitepress/config.mts.
 var Categories = []Category{
-	{Dir: "01-getting-started", Label: "Démarrage rapide"},
-	{Dir: "02-architecture", Label: "Architecture"},
-	{Dir: "03-features", Label: "Fonctionnalités"},
-	{Dir: "04-api", Label: "Référence API"},
-	{Dir: "05-clients", Label: "Clients"},
-	{Dir: "06-development", Label: "Guide de développement"},
-	{Dir: "07-releases", Label: "Versions"},
+	{Dir: "01-getting-started", Label: "快速开始"},
+	{Dir: "02-architecture", Label: "架构"},
+	{Dir: "03-features", Label: "功能模块"},
+	{Dir: "04-api", Label: "API 参考"},
+	{Dir: "05-clients", Label: "客户端"},
+	{Dir: "06-development", Label: "开发指南"},
+	{Dir: "07-releases", Label: "版本发布"},
 }
 
 // Category is one sidebar group.

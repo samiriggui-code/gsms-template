@@ -372,7 +372,7 @@ func validateCubeEgressRules(rules []CubeEgressRule) error {
 				"modèles")
 		}
 		if names[name] {
-			return fmt.Errorf("le name de règle HTTP cube %q est en double", name)
+			return fmt.Errorf("le nom de règle HTTP cube %q est en double", name)
 		}
 		names[name] = true
 
@@ -467,7 +467,7 @@ func validateE2BHostRules(rules []E2BHostRule, allowKeys map[string]string) erro
 			return fmt.Errorf("le host %q d'une règle host e2b doit être un domaine", host)
 		}
 		if seen[key] {
-			return fmt.Errorf("la règle host e2b %q est en double : un seul règle par domaine", host)
+			return fmt.Errorf("la règle host e2b %q est en double : une seule règle par domaine", host)
 		}
 		seen[key] = true
 

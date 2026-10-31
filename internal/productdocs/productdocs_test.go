@@ -57,7 +57,7 @@ const samplePage = "# Wiki 能力（Wiki）\n" +
 
 func parseSample(t *testing.T) *Doc {
 	t.Helper()
-	doc, err := parseDoc("03-features/14-wiki.md", "Fonctionnalités", samplePage)
+	doc, err := parseDoc("03-features/14-wiki.md", "功能模块", samplePage)
 	require.NoError(t, err)
 	return doc
 }
@@ -87,7 +87,7 @@ func TestParseDocSplitsSectionsWithSiteAnchors(t *testing.T) {
 func TestParseDocCleansSiteMarkup(t *testing.T) {
 	doc := parseSample(t)
 	lead := doc.Sections[0].Content
-	assert.Contains(t, lead, "（截图：Wiki 浏览器）")
+	assert.Contains(t, lead, "(capture d'écran : Wiki 浏览器)")
 	assert.NotContains(t, lead, "不应出现")
 	assert.Contains(t, lead, "[观测]("+PublicBaseURL+"03-features/16-observability)")
 	assert.Contains(t, lead, "[本节]("+PublicBaseURL+"03-features/14-wiki#抽取粒度)")
@@ -99,7 +99,7 @@ func TestParseDocCleansSiteMarkup(t *testing.T) {
 	assert.Contains(t, enable, "# 不是标题", "a # line inside a code fence is not a heading")
 	assert.Contains(t, enable, "export WIKI_ENABLED=true")
 
-	assert.Contains(t, doc.Sections[2].Content, "（图：拓扑）")
+	assert.Contains(t, doc.Sections[2].Content, "(image : 拓扑)")
 	assert.NotContains(t, doc.Sections[2].Content, "topology.png")
 }
 
@@ -183,7 +183,7 @@ func TestLoadAndSearch(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Len(t, lib.Docs(""), 3, "only category directories are loaded")
-	assert.Len(t, lib.Docs("Fonctionnalités"), 2)
+	assert.Len(t, lib.Docs("功能模块"), 2)
 	assert.Len(t, lib.Docs("03-features"), 2)
 
 	hits := lib.Search("Wiki 抽取粒度", "", 3)
