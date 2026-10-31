@@ -4,8 +4,9 @@ Avant toute tâche, lire **[HANDOFF.md](./HANDOFF.md)** : état du projet Global
 
 Règles clés :
 
-- Tout passe par branche + PR. Changements additifs par défaut ; une suppression n'est permise qu'avec l'accord explicite de samir (ex. retrait de `textract`/ebooklib).
+- Tout passe par branche + PR. Changements additifs par défaut ; une suppression n'est permise qu'avec l'accord explicite de samir.
 - Déploiement sur global-it-ss.com : ne lancer **aucune** nouvelle instance LLM. Réutiliser les LLM, la clé OpenRouter, le SMTP et le compte admin déjà en place pour Qualiopi, renseignés seulement dans le `.env` du VPS. Ne jamais écraser le `.env` existant.
 - Ne jamais écrire de secret dans le repo.
 - Langues : français principal, anglais secondaire.
-- Dossier `research/` : le script `./scripts/clone-research.sh` arrive avec la PR #24 (branche `feat/site-homepage-i18n`, pas encore dans main). Le lancer seulement s'il est présent et si `research/` est vide.
+- Dossier `research/` : lancer `./scripts/clone-research.sh` seulement si `research/` est vide.
+- Déploiement : depuis le PC de samir (`./scripts/deploy-vps.sh`), pas depuis GitHub Actions.
