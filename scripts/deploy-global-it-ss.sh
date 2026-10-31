@@ -110,6 +110,15 @@ fi
 echo "Validating Compose configuration…"
 docker compose "${COMPOSE_FILES[@]}" config >/dev/null
 
+# Build metadata for the system-info page: the build contexts contain no .git, so
+# version and commit must come from here (same values as start_all.sh).
+eval "$(./scripts/get_version.sh env)"
+export VERSION_ARG="${VERSION:-unknown}" COMMIT_ID_ARG="${COMMIT_ID:-unknown}"
+export BUILD_TIME_ARG="${BUILD_TIME:-}" VITE_FRONTEND_COMMIT="${COMMIT_ID:-unknown}"
+# GO_VERSION_ARG stays unset unless Go is on the host: the builder fills it in.
+[[ "${GO_VERSION:-unknown}" != unknown ]] && export GO_VERSION_ARG="${GO_VERSION}"
+echo "Build info: version=${VERSION_ARG} commit=${COMMIT_ID_ARG} time=${BUILD_TIME_ARG}"
+
 echo "Building site, frontend, app and docreader (local gsms-* images)…"
 docker compose "${COMPOSE_FILES[@]}" build "${NO_CACHE[@]}" site frontend app docreader
 
