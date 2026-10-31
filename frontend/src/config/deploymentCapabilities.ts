@@ -5,6 +5,7 @@ export const DEPLOYMENT_CAPABILITY_KEYS = [
   'integrations.embed',
   'integrations.api',
   'integrations.mcpserver',
+  'integrations.tencent_meeting',
   'settings.mcp',
   'settings.websearch',
   'settings.vectorstore',

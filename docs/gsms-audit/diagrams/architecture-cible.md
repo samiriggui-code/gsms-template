@@ -2,6 +2,8 @@
 
 Un seul produit, une API, une identité, une base de référence ; un processus Go principal issu de WeKnora et des modules internes spécialisés.
 
+> **Périmètre WeKnora aujourd’hui (extensions Tencent, sans métier GIS)** : voir [architecture-weknora-tencent-extensions.md](./architecture-weknora-tencent-extensions.md) et le plan [12-integration-plan-tencent-extensions.md](../12-integration-plan-tencent-extensions.md). Le schéma ci-dessous reste la **cible long terme** (mémoire L2/L3 portée depuis Agent Memory + apps métier GIS).
+
 ```mermaid
 flowchart TB
   subgraph Apps["Applications métier Global-IT-SS"]
@@ -9,6 +11,13 @@ flowchart TB
     APP2["App métier 2"]
     UI["Console Vue 3 + TDesign<br/>(WK frontend étendu)"]
     EXT["Agents de code externes<br/>(Claude Code, Codex…)"]
+  end
+
+  subgraph TencentExt["Extensions Tencent dans WeKnora (phase actuelle)"]
+    TM["Meeting → KB / mémoire"]
+    TC["SDK Go ciblé"]
+    SP["Speech ASR/TTS"]
+    TIM["IM Tencent Chat"]
   end
 
   subgraph Engine["gis-app — processus Go (socle WeKnora)"]
@@ -38,6 +47,10 @@ flowchart TB
   APP1 & APP2 & UI --> API
   EXT --> PX --> API
   PX --> LLM
+  TM & TC & SP & TIM --> API
+  TM --> KE
+  SP --> MG
+  TIM --> PL
   API --> SEC
   SEC --> KE & ME & SE & WE & AR & PL
   AR --> KE & ME & SE & WE & MG & SBX

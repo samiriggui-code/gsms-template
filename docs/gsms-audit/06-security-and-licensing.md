@@ -13,7 +13,7 @@
 | Rôles | Tenant : owner/admin/contributor/viewer ; organisation : admin/editor/viewer ; propriété des ressources | `WK/internal/types/tenant_member.go:21-32`, `organization.go:14-18`, `WK/internal/middleware/rbac.go` |
 | Isolation des données | `tenant_id` sur les entités, filtrage dans les dépôts et retrievers ; la portée mémoire est dérivée du contexte, jamais d'un ID client | `WK/internal/application/repository/retriever/postgres/repository.go`, `WK/internal/types/memory.go:188-191` |
 | Audit | Table `audit_logs` + rétention | `WK/migrations/versioned/000044_audit_log.up.sql`, `audit_log_retention.go` |
-| SSRF / fichiers | Tests SSRF dédiés, allowlist de stockage, validation d'URL de parseur ; `textract` désactivé « due to SSRF vulnerability » | `WK/internal/application/service/*ssrf_test.go`, `WK/internal/storageallowlist/`, `WK/docreader/parser/doc_parser.py:188` |
+| SSRF / fichiers | Tests SSRF dédiés, allowlist de stockage, validation d'URL de parseur ; `textract` (désactivé pour SSRF) retiré du docreader avec sa dépendance | `WK/internal/application/service/*ssrf_test.go`, `WK/internal/storageallowlist/`, `WK/docreader/parser/doc_parser.py` |
 | Exécution de code | Sandbox Docker/E2B/Cube, approbation des commandes et des outils MCP | `WK/internal/sandbox/command_approval.go`, `WK/internal/agent/approval/` |
 | Rate limiting | Limiteur sur routes publiques d'auth | `WK/internal/middleware/auth_public_ratelimit.go`, `WK/internal/ratelimit/` |
 | Politique de sécurité | `SECURITY.md` présent | `WK/SECURITY.md` |
