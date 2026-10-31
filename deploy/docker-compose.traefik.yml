@@ -57,6 +57,9 @@ services:
       - traefik.http.routers.gsms-app.middlewares=${TRAEFIK_ROUTER_MIDDLEWARES:-}
       - traefik.http.services.gsms-app.loadbalancer.server.port=80
 
+  app:
+    ports: !reset []
+
 networks:
   traefik:
     external: true
