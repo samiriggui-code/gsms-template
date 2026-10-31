@@ -57,7 +57,7 @@ const samplePage = "# Wiki 能力（Wiki）\n" +
 
 func parseSample(t *testing.T) *Doc {
 	t.Helper()
-	doc, err := parseDoc("03-features/14-wiki.md", "功能模块", samplePage)
+	doc, err := parseDoc("03-features/14-wiki.md", "Fonctions", samplePage)
 	require.NoError(t, err)
 	return doc
 }
@@ -183,7 +183,7 @@ func TestLoadAndSearch(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Len(t, lib.Docs(""), 3, "only category directories are loaded")
-	assert.Len(t, lib.Docs("功能模块"), 2)
+	assert.Len(t, lib.Docs("Fonctions"), 2)
 	assert.Len(t, lib.Docs("03-features"), 2)
 
 	hits := lib.Search("Wiki 抽取粒度", "", 3)

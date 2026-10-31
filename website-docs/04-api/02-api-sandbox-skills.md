@@ -204,7 +204,7 @@ Uniquement en édition bureau Lite ; autres déploiements 404. Ouvre sur la mach
 | --- | --- | --- |
 | POST | `/system/host-project-dir` | Sans corps ; 200 `{"code":0,"msg":"success","data":{"dir":"/Users/me/project"}}`, `dir` vide si annulation. JWT connecté uniquement, Viewer+ ; clé API refusée |
 
-## Variables d’environnement personnelles
+## Variables d’environnement personnelles {#variables-denvironnement-personnelles}
 
 L’identité de l’appelant est déterminée par le contexte d’auth courant ; pas de `user_id` en entrée. Les interfaces personnelles renvoient noms, source et horodatage de mise à jour, pas les valeurs en clair.
 

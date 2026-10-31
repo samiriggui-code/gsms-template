@@ -5,7 +5,7 @@ Les documents entrent dans le système par upload de fichier, import d’URL ou 
 
 ## Pipeline de traitement des images
 
-Après enregistrement, l’image suit la pipeline `default` ou `smartocr` définie par la KB : actions manuelles ou décision après observation. Le prétraitement OCR est désactivé par défaut et activable par KB ; la configuration de pipeline est figée à la soumission de la tâche — une modification ultérieure ne bascule pas les tâches déjà enfilées. La trace d’exécution enregistre la pipeline réelle et le résultat de chaque étape ; voir [Traitement des images](../03-features/03-document-parsing.md#_4-images-et-multimodal).
+Après enregistrement, l’image suit la pipeline `default` ou `smartocr` définie par la KB : actions manuelles ou décision après observation. Le prétraitement OCR est désactivé par défaut et activable par KB ; la configuration de pipeline est figée à la soumission de la tâche — une modification ultérieure ne bascule pas les tâches déjà enfilées. La trace d’exécution enregistre la pipeline réelle et le résultat de chaque étape ; voir [Traitement des images](../03-features/03-document-parsing.md#images-et-multimodal).
 
 ## Architecture globale {#_1-architecture-globale}
 
