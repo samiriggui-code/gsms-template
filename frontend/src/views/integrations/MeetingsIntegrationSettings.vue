@@ -732,7 +732,7 @@ onBeforeUnmount(() => {
 
 .account-ok__icon {
   color: var(--td-success-color);
-  font-size: 20px;
+  font-size: var(--app-text-xl);
   margin-top: 2px;
 }
 </style>
