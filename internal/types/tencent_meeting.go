@@ -2,11 +2,11 @@ package types
 
 // TencentMeetingTranscriptItem is one meeting artifact to ingest into a KB.
 type TencentMeetingTranscriptItem struct {
-	MeetingID   string `json:"meeting_id" binding:"required"`
-	Title       string `json:"title"`
-	Transcript  string `json:"transcript" binding:"required"`
-	RecordedAt  string `json:"recorded_at,omitempty"`
-	Summary     string `json:"summary,omitempty"`
+	MeetingID  string `json:"meeting_id" binding:"required"`
+	Title      string `json:"title"`
+	Transcript string `json:"transcript" binding:"required"`
+	RecordedAt string `json:"recorded_at,omitempty"`
+	Summary    string `json:"summary,omitempty"`
 }
 
 // TencentMeetingSyncRequest triggers async ingestion (P1).
@@ -21,7 +21,7 @@ type TencentMeetingSyncPayload struct {
 	KnowledgeBaseID string                         `json:"knowledge_base_id"`
 	Items           []TencentMeetingTranscriptItem `json:"items"`
 	Publish         bool                           `json:"publish"`
-	Initiator       string                         `json:"initiator,omitempty"`
+	Initiator       TaskInitiator                  `json:"initiator,omitempty"`
 }
 
 // TencentMeetingSyncResult is returned when a sync job is queued.
