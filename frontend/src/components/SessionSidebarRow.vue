@@ -30,7 +30,7 @@
         :aria-label="t('menu.sessionUnread')" :title="t('menu.sessionUnread')">
         <span class="session-unread-indicator__dot" aria-hidden="true" />
       </span>
-      <span v-else-if="item.parent_session_id" class="session-row-badge session-fork-indicator" role="img" aria-label="由其他会话分叉而来">
+      <span v-else-if="item.parent_session_id" class="session-row-badge session-fork-indicator" role="img" :aria-label="t('chat.forkedFrom')">
         <t-icon name="git-branch" class="submenu_fork_icon" />
       </span>
       <t-popup v-if="!batchMode" v-model:visible="menuOpen" :overlay-class-name="menuOverlayClass" trigger="click" destroy-on-close

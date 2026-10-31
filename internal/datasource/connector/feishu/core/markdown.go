@@ -87,7 +87,7 @@ func (r *mdRenderer) nextImageNo(kind, token string) int {
 // text run) from ever matching the connector's patch needle — only this
 // renderer and the patcher share the derivation (imageMarkerNonce).
 func (r *mdRenderer) imageMarker(n int) string {
-	return fmt.Sprintf("![图片](weknora-img://%d-%s)", n, r.markerNonce)
+	return fmt.Sprintf("![image](weknora-img://%d-%s)", n, r.markerNonce)
 }
 
 // imageMarkerNonce derives the per-document marker nonce from the doc URL.
@@ -138,7 +138,7 @@ func blocksToMarkdown(
 	// array means content was dropped silently. Annotate it like the
 	// embedded-table truncation does instead of failing the document.
 	if len(blocks) >= maxDocumentBlocks {
-		out += fmt.Sprintf("\n> 文档已截断（仅显示前 %d 个块）", maxDocumentBlocks)
+		out += fmt.Sprintf("\n> Document tronqué (seuls les %d premiers blocs sont affichés)", maxDocumentBlocks)
 	}
 	if out != "" {
 		out += "\n"
@@ -276,13 +276,13 @@ func (r *mdRenderer) renderBlock(b DocxBlock) string {
 			// Not ingestible (wrong type / video): keep a visible reference with
 			// the source link when available.
 			if r.docURL != "" {
-				return "> [附件: " + name + "](" + escapeURL(r.docURL) + ")"
+				return "> [Pièce jointe : " + name + "](" + escapeURL(r.docURL) + ")"
 			}
-			return "> [附件: " + name + "]"
+			return "> [Pièce jointe : " + name + "]"
 		}
 	case BlockTypeIframe:
 		if b.Iframe != nil && b.Iframe.Component != nil && b.Iframe.Component.URL != "" {
-			return "[内嵌网页](" + escapeURL(b.Iframe.Component.URL) + ")"
+			return "[Page web intégrée](" + escapeURL(b.Iframe.Component.URL) + ")"
 		}
 		return unsupportedBlockNote(b)
 	case BlockTypeAddOns:
@@ -554,7 +554,7 @@ func (r *mdRenderer) richText(bt *BlockText) string {
 			if name := r.userName(e.MentionUser.UserID); name != "" {
 				sb.WriteString("@" + name)
 			} else {
-				sb.WriteString("@成员")
+				sb.WriteString("@membre")
 			}
 		case e.Equation != nil && strings.TrimSpace(e.Equation.Content) != "":
 			sb.WriteString("$" + strings.TrimSpace(e.Equation.Content) + "$")
@@ -650,38 +650,38 @@ func codeFenceLength(content string) int {
 // mindnote (29) has no content API at all (token-only placeholder per Feishu
 // docs).
 var blockTypeNames = map[int]string{
-	BlockTypeChatCard:          "会话卡片",
-	BlockTypeDiagram:           "流程图&UML",
-	BlockTypeGridColumn:        "分栏列",
-	BlockTypeISV:               "开放平台小组件",
-	BlockTypeMindnote:          "思维笔记",
-	BlockTypeTask:              "任务",
+	BlockTypeChatCard:          "Carte de conversation",
+	BlockTypeDiagram:           "Diagramme & UML",
+	BlockTypeGridColumn:        "Colonne",
+	BlockTypeISV:               "Widget de plateforme ouverte",
+	BlockTypeMindnote:          "Carte mentale",
+	BlockTypeTask:              "Tâche",
 	BlockTypeOKR:               "OKR",
-	BlockTypeOKRObjective:      "OKR目标",
-	BlockTypeOKRKeyResult:      "OKR关键结果",
-	BlockTypeOKRProgress:       "OKR进展",
-	BlockTypeAddOns:            "文档小组件",
-	BlockTypeJiraIssue:         "Jira问题",
-	BlockTypeWikiCatalog:       "Wiki子页面列表",
-	BlockTypeBoard:             "画板",
-	BlockTypeAgenda:            "议程",
-	BlockTypeAgendaItem:        "议程项",
-	BlockTypeAgendaItemTitle:   "议程项标题",
-	BlockTypeAgendaItemContent: "议程项内容",
-	BlockTypeLinkPreview:       "链接预览",
-	BlockTypeSourceSynced:      "源同步块",
-	BlockTypeReferenceSynced:   "引用同步块",
-	BlockTypeSubPageList:       "Wiki子页面列表(新版)",
-	BlockTypeAITemplate:        "AI模板",
+	BlockTypeOKRObjective:      "Objectif OKR",
+	BlockTypeOKRKeyResult:      "Résultat clé OKR",
+	BlockTypeOKRProgress:       "Progression OKR",
+	BlockTypeAddOns:            "Widget de document",
+	BlockTypeJiraIssue:         "Ticket Jira",
+	BlockTypeWikiCatalog:       "Liste des sous-pages wiki",
+	BlockTypeBoard:             "Tableau blanc",
+	BlockTypeAgenda:            "Ordre du jour",
+	BlockTypeAgendaItem:        "Point de l'ordre du jour",
+	BlockTypeAgendaItemTitle:   "Titre du point de l'ordre du jour",
+	BlockTypeAgendaItemContent: "Contenu du point de l'ordre du jour",
+	BlockTypeLinkPreview:       "Aperçu de lien",
+	BlockTypeSourceSynced:      "Bloc synchronisé source",
+	BlockTypeReferenceSynced:   "Bloc synchronisé référencé",
+	BlockTypeSubPageList:       "Liste des sous-pages wiki (nouvelle version)",
+	BlockTypeAITemplate:        "Modèle IA",
 }
 
 // unsupportedBlockNote renders the degraded placeholder for a block type this
 // converter does not unpack. Tokens are never included (no-leak constraint).
 func unsupportedBlockNote(b DocxBlock) string {
 	if name, ok := blockTypeNames[b.BlockType]; ok {
-		return "> [飞书块: " + name + "]"
+		return "> [Bloc Feishu : " + name + "]"
 	}
-	return fmt.Sprintf("> [飞书块: 未知类型(%d)]", b.BlockType)
+	return fmt.Sprintf("> [Bloc Feishu : type inconnu (%d)]", b.BlockType)
 }
 
 // headingText returns the heading field for the block's level, or Text as fallback.
@@ -1001,7 +1001,7 @@ func renderTimelineAddOn(record string) string {
 		}
 		if rec.ContentShow.Text && it.Text != "" {
 			if len(head) > 0 {
-				line += "：" + it.Text
+				line += " : " + it.Text
 			} else {
 				line += " " + it.Text
 			}
@@ -1036,13 +1036,13 @@ func inlineTable(ctx context.Context, client sheetReader, token, kind string) st
 	)
 	if kind == "sheet" {
 		rows, truncated, err = client.readSheetRange(ctx, token)
-		noun = "内嵌电子表格"
+		noun = "Feuille de calcul intégrée"
 	} else {
 		rows, truncated, err = client.readBitableRecords(ctx, token)
-		noun = "内嵌多维表格"
+		noun = "Base multidimensionnelle intégrée"
 	}
 	if err != nil {
-		return fmt.Sprintf("> [无法读取%s]", noun)
+		return fmt.Sprintf("> [Impossible de lire : %s]", noun)
 	}
 	// Embedded sheets (unlike native tables) only expose merge regions through
 	// the v3 metadata API; fetch them for the fill below. A failure degrades to
@@ -1060,7 +1060,7 @@ func inlineTable(ctx context.Context, client sheetReader, token, kind string) st
 		return ""
 	}
 	if truncated {
-		table += fmt.Sprintf("\n\n> 表格已截断（仅显示前 %d 行）", maxTableRows)
+		table += fmt.Sprintf("\n\n> Tableau tronqué (seules les %d premières lignes sont affichées)", maxTableRows)
 	}
 	return table
 }

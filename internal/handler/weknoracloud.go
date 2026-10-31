@@ -53,7 +53,7 @@ func (h *WeKnoraCloudHandler) SaveCredentials(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "凭证保存成功"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Identifiants enregistrés"})
 }
 
 // Status GET /api/v1/models/weknoracloud/status

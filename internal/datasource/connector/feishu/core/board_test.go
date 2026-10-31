@@ -89,7 +89,7 @@ func TestFetchDocxWithBlocks_BoardExportSuccess(t *testing.T) {
 		t.Fatalf("want 1 item (main only), got %d: %+v", len(items), items)
 	}
 	main := items[0]
-	if !strings.Contains(string(main.Content), "![图片](data:image/png;base64,") {
+	if !strings.Contains(string(main.Content), "![image](data:image/png;base64,") {
 		t.Errorf("board not inlined as base64 data URI:\n%s", main.Content)
 	}
 	if strings.Contains(string(main.Content), "weknora-img://") {
@@ -117,7 +117,7 @@ func TestFetchDocxWithBlocks_BoardExportForbiddenDegrades(t *testing.T) {
 		t.Fatalf("want 1 item (main only), got %d: %+v", len(items), items)
 	}
 	main := items[0]
-	if !strings.Contains(string(main.Content), "![图片]()") {
+	if !strings.Contains(string(main.Content), "![image]()") {
 		t.Errorf("markdown missing board degrade note:\n%s", main.Content)
 	}
 	if strings.Contains(string(main.Content), "weknora-img") {
@@ -172,7 +172,7 @@ func TestFetchDocxWithBlocks_AttachmentOverCapDegrades(t *testing.T) {
 	}
 	main := items[0]
 	// The over-cap file degrades to an inline reference carrying the source link.
-	if !strings.Contains(string(main.Content), "> [附件: report.pdf](") {
+	if !strings.Contains(string(main.Content), "> [Pièce jointe : report.pdf](") {
 		t.Errorf("markdown missing over-cap attachment placeholder:\n%s", main.Content)
 	}
 	if strings.Contains(string(main.Content), "- report.pdf") {
@@ -227,7 +227,7 @@ func TestFetchDocxWithBlocks_OverCapPatchHitsMarkerNotEarlierBullet(t *testing.T
 	if n := strings.Count(string(main.Content), "- report.pdf"); n != 1 {
 		t.Errorf("earlier bullet must survive exactly once, got %d:\n%s", n, main.Content)
 	}
-	if !strings.Contains(string(main.Content), "> [附件: report.pdf]") {
+	if !strings.Contains(string(main.Content), "> [Pièce jointe : report.pdf]") {
 		t.Errorf("over-cap degrade note missing:\n%s", main.Content)
 	}
 }

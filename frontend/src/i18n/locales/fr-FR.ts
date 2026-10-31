@@ -4368,6 +4368,13 @@ export default {
     }
   },
   chat: {
+    forkFromHere: 'Créer une conversation à partir d\'ici',
+    forkFromAnswer: 'Continuer dans une branche à partir de cette réponse',
+    forkTitleSuffix: ' (branche)',
+    forkBusy: 'Attendez la fin de la réponse en cours avant de créer une branche',
+    forkFailed: 'La création de la branche a échoué, réessayez',
+    forkedFrom: 'Créée à partir d\'une autre conversation',
+    documentEmpty: 'Le document est vide',
     memoryUsedCount: '{count} souvenirs utilisés',
     memoryForget: 'Supprimer ce souvenir',
     memoryForgotten: 'Souvenir supprimé',

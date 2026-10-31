@@ -10,11 +10,11 @@ const promptUrl = new URL('../../../../../docker/sandbox-pty-prompt.sh', import.
 const prompt = readFileSync(promptUrl, 'utf8')
 const promptPath = fileURLToPath(promptUrl)
 
-test('xterm palette keeps prompt green but ls directories blue', () => {
-  assert.match(theme, /--td-brand-color-4: #07c05f/)
-  assert.match(terminal, /brightGreen: '#07c05f'/)
+test('xterm palette keeps brand accent on brightGreen but ls directories blue', () => {
+  assert.match(theme, /--td-brand-color-4: #0051ff/)
+  assert.match(terminal, /brightGreen: '#0051ff'/)
   assert.match(terminal, /brightBlue: '#729fcf'/)
-  assert.doesNotMatch(terminal, /brightBlue: '#07c05f'/)
+  assert.doesNotMatch(terminal, /brightBlue: '#0051ff'/)
   assert.match(terminal, /brightCyan: '#34e2e2'/)
   assert.doesNotMatch(terminal, /brightCyan: '#08dd6e'/)
   assert.match(prompt, /\\033\[01;32m/)

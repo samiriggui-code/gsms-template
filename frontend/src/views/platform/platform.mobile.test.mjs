@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import test from 'node:test'
+
+const platformIndex = readFileSync(new URL('./index.vue', import.meta.url), 'utf8')
+const menu = readFileSync(new URL('../../components/menu.vue', import.meta.url), 'utf8')
+const uiStore = readFileSync(new URL('../../stores/ui.ts', import.meta.url), 'utf8')
+
+test('platform shell drops desktop min-width and exposes a mobile nav opener', () => {
+  assert.match(platformIndex, /@media \(max-width: 768px\)[\s\S]*?\.main[\s\S]*?min-width:\s*0;/)
+  assert.match(platformIndex, /platform-mobile-header/)
+  assert.match(platformIndex, /platform-mobile-header__menu/)
+  assert.match(platformIndex, /usePlatformMobile/)
+  assert.match(platformIndex, /handleMobileSidebarKeyDown/)
+  assert.match(platformIndex, /Escape/)
+})
+
+test('sidebar menu uses overlay drawer classes on narrow viewports', () => {
+  assert.match(menu, /aside_box--platform-mobile/)
+  assert.match(menu, /aside_box--mobile-open/)
+  assert.match(menu, /closeMobileSidebar/)
+  assert.match(menu, /'dialog'/)
+  assert.match(menu, /handleMobileDrawerKeyDown/)
+})
+
+test('platform nav uses GSMS brand logo assets, not WeKnora defaults', () => {
+  assert.doesNotMatch(menu, /weknora\.png/)
+  assert.match(menu, /@\/assets\/brand\/logo-transparent\.svg/)
+})
+
+test('ui store tracks platform mobile and collapses on entry', () => {
+  assert.match(uiStore, /createSidebarState/)
+  assert.match(uiStore, /initialPlatformMobile/)
+  assert.match(uiStore, /setPlatformMobile\(/)
+  assert.match(uiStore, /openMobileSidebar\(/)
+})

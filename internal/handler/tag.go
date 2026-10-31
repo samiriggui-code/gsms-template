@@ -57,7 +57,7 @@ func (h *TagHandler) resolveTagIDWithCtx(c *gin.Context, ctx context.Context) (s
 		tenantID := types.MustTenantIDFromContext(ctx)
 		tag, err := h.tagRepo.GetBySeqID(ctx, tenantID, seqID)
 		if err != nil {
-			return "", errors.NewNotFoundError("标签不存在")
+			return "", errors.NewNotFoundError("Le tag n'existe pas")
 		}
 		return tag.ID, nil
 	}
@@ -93,7 +93,7 @@ func (h *TagHandler) ListTags(c *gin.Context) {
 	var page types.Pagination
 	if err := c.ShouldBindQuery(&page); err != nil {
 		logger.Error(ctx, "Failed to bind pagination query", err)
-		c.Error(errors.NewBadRequestError("分页参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de pagination non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -142,7 +142,7 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 	var req CreateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind create tag payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -198,7 +198,7 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 	var req UpdateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind update tag payload", err)
-		c.Error(errors.NewBadRequestError("请求参数不合法").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -249,7 +249,7 @@ func (h *TagHandler) DeleteTag(c *gin.Context) {
 
 	var req DeleteTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil && !stderrors.Is(err, io.EOF) {
-		_ = c.Error(errors.NewBadRequestError("删除选项不合法"))
+		_ = c.Error(errors.NewBadRequestError("Options de suppression non valides"))
 		return
 	}
 
@@ -259,7 +259,7 @@ func (h *TagHandler) DeleteTag(c *gin.Context) {
 		wanted := make(map[int64]bool, len(req.ExcludeIDs))
 		for _, id := range req.ExcludeIDs {
 			if id <= 0 {
-				_ = c.Error(errors.NewBadRequestError("排除条目 ID 必须为正整数"))
+				_ = c.Error(errors.NewBadRequestError("L'ID d'une entrée exclue doit être un entier positif"))
 				return
 			}
 			wanted[id] = true
@@ -275,14 +275,15 @@ func (h *TagHandler) DeleteTag(c *gin.Context) {
 			}
 			if chunk.TenantID != tenantID || chunk.KnowledgeBaseID != c.Param("id") ||
 				chunk.ChunkType != types.ChunkTypeFAQ {
-				_ = c.Error(errors.NewForbiddenError("排除条目不属于当前知识库"))
+				_ = c.Error(errors.NewForbiddenError("Une entrée exclue n'appartient pas à cette base de " +
+					"connaissances"))
 				return
 			}
 			excludeUUIDs = append(excludeUUIDs, chunk.ID)
 			delete(wanted, chunk.SeqID)
 		}
 		if len(wanted) != 0 {
-			_ = c.Error(errors.NewNotFoundError("排除条目不存在"))
+			_ = c.Error(errors.NewNotFoundError("Une entrée exclue n'existe pas"))
 			return
 		}
 	}

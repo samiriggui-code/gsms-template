@@ -2,7 +2,7 @@
   <main class="workspace-onboarding">
     <section class="workspace-card">
       <div class="workspace-mark" aria-hidden="true">
-        <t-icon name="system-sum" size="30px" />
+        <img src="@/assets/brand/logo-grayscale.svg" alt="" class="workspace-logo" />
       </div>
       <h1 v-if="authStore.canCreateTenant">{{ $t('auth.workspaceOnboarding.title') }}</h1>
       <h1 v-else>{{ $t('auth.workspaceOnboarding.inviteOnlyTitle') }}</h1>
@@ -125,9 +125,14 @@ async function handleLogout() {
 <style scoped lang="less">
 .workspace-onboarding {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 32px 20px;
+  padding:
+    max(32px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right))
+    max(32px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
   background:
     radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--td-brand-color) 12%, transparent), transparent 38%),
     var(--td-bg-color-page);
@@ -144,14 +149,20 @@ async function handleLogout() {
 }
 
 .workspace-mark {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   margin: 0 auto 22px;
   display: grid;
   place-items: center;
   border-radius: 18px;
-  color: var(--td-brand-color);
   background: var(--td-brand-color-light);
+  border: 1px solid color-mix(in srgb, var(--td-brand-color) 18%, transparent);
+}
+
+.workspace-logo {
+  width: 52px;
+  height: auto;
+  display: block;
 }
 
 h1 {
@@ -240,6 +251,11 @@ h1 {
 
   .workspace-actions {
     grid-template-columns: 1fr;
+  }
+
+  .logout-link {
+    min-height: 44px;
+    padding: 10px 12px;
   }
 }
 </style>

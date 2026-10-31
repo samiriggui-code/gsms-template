@@ -1,7 +1,48 @@
 <template>
-    <div class="main" ref="dropzone" :style="{ '--sidebar-width': `${uiStore.sidebarDisplayWidth}px` }">
+    <div
+        class="main"
+        ref="dropzone"
+        :class="{
+            'main--platform-mobile': uiStore.platformMobile,
+            'main--mobile-sidebar-open': uiStore.platformMobile && !uiStore.sidebarCollapsed,
+        }"
+        :style="{ '--sidebar-width': `${uiStore.sidebarDisplayWidth}px` }"
+    >
+        <div
+            v-if="uiStore.platformMobile && !uiStore.sidebarCollapsed"
+            class="platform-mobile-sidebar-backdrop"
+            aria-hidden="true"
+            @click="onMobileSidebarBackdropClick"
+        />
         <Menu></Menu>
-        <div v-if="isRouterAlive" class="platform-route-outlet">
+        <div v-if="uiStore.platformMobile" class="platform-mobile-column">
+            <header class="platform-mobile-header">
+                <button
+                    ref="mobileNavOpenBtn"
+                    type="button"
+                    class="platform-mobile-header__menu"
+                    :aria-label="uiStore.sidebarCollapsed ? t('menu.expandSidebar') : t('common.close')"
+                    @click="uiStore.sidebarCollapsed ? uiStore.openMobileSidebar() : uiStore.closeMobileSidebar()"
+                >
+                    <svg v-if="uiStore.sidebarCollapsed" viewBox="0 0 20 20" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <line x1="3" y1="5.5" x2="17" y2="5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                        <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                        <line x1="3" y1="14.5" x2="17" y2="14.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                    </svg>
+                    <svg v-else viewBox="0 0 20 20" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                    </svg>
+                </button>
+                <button type="button" class="platform-mobile-header__brand" @click="router.push('/platform/knowledge-bases')">
+                    <img src="@/assets/brand/logo-transparent.svg" alt="Global-IT-SS" width="28" height="28" />
+                    <span>Global-IT-SS</span>
+                </button>
+            </header>
+            <div v-if="isRouterAlive" class="platform-route-outlet">
+                <RouterView />
+            </div>
+        </div>
+        <div v-else-if="isRouterAlive" class="platform-route-outlet">
             <RouterView />
         </div>
         <!-- WeKnora 助手：停靠时作为布局右栏挤压页面，悬浮时浮在页面上；都不加遮罩，
@@ -41,11 +82,15 @@ import { getKnowledgeBaseById } from '@/api/knowledge-base/index'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useI18n } from 'vue-i18n'
 import { collectDroppedFiles } from './collectDroppedFiles'
+import { usePlatformMobile } from '@/composables/usePlatformMobile'
+
+usePlatformMobile()
 
 const route = useRoute();
 const router = useRouter();
 const commandPaletteStore = useCommandPaletteStore();
 const uiStore = useUIStore();
+const mobileNavOpenBtn = ref<HTMLButtonElement | null>(null)
 let ismask = ref(false)
 const { t } = useI18n();
 
@@ -72,6 +117,44 @@ const handleGlobalKeyDown = (e: KeyboardEvent) => {
         reloadApp()
     }
 }
+
+const focusMobileNavOpen = () => {
+    nextTick(() => mobileNavOpenBtn.value?.focus())
+}
+
+const onMobileSidebarBackdropClick = () => {
+    uiStore.closeMobileSidebar()
+    focusMobileNavOpen()
+}
+
+watch(
+    () => uiStore.sidebarCollapsed,
+    (collapsed, wasCollapsed) => {
+        if (uiStore.platformMobile && collapsed && wasCollapsed === false) {
+            focusMobileNavOpen()
+        }
+    },
+)
+
+const handleMobileSidebarKeyDown = (e: KeyboardEvent) => {
+    if (!uiStore.platformMobile || uiStore.sidebarCollapsed) return
+    if (e.key !== 'Escape') return
+    e.preventDefault()
+    uiStore.closeMobileSidebar()
+    focusMobileNavOpen()
+}
+
+watch(
+    () => uiStore.platformMobile && !uiStore.sidebarCollapsed,
+    (open) => {
+        if (open) {
+            document.addEventListener('keydown', handleMobileSidebarKeyDown)
+        } else {
+            document.removeEventListener('keydown', handleMobileSidebarKeyDown)
+        }
+    },
+    { flush: 'post' },
+)
 
 // 用于跟踪拖拽进入/离开的计数器，解决子元素触发 dragleave 的问题
 let dragCounter = 0;
@@ -235,6 +318,7 @@ function maybeOpenCmdkFromRoute() {
 
 // 组件卸载时移除全局事件监听器
 onUnmounted(() => {
+    document.removeEventListener('keydown', handleMobileSidebarKeyDown);
     document.removeEventListener('dragenter', handleGlobalDragEnter, true);
     document.removeEventListener('dragover', handleGlobalDragOver, true);
     document.removeEventListener('dragleave', handleGlobalDragLeave, true);
@@ -258,8 +342,84 @@ onUnmounted(() => {
     height: 100%;
     min-width: 600px;
     min-height: 0;
+    position: relative;
     /* 统一整页背景，让左侧菜单与右侧内容区视觉连贯 */
     background: var(--td-bg-color-container);
+}
+
+@media (max-width: 768px) {
+    .main {
+        min-width: 0;
+    }
+
+    .main--mobile-sidebar-open .platform-route-outlet {
+        overflow: hidden;
+    }
+}
+
+.main--platform-mobile {
+    .platform-mobile-column {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .platform-mobile-header {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 48px;
+        padding: env(safe-area-inset-top, 0px) max(12px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+        border-bottom: 1px solid var(--td-component-stroke);
+        background: var(--td-bg-color-container);
+        z-index: 1200;
+    }
+
+    .platform-mobile-header__menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: none;
+        border-radius: var(--app-radius-md);
+        background: transparent;
+        color: var(--td-text-color-primary);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--td-bg-color-container-hover);
+        }
+    }
+
+    .platform-mobile-header__brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border: none;
+        border-radius: var(--app-radius-md);
+        background: transparent;
+        color: var(--td-text-color-primary);
+        font-size: var(--app-text-lg);
+        font-weight: 600;
+        cursor: pointer;
+
+        img {
+            display: block;
+        }
+    }
+}
+
+.platform-mobile-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1090;
+    background: rgba(0, 0, 0, 0.45);
 }
 
 /* 右侧路由区：占满剩余宽度与整列高度，并把 min-height:0 传给子页面以便内部 flex 滚动 */

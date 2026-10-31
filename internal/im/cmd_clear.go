@@ -9,14 +9,17 @@ type ClearCommand struct{}
 
 func newClearCommand() *ClearCommand { return &ClearCommand{} }
 
+// Name returns the command keyword.
 func (c *ClearCommand) Name() string { return "clear" }
+
+// Description returns the help text shown for the command.
 func (c *ClearCommand) Description() string {
-	return "清空对话记忆，下次消息将开始全新会话"
+	return "Efface la mémoire de la conversation ; le prochain message ouvrira une nouvelle conversation"
 }
 
 func (c *ClearCommand) Execute(_ context.Context, _ *CommandContext, _ []string) (*CommandResult, error) {
 	return &CommandResult{
-		Content: "✅ 对话已清空，下次消息将开始全新会话。",
+		Content: "✅ Conversation effacée ; le prochain message ouvrira une nouvelle conversation.",
 		Action:  ActionClear,
 	}, nil
 }

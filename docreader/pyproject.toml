@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.10.18"
 dependencies = [
     "beautifulsoup4>=4.14.2",
-    "ebooklib>=0.18",
     "grpcio>=1.78.0",
     "grpcio-health-checking>=1.78.0",
     "grpcio-tools>=1.78.0",

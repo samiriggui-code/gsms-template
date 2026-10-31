@@ -195,7 +195,7 @@ func TestResolveMarkdownImages_InternalHandleFallsBackToPlainText(t *testing.T) 
 		{
 			name: "empty alt uses region label",
 			in:   "![](resource://Zb2IrqfTdlCFkbUqFtmS5A)",
-			want: "图片",
+			want: "Image",
 		},
 		{
 			name: "mixed internal and failed http",
@@ -224,7 +224,7 @@ func TestResolveMarkdownImages_UppercaseHTTPSchemeStillUploads(t *testing.T) {
 	// IM rewrite may emit HTTPS://; loopback still fails SSRF and must degrade
 	// to a link rather than being treated as a non-HTTP handle.
 	got := a.resolveMarkdownImages(context.Background(), "tok", "![](HTTPS://127.0.0.1/x.png)")
-	want := "[图片](HTTPS://127.0.0.1/x.png)"
+	want := "[Image](HTTPS://127.0.0.1/x.png)"
 	if got != want {
 		t.Errorf("uppercase scheme fallback = %q, want %q", got, want)
 	}

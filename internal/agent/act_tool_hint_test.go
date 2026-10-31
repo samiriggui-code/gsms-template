@@ -18,16 +18,16 @@ func TestFormatToolHintTruncatesByRunes(t *testing.T) {
 	short := formatToolHint(agenttools.ToolSearchKnowledge,
 		map[string]any{"query": strings.Repeat("数", 30)})
 	require.True(t, utf8.ValidString(short), "hint must stay valid UTF-8, got %q", short)
-	require.Equal(t, `检索知识库("`+strings.Repeat("数", 30)+`")`, short)
+	require.Equal(t, `Rechercher dans la base de connaissances("`+strings.Repeat("数", 30)+`")`, short)
 
 	// 60 CJK runes (180 bytes): truncated at the 40th rune, never mid-rune.
 	long := formatToolHint(agenttools.ToolSearchKnowledge,
 		map[string]any{"query": strings.Repeat("数", 60)})
 	require.True(t, utf8.ValidString(long), "hint must stay valid UTF-8, got %q", long)
-	require.Equal(t, `检索知识库("`+strings.Repeat("数", 40)+`…")`, long)
+	require.Equal(t, `Rechercher dans la base de connaissances("`+strings.Repeat("数", 40)+`…")`, long)
 
 	// ASCII longer than the budget keeps its byte-oriented behavior.
 	ascii := formatToolHint(agenttools.ToolSearchKnowledge,
 		map[string]any{"query": strings.Repeat("a", 50)})
-	require.Equal(t, `检索知识库("`+strings.Repeat("a", 40)+`…")`, ascii)
+	require.Equal(t, `Rechercher dans la base de connaissances("`+strings.Repeat("a", 40)+`…")`, ascii)
 }

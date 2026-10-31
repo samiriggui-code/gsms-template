@@ -12,12 +12,12 @@ func EnvLanguage() string {
 }
 
 // DefaultLanguage returns the configured default language locale.
-// It reads the WEKNORA_LANGUAGE environment variable; if unset, falls back to "zh-CN".
+// It reads the WEKNORA_LANGUAGE environment variable; if unset, falls back to "fr-FR".
 func DefaultLanguage() string {
 	if lang := EnvLanguage(); lang != "" {
 		return lang
 	}
-	return "zh-CN"
+	return "fr-FR"
 }
 
 // TenantIDFromContext extracts the execution tenant ID from ctx.
@@ -382,7 +382,7 @@ func LLMCallMetadataFromContext(ctx context.Context) (purpose, prefixFingerprint
 }
 
 // LanguageFromContext extracts the language locale string from ctx (e.g. "zh-CN", "en-US").
-// Returns ("zh-CN", false) when the key is absent.
+// Returns ("", false) when the key is absent.
 func LanguageFromContext(ctx context.Context) (string, bool) {
 	v, ok := ctx.Value(LanguageContextKey).(string)
 	return v, ok && v != ""
@@ -425,7 +425,7 @@ func LanguageFromContextOrDefault(ctx context.Context) string {
 
 // LanguageNameFromContext returns the human-readable language name for use in prompts.
 // e.g. "zh-CN" -> "Chinese (Simplified)", "en-US" -> "English", "ko-KR" -> "Korean"
-// Falls back to DefaultLanguage() (WEKNORA_LANGUAGE env, then "zh-CN").
+// Falls back to DefaultLanguage() (WEKNORA_LANGUAGE env, then "fr-FR").
 func LanguageNameFromContext(ctx context.Context) string {
 	return ResolveLanguageName(ctx, "")
 }

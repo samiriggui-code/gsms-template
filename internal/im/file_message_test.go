@@ -35,12 +35,14 @@ func TestFileMessageQAContent(t *testing.T) {
 		{
 			name: "builds query for file-only event",
 			msg:  &IncomingMessage{FileName: "report.pdf"},
-			want: "我上传了文件「report.pdf」。请确认已收到，并告知我接下来可以如何协助。",
+			want: "J'ai envoyé le fichier « report.pdf ». Confirme que tu l'as bien reçu et dis-moi comment tu " +
+				"peux m'aider ensuite.",
 		},
 		{
 			name: "uses safe name when platform omits filename",
 			msg:  &IncomingMessage{},
-			want: "我上传了文件「未命名文件」。请确认已收到，并告知我接下来可以如何协助。",
+			want: "J'ai envoyé le fichier « fichier sans nom ». Confirme que tu l'as bien reçu et dis-moi comment " +
+				"tu peux m'aider ensuite.",
 		},
 	}
 
@@ -69,7 +71,8 @@ func TestEmptyIncomingMessageReply(t *testing.T) {
 			name:      "blank text is rejected",
 			msg:       &IncomingMessage{MessageType: MessageTypeText, Content: " \n\t "},
 			wantEmpty: true,
-			wantHint:  "未能识别这条消息中的文字内容。请改用纯文本发送；图片或文件请单独发送。",
+			wantHint: "Impossible de reconnaître le texte de ce message. Envoyez du texte ; envoyez les images " +
+				"ou fichiers séparément.",
 		},
 		{
 			name:      "image without caption is accepted before QA content fill",
@@ -93,7 +96,7 @@ func TestEmptyIncomingMessageReply(t *testing.T) {
 				Extra:       map[string]string{"raw_msgtype": "audio"},
 			},
 			wantEmpty: true,
-			wantHint:  "未能识别这条语音中的文字内容。请改用纯文本发送，或再说一遍。",
+			wantHint:  "Impossible de reconnaître le texte de ce message vocal. Envoyez-le en texte, ou répétez.",
 		},
 		{
 			name: "video uses an unsupported-type hint",
@@ -102,7 +105,8 @@ func TestEmptyIncomingMessageReply(t *testing.T) {
 				Extra:       map[string]string{"raw_msgtype": "video"},
 			},
 			wantEmpty: true,
-			wantHint:  "暂不支持视频消息。请改用纯文本发送；图片或文件请单独发送。",
+			wantHint: "Les messages vidéo ne sont pas encore pris en charge. Envoyez du texte ; envoyez les " +
+				"images ou fichiers séparément.",
 		},
 	}
 

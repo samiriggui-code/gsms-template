@@ -1674,7 +1674,7 @@ func TestFetchDocxWithBlocks_EmbeddedImage(t *testing.T) {
 		t.Fatalf("want 1 item (main only), got %d: %+v", len(items), items)
 	}
 	main := items[0]
-	wantURI := "![图片](data:image/png;base64," + base64.StdEncoding.EncodeToString(pngBytes) + ")"
+	wantURI := "![image](data:image/png;base64," + base64.StdEncoding.EncodeToString(pngBytes) + ")"
 	if !strings.Contains(string(main.Content), wantURI) {
 		t.Errorf("image not inlined as base64 data URI:\n%s", main.Content[:min(len(main.Content), 400)])
 	}
@@ -1737,7 +1737,7 @@ func TestFetchDocxWithBlocks_ImageDownloadFailure(t *testing.T) {
 		t.Fatalf("want 1 item (main only), got %d: %+v", len(items), items)
 	}
 	main := items[0]
-	if !strings.Contains(string(main.Content), "![图片]()") {
+	if !strings.Contains(string(main.Content), "![image]()") {
 		t.Errorf("broken image must degrade to a placeholder:\n%s", main.Content)
 	}
 	if strings.Contains(string(main.Content), "weknora-img://") {
@@ -1780,7 +1780,7 @@ func TestFetchDocxWithBlocks_NonWhitelistedExtNotPromoted(t *testing.T) {
 	}
 	mainContent := string(items[0].Content)
 	// Non-whitelisted files degrade to a reference carrying the source link.
-	if !strings.Contains(mainContent, "> [附件: icon.png](") {
+	if !strings.Contains(mainContent, "> [Pièce jointe : icon.png](") {
 		t.Errorf("main doc missing inline reference for icon.png; got:\n%s", mainContent)
 	}
 }

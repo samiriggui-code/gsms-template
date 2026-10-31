@@ -658,6 +658,12 @@ onUnmounted(() => {
   max-width: 1280px;
   height: 900px;
 }
+
+.settings-modal-shell.all-settings-overlay.settings-modal-shell--platform-mobile > .settings-modal {
+  max-width: none;
+  height: 100dvh;
+}
+
 </style>
 
 <style lang="less" scoped>
@@ -761,6 +767,15 @@ onUnmounted(() => {
 
     @media (max-width: 720px) {
       padding: 16px 16px 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 20px 16px 32px;
+
+    &--wide,
+    &--full {
+      padding: 16px 16px 24px;
     }
   }
 }

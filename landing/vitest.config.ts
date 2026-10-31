@@ -5,9 +5,15 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  css: {
+    postcss: path.resolve(__dirname, "postcss.config.mjs"),
+  },
   test: {
     environment: "jsdom",
     globals: true,
+    css: {
+      include: [/src\/app\/globals\.css$/],
+    },
     setupFiles: ["./vitest.setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
   },

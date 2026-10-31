@@ -10,12 +10,15 @@ type StopCommand struct{}
 
 func newStopCommand() *StopCommand { return &StopCommand{} }
 
-func (c *StopCommand) Name() string        { return "stop" }
-func (c *StopCommand) Description() string { return "中止当前正在进行的回答" }
+// Name returns the command keyword.
+func (c *StopCommand) Name() string { return "stop" }
+
+// Description returns the help text shown for the command.
+func (c *StopCommand) Description() string { return "Interrompt la réponse en cours" }
 
 func (c *StopCommand) Execute(_ context.Context, _ *CommandContext, _ []string) (*CommandResult, error) {
 	return &CommandResult{
-		Content: "✅ 已请求中止当前回答。",
+		Content: "✅ Interruption de la réponse en cours demandée.",
 		Action:  ActionStop,
 	}, nil
 }

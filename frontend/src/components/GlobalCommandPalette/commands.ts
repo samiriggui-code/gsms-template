@@ -42,7 +42,7 @@ export function buildCommands(ctx: CommandContext): CmdkCommand[] {
       id: 'open-assistant',
       label: t('commandPalette.quick.assistant', { name: assistantName(t) }),
       icon: 'assistant',
-      keywords: ['assistant', 'help', 'weknora', 'kora', '助手', '帮助', 'ассистент', useAssistantStore().displayName].filter(Boolean),
+      keywords: ['assistant', 'help', 'weknora', 'kora', 'aide', useAssistantStore().displayName].filter(Boolean),
       run: () => {
         close()
         useAssistantStore().open()
@@ -52,7 +52,7 @@ export function buildCommands(ctx: CommandContext): CmdkCommand[] {
       id: 'new-chat',
       label: t('commandPalette.quick.newChat'),
       icon: 'chat-add',
-      keywords: ['new', 'chat', 'conversation', '新建', '对话', 'создать'],
+      keywords: ['new', 'chat', 'conversation', 'nouvelle', 'discussion'],
       run: () => {
         close()
         router.push('/platform/creatChat')
@@ -62,7 +62,7 @@ export function buildCommands(ctx: CommandContext): CmdkCommand[] {
       id: 'open-kb-list',
       label: t('commandPalette.quick.knowledgeBases'),
       icon: 'folder',
-      keywords: ['kb', 'knowledge', 'base', '知识库', '文档'],
+      keywords: ['kb', 'knowledge', 'base', 'connaissances', 'documents'],
       run: () => {
         close()
         router.push('/platform/knowledge-bases')
@@ -72,7 +72,7 @@ export function buildCommands(ctx: CommandContext): CmdkCommand[] {
       id: 'open-agents',
       label: t('commandPalette.quick.agents'),
       icon: 'user-circle',
-      keywords: ['agent', 'bot', '智能体', '助手'],
+      keywords: ['agent', 'bot', 'agents', 'assistant'],
       run: () => {
         close()
         router.push('/platform/agents')
@@ -82,7 +82,7 @@ export function buildCommands(ctx: CommandContext): CmdkCommand[] {
       id: 'open-organizations',
       label: t('commandPalette.quick.organizations'),
       icon: 'usergroup',
-      keywords: ['org', 'organization', 'team', 'space', '组织', '共享'],
+      keywords: ['org', 'organization', 'team', 'space', 'organisation', 'équipe', 'espace', 'partage'],
       run: () => {
         close()
         router.push('/platform/organizations')
@@ -92,7 +92,7 @@ export function buildCommands(ctx: CommandContext): CmdkCommand[] {
       id: 'open-settings',
       label: t('commandPalette.quick.settings'),
       icon: 'setting',
-      keywords: ['settings', 'preferences', 'config', '设置', '配置'],
+      keywords: ['settings', 'preferences', 'config', 'paramètres', 'réglages', 'configuration'],
       run: () => {
         close()
         router.push('/platform/settings')
@@ -102,7 +102,7 @@ export function buildCommands(ctx: CommandContext): CmdkCommand[] {
       id: 'open-product-tour',
       label: t('commandPalette.quick.productTour'),
       icon: 'help-circle',
-      keywords: ['guide', 'tour', 'onboarding', 'help', '引导', '新手', '教程'],
+      keywords: ['guide', 'tour', 'onboarding', 'help', 'visite', 'tutoriel', 'démarrage'],
       run: () => {
         close()
         openNewUserGuide()

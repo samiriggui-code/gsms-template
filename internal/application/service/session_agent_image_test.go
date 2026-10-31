@@ -34,7 +34,7 @@ func TestComposeAgentImageQueryUsesVLMWhenTheChatModelCannotSee(t *testing.T) {
 	if len(images) != 0 {
 		t.Fatalf("text model still received images: %v", images)
 	}
-	if !strings.Contains(query, "一张收据") || !strings.Contains(query, "[用户上传图片内容]") {
+	if !strings.Contains(query, "一张收据") || !strings.Contains(query, "[Contenu de l'image envoyée par l'utilisateur]") {
 		t.Fatalf("query = %q", query)
 	}
 	if len(got) != 1 {

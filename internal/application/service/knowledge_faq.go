@@ -49,7 +49,7 @@ func (s *knowledgeService) ListFAQEntries(ctx context.Context,
 	if len(tagUUIDs) == 0 && legacyTagSeqID > 0 {
 		tag, err := s.tagRepo.GetBySeqID(ctx, effectiveTenantID, legacyTagSeqID)
 		if err != nil {
-			return nil, werrors.NewNotFoundError("标签不存在")
+			return nil, werrors.NewNotFoundError("Le tag n'existe pas")
 		}
 		tagUUIDs = []string{tag.ID}
 	}
@@ -116,7 +116,7 @@ func (s *knowledgeService) CreateFAQEntry(ctx context.Context,
 	kbID string, payload *types.FAQEntryPayload,
 ) (*types.FAQEntry, error) {
 	if payload == nil {
-		return nil, werrors.NewBadRequestError("请求体不能为空")
+		return nil, werrors.NewBadRequestError("Le corps de la requête est obligatoire")
 	}
 
 	kb, ctx, err := s.writableFAQKnowledgeBase(ctx, kbID)
@@ -261,7 +261,7 @@ func (s *knowledgeService) GetFAQEntry(ctx context.Context,
 	kbID string, entrySeqID int64,
 ) (*types.FAQEntry, error) {
 	if entrySeqID <= 0 {
-		return nil, werrors.NewBadRequestError("条目ID不能为空")
+		return nil, werrors.NewBadRequestError("L'ID de l'entrée est obligatoire")
 	}
 
 	kb, err := s.validateFAQKnowledgeBase(ctx, kbID)
@@ -275,17 +275,17 @@ func (s *knowledgeService) GetFAQEntry(ctx context.Context,
 	// 获取chunk by seq_id
 	chunk, err := s.chunkRepo.GetChunkBySeqID(ctx, tenantID, entrySeqID)
 	if err != nil {
-		return nil, werrors.NewNotFoundError("FAQ条目不存在")
+		return nil, werrors.NewNotFoundError("L'entrée FAQ n'existe pas")
 	}
 
 	// 验证chunk属于当前知识库
 	if chunk.KnowledgeBaseID != kb.ID || chunk.TenantID != tenantID {
-		return nil, werrors.NewNotFoundError("FAQ条目不存在")
+		return nil, werrors.NewNotFoundError("L'entrée FAQ n'existe pas")
 	}
 
 	// 验证是FAQ类型
 	if chunk.ChunkType != types.ChunkTypeFAQ {
-		return nil, werrors.NewNotFoundError("FAQ条目不存在")
+		return nil, werrors.NewNotFoundError("L'entrée FAQ n'existe pas")
 	}
 
 	// Build tag seq_id map for conversion
@@ -318,7 +318,7 @@ func (s *knowledgeService) UpdateFAQEntry(ctx context.Context,
 	kbID string, entrySeqID int64, payload *types.FAQEntryPayload,
 ) (*types.FAQEntry, error) {
 	if payload == nil {
-		return nil, werrors.NewBadRequestError("请求体不能为空")
+		return nil, werrors.NewBadRequestError("Le corps de la requête est obligatoire")
 	}
 	kb, ctx, err := s.writableFAQKnowledgeBase(ctx, kbID)
 	if err != nil {
@@ -329,13 +329,13 @@ func (s *knowledgeService) UpdateFAQEntry(ctx context.Context,
 
 	chunk, err := s.chunkRepo.GetChunkBySeqID(ctx, tenantID, entrySeqID)
 	if err != nil {
-		return nil, werrors.NewNotFoundError("FAQ条目不存在")
+		return nil, werrors.NewNotFoundError("L'entrée FAQ n'existe pas")
 	}
 	if chunk.KnowledgeBaseID != kb.ID {
-		return nil, werrors.NewForbiddenError("无权操作该 FAQ 条目")
+		return nil, werrors.NewForbiddenError("Vous n'avez pas le droit de modifier cette entrée FAQ")
 	}
 	if chunk.ChunkType != types.ChunkTypeFAQ {
-		return nil, werrors.NewBadRequestError("仅支持更新 FAQ 条目")
+		return nil, werrors.NewBadRequestError("Seules les entrées FAQ peuvent être mises à jour")
 	}
 	meta, err := sanitizeFAQEntryPayload(payload)
 	if err != nil {
@@ -378,7 +378,7 @@ func (s *knowledgeService) UpdateFAQEntry(ctx context.Context,
 	if payload.TagID > 0 {
 		tag, tagErr := s.tagRepo.GetBySeqID(ctx, tenantID, payload.TagID)
 		if tagErr != nil {
-			return nil, werrors.NewNotFoundError("标签不存在")
+			return nil, werrors.NewNotFoundError("Le tag n'existe pas")
 		}
 		chunk.TagID = tag.ID
 	} else {
@@ -468,7 +468,7 @@ func (s *knowledgeService) AddSimilarQuestions(ctx context.Context,
 	kbID string, entrySeqID int64, questions []string,
 ) (*types.FAQEntry, error) {
 	if len(questions) == 0 {
-		return nil, werrors.NewBadRequestError("相似问列表不能为空")
+		return nil, werrors.NewBadRequestError("La liste des questions similaires est obligatoire")
 	}
 
 	kb, ctx, err := s.writableFAQKnowledgeBase(ctx, kbID)
@@ -481,19 +481,19 @@ func (s *knowledgeService) AddSimilarQuestions(ctx context.Context,
 	// Get existing FAQ entry
 	chunk, err := s.chunkRepo.GetChunkBySeqID(ctx, tenantID, entrySeqID)
 	if err != nil {
-		return nil, werrors.NewNotFoundError("FAQ条目不存在")
+		return nil, werrors.NewNotFoundError("L'entrée FAQ n'existe pas")
 	}
 	if chunk.KnowledgeBaseID != kb.ID {
-		return nil, werrors.NewForbiddenError("无权操作该 FAQ 条目")
+		return nil, werrors.NewForbiddenError("Vous n'avez pas le droit de modifier cette entrée FAQ")
 	}
 	if chunk.ChunkType != types.ChunkTypeFAQ {
-		return nil, werrors.NewBadRequestError("仅支持更新 FAQ 条目")
+		return nil, werrors.NewBadRequestError("Seules les entrées FAQ peuvent être mises à jour")
 	}
 
 	// Get existing metadata
 	meta, err := chunk.FAQMetadata()
 	if err != nil || meta == nil {
-		return nil, werrors.NewBadRequestError("获取 FAQ 元数据失败")
+		return nil, werrors.NewBadRequestError("Impossible de lire les métadonnées de la FAQ")
 	}
 
 	// Deduplicate and sanitize new questions
@@ -628,7 +628,7 @@ func (s *knowledgeService) UpdateFAQEntryStatus(ctx context.Context,
 		return err
 	}
 	if chunk.KnowledgeBaseID != kb.ID || chunk.ChunkType != types.ChunkTypeFAQ {
-		return werrors.NewBadRequestError("仅支持更新 FAQ 条目")
+		return werrors.NewBadRequestError("Seules les entrées FAQ peuvent être mises à jour")
 	}
 	if chunk.IsEnabled == isEnabled {
 		return nil
@@ -854,7 +854,7 @@ func (s *knowledgeService) UpdateFAQEntryTag(ctx context.Context, kbID string, e
 		return err
 	}
 	if chunk.KnowledgeBaseID != kb.ID || chunk.ChunkType != types.ChunkTypeFAQ {
-		return werrors.NewBadRequestError("仅支持更新 FAQ 条目标签")
+		return werrors.NewBadRequestError("Seul le tag des entrées FAQ peut être mis à jour")
 	}
 
 	var resolvedTagID string
@@ -864,7 +864,7 @@ func (s *knowledgeService) UpdateFAQEntryTag(ctx context.Context, kbID string, e
 			return err
 		}
 		if tag.KnowledgeBaseID != kb.ID {
-			return werrors.NewBadRequestError("标签不属于当前知识库")
+			return werrors.NewBadRequestError("Le tag n'appartient pas à cette base de connaissances")
 		}
 		resolvedTagID = tag.ID
 	}
@@ -1242,7 +1242,7 @@ func (s *knowledgeService) DeleteFAQEntries(ctx context.Context,
 	kbID string, entrySeqIDs []int64,
 ) error {
 	if len(entrySeqIDs) == 0 {
-		return werrors.NewBadRequestError("请选择需要删除的 FAQ 条目")
+		return werrors.NewBadRequestError("Sélectionnez les entrées FAQ à supprimer")
 	}
 	kb, ctx, err := s.writableFAQKnowledgeBase(ctx, kbID)
 	if err != nil {
@@ -1266,7 +1266,7 @@ func (s *knowledgeService) DeleteFAQEntries(ctx context.Context,
 			}
 			if knowledge == nil || knowledge.TenantID != tenantID || knowledge.KnowledgeBaseID != kb.ID ||
 				knowledge.Type != types.KnowledgeTypeFAQ {
-				return werrors.NewForbiddenError("FAQ 文档不属于当前知识库")
+				return werrors.NewForbiddenError("Le document FAQ n'appartient pas à cette base de connaissances")
 			}
 			knowledges[chunk.KnowledgeID] = knowledge
 		}
@@ -1421,14 +1421,14 @@ func (s *knowledgeService) buildFAQCSV(chunks []*types.Chunk, tagMap map[string]
 
 	// Write CSV header (matching import example format)
 	headers := []string{
-		"分类(必填)",
-		"问题(必填)",
-		"相似问题(选填-多个用##分隔)",
-		"反例问题(选填-多个用##分隔)",
-		"机器人回答(必填-多个用##分隔)",
-		"是否全部回复(选填-默认FALSE)",
-		"是否停用(选填-默认FALSE)",
-		"是否禁止被推荐(选填-默认False 可被推荐)",
+		"Catégorie(obligatoire)",
+		"Question(obligatoire)",
+		"Questions similaires(facultatif - séparer par ##)",
+		"Questions exclues(facultatif - séparer par ##)",
+		"Réponses(obligatoire - séparer par ##)",
+		"Toutes les réponses(facultatif - FALSE par défaut)",
+		"Désactivé(facultatif - FALSE par défaut)",
+		"Non recommandable(facultatif - FALSE par défaut)",
 	}
 	buf.WriteString(strings.Join(headers, ","))
 	buf.WriteString("\n")
@@ -1485,18 +1485,18 @@ func boolToCSV(b bool) string {
 
 func (s *knowledgeService) validateFAQKnowledgeBase(ctx context.Context, kbID string) (*types.KnowledgeBase, error) {
 	if kbID == "" {
-		return nil, werrors.NewBadRequestError("知识库 ID 不能为空")
+		return nil, werrors.NewBadRequestError("L'ID de la base de connaissances est obligatoire")
 	}
 	kb, err := s.kbService.GetKnowledgeBaseByID(ctx, kbID)
 	if err != nil {
 		return nil, err
 	}
 	if kb == nil || kb.ID != kbID {
-		return nil, werrors.NewNotFoundError("知识库不存在")
+		return nil, werrors.NewNotFoundError("La base de connaissances n'existe pas")
 	}
 	kb.EnsureDefaults()
 	if kb.Type != types.KnowledgeBaseTypeFAQ {
-		return nil, werrors.NewBadRequestError("仅 FAQ 知识库支持该操作")
+		return nil, werrors.NewBadRequestError("Cette opération n'est possible que sur une base FAQ")
 	}
 	return kb, nil
 }
@@ -1536,7 +1536,7 @@ func (s *knowledgeService) ensureFAQKnowledge(
 		Type:             types.KnowledgeTypeFAQ,
 		Channel:          types.ChannelWeb,
 		Title:            buildFAQKnowledgeTitle(kb.Name),
-		Description:      "FAQ 条目容器",
+		Description:      "Conteneur des entrées FAQ",
 		Source:           types.KnowledgeTypeFAQ,
 		ParseStatus:      "completed",
 		EnableStatus:     "enabled",
@@ -1648,7 +1648,8 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 	// 1. 首先检查当前条目自身的相似问是否与标准问重复
 	for _, q := range meta.SimilarQuestions {
 		if q == meta.StandardQuestion {
-			return werrors.NewBadRequestError(fmt.Sprintf("相似问「%s」不能与标准问相同", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question similaire « %s » ne peut pas être "+
+				"identique à la question principale", q))
 		}
 	}
 
@@ -1656,7 +1657,7 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 	seen := make(map[string]struct{})
 	for _, q := range meta.SimilarQuestions {
 		if _, exists := seen[q]; exists {
-			return werrors.NewBadRequestError(fmt.Sprintf("相似问「%s」重复", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question similaire « %s » est en double", q))
 		}
 		seen[q] = struct{}{}
 	}
@@ -1674,15 +1675,17 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 		}
 		// 检查反例是否与标准问重复
 		if q == meta.StandardQuestion {
-			return werrors.NewBadRequestError(fmt.Sprintf("反例问题「%s」不能与标准问相同", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question exclue « %s » ne peut pas être identique à "+
+				"la question principale", q))
 		}
 		// 检查反例是否与相似问重复
 		if _, exists := positiveQuestions[q]; exists {
-			return werrors.NewBadRequestError(fmt.Sprintf("反例问题「%s」不能与相似问相同", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question exclue « %s » ne peut pas être identique à "+
+				"une question similaire", q))
 		}
 		// 检查反例之间是否重复
 		if _, exists := negativeQuestionsSeen[q]; exists {
-			return werrors.NewBadRequestError(fmt.Sprintf("反例问题「%s」重复", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question exclue « %s » est en double", q))
 		}
 		negativeQuestionsSeen[q] = struct{}{}
 	}
@@ -1702,7 +1705,8 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 
 	existingMeta, err := dupChunk.FAQMetadata()
 	if err != nil || existingMeta == nil {
-		return werrors.NewBadRequestError("标准问或相似问与已有条目重复")
+		return werrors.NewBadRequestError("La question principale ou une question similaire existe déjà dans une " +
+			"autre entrée")
 	}
 
 	// 5–7. 与原先全量扫描一致的报错语义：先检查标准问，再逐条检查相似问
@@ -1715,10 +1719,12 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 
 	if meta.StandardQuestion != "" {
 		if meta.StandardQuestion == existingMeta.StandardQuestion {
-			return werrors.NewBadRequestError(fmt.Sprintf("标准问「%s」已存在", meta.StandardQuestion))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question principale « %s » existe "+
+				"déjà", meta.StandardQuestion))
 		}
 		if _, ok := existingSimilarSet[meta.StandardQuestion]; ok {
-			return werrors.NewBadRequestError(fmt.Sprintf("标准问「%s」已存在", meta.StandardQuestion))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question principale « %s » existe "+
+				"déjà", meta.StandardQuestion))
 		}
 	}
 
@@ -1727,14 +1733,15 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 			continue
 		}
 		if q == existingMeta.StandardQuestion {
-			return werrors.NewBadRequestError(fmt.Sprintf("相似问「%s」已存在", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question similaire « %s » existe déjà", q))
 		}
 		if _, ok := existingSimilarSet[q]; ok {
-			return werrors.NewBadRequestError(fmt.Sprintf("相似问「%s」已存在", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question similaire « %s » existe déjà", q))
 		}
 	}
 
-	return werrors.NewBadRequestError("标准问或相似问与已有条目重复")
+	return werrors.NewBadRequestError("La question principale ou une question similaire existe déjà dans une " +
+		"autre entrée")
 }
 
 // faqTagResolver resolves a payload's TagID/TagName to the tag's internal UUID.
@@ -1850,7 +1857,7 @@ func sanitizeFAQEntryPayload(payload *types.FAQEntryPayload) (*types.FAQChunkMet
 		case types.AnswerStrategyAll, types.AnswerStrategyRandom:
 			answerStrategy = *payload.AnswerStrategy
 		default:
-			return nil, werrors.NewBadRequestError("answer_strategy 必须是 'all' 或 'random'")
+			return nil, werrors.NewBadRequestError("answer_strategy doit valoir 'all' ou 'random'")
 		}
 	}
 	meta := &types.FAQChunkMetadata{
@@ -1864,10 +1871,10 @@ func sanitizeFAQEntryPayload(payload *types.FAQEntryPayload) (*types.FAQChunkMet
 	}
 	meta.Sanitize()
 	if meta.StandardQuestion == "" {
-		return nil, werrors.NewBadRequestError("标准问不能为空")
+		return nil, werrors.NewBadRequestError("La question principale est obligatoire")
 	}
 	if len(meta.Answers) == 0 {
-		return nil, werrors.NewBadRequestError("至少提供一个答案")
+		return nil, werrors.NewBadRequestError("Fournissez au moins une réponse")
 	}
 	return meta, nil
 }

@@ -1,9 +1,21 @@
 <template>
-    <div class="aside_box" :class="{ 'aside_box--collapsed': uiStore.sidebarCollapsed, 'aside_box--resizing': uiStore.sidebarResizing }">
+    <div
+        ref="mobileDrawerRoot"
+        class="aside_box"
+        :class="{
+            'aside_box--collapsed': uiStore.sidebarCollapsed,
+            'aside_box--resizing': uiStore.sidebarResizing && !uiStore.platformMobile,
+            'aside_box--platform-mobile': uiStore.platformMobile,
+            'aside_box--mobile-open': uiStore.platformMobile && !uiStore.sidebarCollapsed,
+        }"
+        :role="mobileDrawerOpen ? 'dialog' : undefined"
+        :aria-modal="mobileDrawerOpen ? true : undefined"
+        :aria-label="mobileDrawerOpen ? t('menu.expandSidebar') : undefined"
+    >
         <!-- 展开时：Logo + 搜索/折叠按钮同行 -->
         <div class="logo_row" v-if="!uiStore.sidebarCollapsed">
             <div class="logo_box" @click="router.push('/platform/knowledge-bases')" style="cursor: pointer;">
-                <img class="logo" src="@/assets/img/weknora.png" alt="">
+                <img class="logo" src="@/assets/brand/logo-transparent.svg" alt="Global-IT-SS" />
                 <sup v-if="isLiteEdition" class="lite-badge">Lite</sup>
             </div>
             <div class="logo_actions">
@@ -23,14 +35,21 @@
                         <img class="header-icon-img" :src="getImgSrc('search.svg')" alt="">
                     </div>
                 </t-tooltip>
-                <div class="sidebar-toggle" @click="uiStore.toggleSidebar" :title="t('menu.collapseSidebar')">
+                <button
+                    ref="mobileDrawerCloseBtn"
+                    type="button"
+                    class="sidebar-toggle"
+                    :title="uiStore.platformMobile ? t('common.close') : t('menu.collapseSidebar')"
+                    :aria-label="uiStore.platformMobile ? t('common.close') : t('menu.collapseSidebar')"
+                    @click="uiStore.platformMobile ? uiStore.closeMobileSidebar() : uiStore.toggleSidebar()"
+                >
                     <svg viewBox="0 0 20 20" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="1.5" y="1.5" width="17" height="17" rx="3" stroke="currentColor" stroke-width="1.5" />
                         <line x1="7.5" y1="1.5" x2="7.5" y2="18.5" stroke="currentColor" stroke-width="1.5" />
                         <line x1="4" y1="7.5" x2="4" y2="12.5" stroke="currentColor" stroke-width="1.5"
                             stroke-linecap="round" />
                     </svg>
-                </div>
+                </button>
             </div>
         </div>
         <!-- 折叠时：展开按钮 -->
@@ -57,9 +76,17 @@
         <TenantSelector v-if="canAccessAllTenants && !uiStore.sidebarCollapsed" />
 
         <!-- 侧栏边缘拖拽调宽，拖窄时自动收缩 -->
-        <PanelResizeHandle edge="right" :label="t('knowledgeStages.resizeDrawer')"
-            :value="uiStore.sidebarDisplayWidth" :min="SIDEBAR_COLLAPSED_WIDTH" :max="SIDEBAR_MAX_WIDTH"
-            @start="startSidebarResize" @resize="resizeSidebar" @end="uiStore.sidebarResizing = false" />
+        <PanelResizeHandle
+            v-if="!uiStore.platformMobile"
+            edge="right"
+            :label="t('knowledgeStages.resizeDrawer')"
+            :value="uiStore.sidebarDisplayWidth"
+            :min="SIDEBAR_COLLAPSED_WIDTH"
+            :max="SIDEBAR_MAX_WIDTH"
+            @start="startSidebarResize"
+            @resize="resizeSidebar"
+            @end="uiStore.sidebarResizing = false"
+        />
 
         <!-- 上半部分：新对话吸顶 + 知识库/智能体/共享空间/历史会话随滚动一起滚走 -->
         <div class="menu_top" ref="scrollContainer" @scroll="handleScroll">
@@ -333,6 +360,47 @@ const toolboxPreview = computed(() => TOOLBOX_ITEMS.filter((item) => canAccessTo
 })));
 const orgStore = useOrganizationStore();
 const uiStore = useUIStore();
+const mobileDrawerRoot = ref<HTMLElement | null>(null)
+const mobileDrawerCloseBtn = ref<HTMLButtonElement | null>(null)
+const mobileDrawerOpen = computed(() => uiStore.platformMobile && !uiStore.sidebarCollapsed)
+
+const focusableDrawerSelector =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+const getFocusableInMobileDrawer = (): HTMLElement[] => {
+  const root = mobileDrawerRoot.value
+  if (!root) return []
+  return Array.from(root.querySelectorAll<HTMLElement>(focusableDrawerSelector)).filter(
+    (el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true',
+  )
+}
+
+const handleMobileDrawerKeyDown = (event: KeyboardEvent) => {
+  if (!mobileDrawerOpen.value) return
+  if (event.key !== 'Tab') return
+  const focusables = getFocusableInMobileDrawer()
+  if (focusables.length === 0) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = document.activeElement
+  if (event.shiftKey && active === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+watch(mobileDrawerOpen, (open) => {
+  if (open) {
+    nextTick(() => mobileDrawerCloseBtn.value?.focus())
+    document.addEventListener('keydown', handleMobileDrawerKeyDown)
+    return
+  }
+  document.removeEventListener('keydown', handleMobileDrawerKeyDown)
+})
+
 const browserConnection = useBrowserConnectionStore();
 const browserStackStatus = computed(() => {
     if (!uiStore.sidebarBrowserStatus) return '';
@@ -353,6 +421,9 @@ const isMacLike = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.tes
 const cmdModKeyLabel = isMacLike ? '⌘' : 'Ctrl';
 const route = useRoute();
 const router = useRouter();
+watch(() => route.fullPath, () => {
+    uiStore.closeMobileSidebar();
+});
 const currentpath = ref('');
 const total = ref(0);
 const sessionBuckets = ref<Record<string, SidebarSessionBucket>>({});
@@ -1100,6 +1171,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    document.removeEventListener('keydown', handleMobileDrawerKeyDown)
     clearInterval(sessionActivityTimer);
     clearTimeout(forkRevealTimer);
     sessionActivity.clear();
@@ -1345,6 +1417,53 @@ const resizeSidebar = (delta: number, keyboard: boolean) => {
         .menu_top {
             margin-right: 0;
             padding-right: 0;
+        }
+    }
+
+    @media (max-width: 768px) {
+        &:not(.aside_box--platform-mobile) {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            padding: 0;
+            overflow: hidden;
+            visibility: hidden;
+            pointer-events: none;
+            border: none;
+        }
+    }
+
+    &.aside_box--platform-mobile {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1100;
+        height: 100%;
+        max-width: min(320px, 88vw);
+        width: min(320px, 88vw) !important;
+        min-width: 0 !important;
+        transform: translateX(-100%);
+        transition: transform var(--app-motion-base) ease, visibility var(--app-motion-base);
+        box-shadow: var(--td-shadow-3);
+
+        &.aside_box--mobile-open {
+            transform: translateX(0);
+        }
+
+        &.aside_box--collapsed {
+            width: 0 !important;
+            max-width: 0 !important;
+            padding: 0;
+            border: none;
+            overflow: hidden;
+            visibility: hidden;
+            transform: translateX(-100%);
+            box-shadow: none;
         }
     }
 
@@ -2002,11 +2121,6 @@ const resizeSidebar = (delta: number, keyboard: boolean) => {
 }
 </style>
 <style lang="less">
-// Dark mode: invert dark logo to light
-html[theme-mode="dark"] .aside_box .logo_box .logo {
-    filter: invert(1) hue-rotate(180deg);
-}
-
 // Dark mode: 滚动条在深色背景下需要更亮的颜色才看得见
 html[theme-mode="dark"] .aside_box .menu_top:hover {
     scrollbar-color: rgba(255, 255, 255, 0.22) transparent;

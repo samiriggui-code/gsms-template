@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="settings-modal-shell">
-      <div v-if="visible" class="settings-modal-shell settings-overlay" :class="overlayClass" :style="{ zIndex }"
+      <div v-if="visible" class="settings-modal-shell settings-overlay" :class="[overlayClass, { 'settings-modal-shell--platform-mobile': uiStore.platformMobile }]" :style="{ zIndex }"
         @click.self="emit('close')">
         <div class="settings-modal" role="dialog" aria-modal="true" :aria-label="title">
           <div v-if="loading" class="editor-initializing" role="status" :aria-label="$t('common.loading')">
@@ -14,13 +14,22 @@
             </svg>
           </button>
 
+          <div
+            v-if="uiStore.platformMobile && settingsMobileNavOpen"
+            class="settings-mobile-nav-backdrop"
+            aria-hidden="true"
+            @click="settingsMobileNavOpen = false"
+          />
           <div class="settings-container">
-            <aside class="settings-sidebar">
+            <aside
+              class="settings-sidebar"
+              :class="{ 'settings-sidebar--mobile-open': uiStore.platformMobile && settingsMobileNavOpen }"
+            >
               <div class="sidebar-header">
                 <h2 class="sidebar-title">{{ title }}</h2>
                 <slot name="sidebar-header-extra" />
               </div>
-              <nav class="settings-nav" :data-guide="navGuide || undefined">
+              <nav class="settings-nav" :data-guide="navGuide || undefined" @click="onSettingsNavClick">
                 <slot name="nav">
                   <template v-for="group in navGroups" :key="group.key">
                     <div class="nav-group-title">{{ group.label }}</div>
@@ -40,6 +49,19 @@
 
             <div class="settings-content">
               <div class="settings-body">
+                <button
+                  v-if="uiStore.platformMobile && !settingsMobileNavOpen"
+                  type="button"
+                  class="settings-mobile-sections-toggle"
+                  @click="settingsMobileNavOpen = true"
+                >
+                  <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true">
+                    <line x1="3" y1="5.5" x2="17" y2="5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                    <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                    <line x1="3" y1="14.5" x2="17" y2="14.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+                  </svg>
+                  <span>{{ $t('general.settings') }}</span>
+                </button>
                 <slot />
               </div>
               <div v-if="$slots.footer || $slots['footer-note']" class="settings-footer">
@@ -57,6 +79,37 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+import { useUIStore } from '@/stores/ui'
+import { usePlatformMobile } from '@/composables/usePlatformMobile'
+
+usePlatformMobile()
+const uiStore = useUIStore()
+const settingsMobileNavOpen = ref(false)
+
+watch(
+  () => uiStore.platformMobile,
+  () => {
+    settingsMobileNavOpen.value = false
+  },
+)
+
+watch(
+  () => props.visible,
+  (open) => {
+    if (!open) settingsMobileNavOpen.value = false
+  },
+)
+
+function onSettingsNavClick(event: MouseEvent) {
+  if (!uiStore.platformMobile) return
+  const target = event.target as HTMLElement | null
+  if (!target) return
+  if (target.closest('.nav-item, .submenu-item')) {
+    settingsMobileNavOpen.value = false
+  }
+}
+
 /**
  * 全屏"设置类"弹窗壳：遮罩 + 1080×780 面板 + 左侧分组导航 + 右侧内容 + 可选底栏。
  * 被 Settings / AgentEditorModal / OrganizationSettingsModal / KnowledgeBaseEditorModal 共用，
@@ -83,7 +136,7 @@ export interface SettingsModalNavGroup {
   items: SettingsModalNavItem[]
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     visible: boolean
     title: string
@@ -392,6 +445,90 @@ function showBadge(item: SettingsModalNavItem): boolean {
     display: flex;
     gap: 12px;
     flex-shrink: 0;
+  }
+}
+
+.settings-modal-shell--platform-mobile {
+  &.settings-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .settings-modal {
+    max-width: none;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .close-btn {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    width: 44px;
+    height: 44px;
+  }
+
+  .settings-container {
+    position: relative;
+  }
+
+  .settings-sidebar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 15;
+    width: min(300px, 88vw);
+    max-width: min(300px, 88vw);
+    transform: translateX(-100%);
+    transition: transform var(--app-motion-base) ease;
+    box-shadow: var(--td-shadow-3);
+
+    &.settings-sidebar--mobile-open {
+      transform: translateX(0);
+    }
+  }
+
+  .settings-mobile-nav-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 14;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .settings-content {
+    width: 100%;
+  }
+
+  .settings-mobile-sections-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--td-component-stroke);
+    border-radius: var(--app-radius-md);
+    background: var(--td-bg-color-container);
+    color: var(--td-text-color-primary);
+    font-size: var(--app-text-base);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .settings-footer {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .settings-footer-note {
+    margin-right: 0;
+    flex: 1 1 100%;
+  }
+
+  .settings-footer-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    width: 100%;
   }
 }
 

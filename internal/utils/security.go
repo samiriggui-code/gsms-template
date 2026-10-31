@@ -1287,17 +1287,20 @@ func FormatSSRFError(label, rawURL string, err error) string {
 	}
 	if errors.Is(err, ErrSSRFHostNotWhitelisted) {
 		return fmt.Sprintf(
-			"%s 未通过安全校验：服务端开启了「仅允许白名单出站」（SSRF_DNS_WHITELIST_ONLY），"+
-				"%s 不在白名单内，因此在解析域名之前就被拒绝。如该地址确实可信，请联系运维把它加入 "+
-				"SSRF_WHITELIST_EXTRA（支持精确域名 / *.example.com 通配 / IP / CIDR），"+
-				"示例：SSRF_WHITELIST_EXTRA=%s,*.example.com,10.0.0.0/8",
+			"%s n'a pas passé la vérification de sécurité : le serveur n'autorise que les sorties en liste "+
+				"blanche (SSRF_DNS_WHITELIST_ONLY), "+
+				"et %s n'y figure pas ; il a donc été refusé avant la résolution DNS. Si cette adresse est "+
+				"fiable, demandez à l'exploitant de l'ajouter à "+
+				"SSRF_WHITELIST_EXTRA (domaine exact / joker *.example.com / IP / CIDR), "+
+				"par exemple : SSRF_WHITELIST_EXTRA=%s,*.example.com,10.0.0.0/8",
 			label, host, host,
 		)
 	}
 	return fmt.Sprintf(
-		"%s 未通过安全校验：%v。如该地址确实可信，请联系运维在服务端环境变量 "+
-			"SSRF_WHITELIST_EXTRA 中加入该主机（支持精确域名 / *.example.com 通配 / IP / CIDR），"+
-			"示例：SSRF_WHITELIST_EXTRA=%s,*.example.com,10.0.0.0/8",
+		"%s n'a pas passé la vérification de sécurité : %v. Si cette adresse est fiable, demandez à l'exploitant "+
+			"d'ajouter cet hôte à la variable d'environnement "+
+			"SSRF_WHITELIST_EXTRA du serveur (domaine exact / joker *.example.com / IP / CIDR), "+
+			"par exemple : SSRF_WHITELIST_EXTRA=%s,*.example.com,10.0.0.0/8",
 		label, err, host,
 	)
 }

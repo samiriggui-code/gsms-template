@@ -331,6 +331,17 @@ async function openProjectDir() {
     width: 100%;
     max-width: 960px;
     gap: 24px;
+    box-sizing: border-box;
+    padding: 0 20px;
+
+    @media (max-width: 768px) {
+        padding:
+            max(56px, calc(env(safe-area-inset-top) + 48px))
+            max(12px, env(safe-area-inset-right))
+            max(16px, env(safe-area-inset-bottom))
+            max(12px, env(safe-area-inset-left));
+        gap: 16px;
+    }
 
     :deep(.answers-input) {
         position: static;
@@ -404,6 +415,10 @@ async function openProjectDir() {
     color: var(--td-text-color-primary);
     font-family: var(--app-font-family);
     font-size: 28px;
+
+    @media (max-width: 768px) {
+        font-size: 22px;
+    }
     font-weight: 600;
     align-items: center;
     margin-bottom: 0;

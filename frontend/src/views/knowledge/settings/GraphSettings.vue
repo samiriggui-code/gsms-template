@@ -95,7 +95,7 @@
               creatable
               filterable
               @change="handleTagsChange"
-              style="flex: 1; min-width: 400px;"
+              class="graph-tags-select"
             />
           </div>
           <div v-if="!modelStatus.llm.available" class="control-tip">
@@ -754,6 +754,45 @@ onMounted(async () => {
   align-items: flex-start;
 }
 
+.graph-tags-select {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .setting-row:not(.vertical) {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .setting-info,
+  .setting-control {
+    flex: 1 1 auto;
+    max-width: 100%;
+    padding-right: 0;
+  }
+
+  .setting-control {
+    justify-content: flex-start;
+  }
+
+  .tags-control-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .relation-item {
+    flex-direction: column;
+    align-items: stretch;
+
+    .relation-arrow {
+      align-self: center;
+      transform: rotate(90deg);
+    }
+  }
+}
+
 .text-control-group {
   flex-direction: column;
 }
@@ -845,6 +884,13 @@ onMounted(async () => {
   .relation-arrow {
     color: var(--td-text-color-secondary);
     font-size: var(--app-text-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .relation-item .relation-select {
+    min-width: 0;
+    width: 100%;
   }
 }
 

@@ -652,7 +652,7 @@ var sensitivePatterns = []*regexp.Regexp{
 // RedactedMemoryPlaceholder replaces removed material. It is visible on purpose:
 // a user reading their memory list should be able to tell that something was
 // dropped rather than silently mangled.
-const RedactedMemoryPlaceholder = "【已隐藏】"
+const RedactedMemoryPlaceholder = "[masqué]"
 
 // RedactSensitive removes credentials and identity numbers from a statement.
 // The second return value reports whether anything was removed.

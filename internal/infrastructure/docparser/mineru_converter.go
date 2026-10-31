@@ -438,7 +438,7 @@ func validateMinerUOutboundURL(rawURL string) error {
 func PingMinerU(endpoint, apiKey string) (bool, string) {
 	endpoint = strings.TrimRight(endpoint, "/")
 	if endpoint == "" {
-		return false, "未配置 MinerU 端点"
+		return false, "Aucun endpoint MinerU configuré"
 	}
 	if err := validateMinerUOutboundURL(endpoint); err != nil {
 		return false, err.Error()
@@ -451,7 +451,7 @@ func PingMinerU(endpoint, apiKey string) (bool, string) {
 
 	protocol, err := detectMinerUProtocol(ctx, client, endpoint, apiKey)
 	if err != nil {
-		return false, fmt.Sprintf("MinerU 服务不可用: %v", err)
+		return false, fmt.Sprintf("Service MinerU indisponible : %v", err)
 	}
 	if protocol == minerUProtocolV1 {
 		return pingMinerUV1Auth(ctx, client, endpoint, apiKey)
@@ -459,11 +459,11 @@ func PingMinerU(endpoint, apiKey string) (bool, string) {
 
 	resp, err := client.Get(endpoint + "/docs")
 	if err != nil {
-		return false, fmt.Sprintf("MinerU 服务不可达: %v", err)
+		return false, fmt.Sprintf("Service MinerU injoignable : %v", err)
 	}
 	resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		return false, fmt.Sprintf("MinerU 服务返回状态 %d", resp.StatusCode)
+		return false, fmt.Sprintf("Le service MinerU a renvoyé le statut %d", resp.StatusCode)
 	}
 	return true, ""
 }
@@ -473,21 +473,21 @@ func PingMinerU(endpoint, apiKey string) (bool, string) {
 func pingMinerUV1Auth(ctx context.Context, client *http.Client, endpoint, apiKey string) (bool, string) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint+"/v1/parse/jobs?limit=1", nil)
 	if err != nil {
-		return false, fmt.Sprintf("构建请求失败: %v", err)
+		return false, fmt.Sprintf("Échec de construction de la requête : %v", err)
 	}
 	if apiKey = strings.TrimSpace(apiKey); apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, fmt.Sprintf("MinerU 服务不可达: %v", err)
+		return false, fmt.Sprintf("Service MinerU injoignable : %v", err)
 	}
 	_ = resp.Body.Close()
 	if resp.StatusCode == http.StatusUnauthorized {
 		if apiKey == "" {
-			return false, "MinerU 服务已启用鉴权，请配置 API Key"
+			return false, "Le service MinerU exige une authentification ; configurez une clé API"
 		}
-		return false, "MinerU API Key 无效"
+		return false, "Clé API MinerU non valide"
 	}
 	return true, ""
 }

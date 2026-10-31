@@ -1014,7 +1014,7 @@ func queryMaximumResults(message string) (int, bool) {
 func (w *weaviateRepository) ListCollections(ctx context.Context) ([]string, error) {
 	schema, err := w.client.Schema().Getter().Do(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("weaviate 获取 schema 失败: %w", err)
+		return nil, fmt.Errorf("weaviate : échec de récupération du schéma : %w", err)
 	}
 	var collectionNames []string
 	for _, class := range schema.Classes {
