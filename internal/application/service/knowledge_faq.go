@@ -1648,7 +1648,8 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 	// 1. 首先检查当前条目自身的相似问是否与标准问重复
 	for _, q := range meta.SimilarQuestions {
 		if q == meta.StandardQuestion {
-			return werrors.NewBadRequestError(fmt.Sprintf("La question similaire « %s » ne peut pas être identique à la question principale", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question similaire « %s » ne peut pas être "+
+				"identique à la question principale", q))
 		}
 	}
 
@@ -1674,11 +1675,13 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 		}
 		// 检查反例是否与标准问重复
 		if q == meta.StandardQuestion {
-			return werrors.NewBadRequestError(fmt.Sprintf("La question exclue « %s » ne peut pas être identique à la question principale", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question exclue « %s » ne peut pas être identique à "+
+				"la question principale", q))
 		}
 		// 检查反例是否与相似问重复
 		if _, exists := positiveQuestions[q]; exists {
-			return werrors.NewBadRequestError(fmt.Sprintf("La question exclue « %s » ne peut pas être identique à une question similaire", q))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question exclue « %s » ne peut pas être identique à "+
+				"une question similaire", q))
 		}
 		// 检查反例之间是否重复
 		if _, exists := negativeQuestionsSeen[q]; exists {
@@ -1702,7 +1705,8 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 
 	existingMeta, err := dupChunk.FAQMetadata()
 	if err != nil || existingMeta == nil {
-		return werrors.NewBadRequestError("La question principale ou une question similaire existe déjà dans une autre entrée")
+		return werrors.NewBadRequestError("La question principale ou une question similaire existe déjà dans une " +
+			"autre entrée")
 	}
 
 	// 5–7. 与原先全量扫描一致的报错语义：先检查标准问，再逐条检查相似问
@@ -1715,10 +1719,12 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 
 	if meta.StandardQuestion != "" {
 		if meta.StandardQuestion == existingMeta.StandardQuestion {
-			return werrors.NewBadRequestError(fmt.Sprintf("La question principale « %s » existe déjà", meta.StandardQuestion))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question principale « %s » existe "+
+				"déjà", meta.StandardQuestion))
 		}
 		if _, ok := existingSimilarSet[meta.StandardQuestion]; ok {
-			return werrors.NewBadRequestError(fmt.Sprintf("La question principale « %s » existe déjà", meta.StandardQuestion))
+			return werrors.NewBadRequestError(fmt.Sprintf("La question principale « %s » existe "+
+				"déjà", meta.StandardQuestion))
 		}
 	}
 
@@ -1734,7 +1740,8 @@ func (s *knowledgeService) checkFAQQuestionDuplicate(
 		}
 	}
 
-	return werrors.NewBadRequestError("La question principale ou une question similaire existe déjà dans une autre entrée")
+	return werrors.NewBadRequestError("La question principale ou une question similaire existe déjà dans une " +
+		"autre entrée")
 }
 
 // faqTagResolver resolves a payload's TagID/TagName to the tag's internal UUID.

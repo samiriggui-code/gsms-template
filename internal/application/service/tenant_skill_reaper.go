@@ -17,7 +17,8 @@ import (
 
 const (
 	skillReaperCronSpec            = "0 */5 * * * *"
-	skillInstallInterruptedMessage = "Processus d'installation interrompu : the process died before the install finished"
+	skillInstallInterruptedMessage = "Processus d'installation interrompu : the process died before the install " +
+		"finished"
 )
 
 // skillReaperStore is the skill-row slice ReapStuckRuns needs.

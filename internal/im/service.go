@@ -37,8 +37,9 @@ import (
 )
 
 const (
-	imNoAnswerFallback  = "Désolé, je ne peux pas répondre à cette question pour le moment."
-	imErrorFallback     = "Désolé, une erreur est survenue pendant le traitement de votre question ; réessayez plus tard."
+	imNoAnswerFallback = "Désolé, je ne peux pas répondre à cette question pour le moment."
+	imErrorFallback    = "Désolé, une erreur est survenue pendant le traitement de votre question ; réessayez " +
+		"plus tard."
 	imCancelledFallback = "Désolé, la réponse a été annulée."
 
 	// dedupTTL is how long processed message IDs are retained.
@@ -407,7 +408,9 @@ func formatQuotedContext(quote *QuotedMessage) string {
 		if label := nonTextTypeLabel[quote.NonTextType]; label != "" {
 			kind = "ce type de contenu (" + label + ")"
 		}
-		return "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux pas encore traiter " + kind + " et suggère-lui de décrire sa question par écrit. N'essaie pas de deviner le contenu de ce message."
+		return "L'utilisateur a cité un message que tu ne peux pas voir. Dis-lui directement que tu ne peux pas " +
+			"encore traiter " + kind + " et suggère-lui de décrire sa question par écrit. N'essaie pas de deviner " +
+			"le contenu de ce message."
 	}
 	if quote.Content == "" {
 		return ""
@@ -421,7 +424,8 @@ func formatQuotedContext(quote *QuotedMessage) string {
 	content = strings.ReplaceAll(content, "</quoted_message>", "")
 	label := "Voici un message passé cité par l'utilisateur, à titre de contexte uniquement :"
 	if quote.IsBotMessage {
-		label = "Voici une de tes réponses précédentes (en tant que bot) citée par l'utilisateur, à titre de contexte uniquement :"
+		label = "Voici une de tes réponses précédentes (en tant que bot) citée par l'utilisateur, à titre de " +
+			"contexte uniquement :"
 	}
 	return label + "\n<quoted_message>\n" + content + "\n</quoted_message>"
 }
@@ -526,11 +530,13 @@ func (s *Service) buildIMMCPAuthNotice(ctx context.Context, services []imMCPAuth
 		if authURL != "" {
 			lines = append(lines, fmt.Sprintf("• %s : %s", name, authURL))
 		} else {
-			lines = append(lines, fmt.Sprintf("• %s (terminez l'autorisation OAuth dans l'administration WeKnora)", name))
+			lines = append(lines, fmt.Sprintf("• %s (terminez l'autorisation OAuth dans l'administration "+
+				"WeKnora)", name))
 		}
 	}
 
-	return "⚠️ Les services MCP suivants doivent être autorisés avant usage. Cliquez sur le lien pour les autoriser, puis renvoyez votre message :\n" +
+	return "⚠️ Les services MCP suivants doivent être autorisés avant usage. Cliquez sur le lien pour les " +
+		"autoriser, puis renvoyez votre message :\n" +
 		strings.Join(lines, "\n")
 }
 
@@ -1902,7 +1908,8 @@ func (s *Service) HandleMessage(ctx context.Context, msg *IncomingMessage, chann
 		logger.Infof(ctx, "[IM] Enqueued: user=%s pos=%d depth=%d", msg.UserID, pos, s.qaQueue.Metrics().Depth)
 		// In multi-instance mode the local queue position does not reflect global
 		// depth, so use a generic "queued" hint instead of an exact number.
-		queueMsg := fmt.Sprintf("Bien reçu, %d message(s) avant le vôtre en cours de traitement, merci de patienter ⏳", pos)
+		queueMsg := fmt.Sprintf("Bien reçu, %d message(s) avant le vôtre en cours de traitement, merci de "+
+			"patienter ⏳", pos)
 		if s.redis != nil {
 			queueMsg = "Bien reçu, votre message est en file d'attente, merci de patienter ⏳"
 		}
@@ -1938,9 +1945,11 @@ func emptyIncomingMessageReply(msg *IncomingMessage) (string, bool) {
 	case "audio":
 		return "Impossible de reconnaître le texte de ce message vocal. Envoyez-le en texte, ou répétez.", true
 	case "video":
-		return "Les messages vidéo ne sont pas encore pris en charge. Envoyez du texte ; envoyez les images ou fichiers séparément.", true
+		return "Les messages vidéo ne sont pas encore pris en charge. Envoyez du texte ; envoyez les images ou " +
+			"fichiers séparément.", true
 	default:
-		return "Impossible de reconnaître le texte de ce message. Envoyez du texte ; envoyez les images ou fichiers séparément.", true
+		return "Impossible de reconnaître le texte de ce message. Envoyez du texte ; envoyez les images ou " +
+			"fichiers séparément.", true
 	}
 }
 
@@ -1977,7 +1986,8 @@ func (s *Service) executeQARequest(req *qaRequest) {
 	attachments, imageURLs, downloaded, err := s.prepareIMAttachments(ctx, req.msg, req.adapter)
 	if err != nil {
 		logger.Warnf(ctx, "[IM] attachment preparation failed: %v", err)
-		if sendErr := req.adapter.SendReply(ctx, req.msg, &ReplyMessage{Content: "❌ Impossible de lire cette pièce jointe ; réessayez ou décrivez-la par écrit.", IsFinal: true}); sendErr != nil {
+		if sendErr := req.adapter.SendReply(ctx, req.msg, &ReplyMessage{Content: "❌ Impossible de lire cette " +
+			"pièce jointe ; réessayez ou décrivez-la par écrit.", IsFinal: true}); sendErr != nil {
 			logger.Warnf(ctx, "[IM] Failed to send attachment error reply: %v", sendErr)
 		}
 		return
@@ -3444,7 +3454,8 @@ func fileMessageQAContent(msg *IncomingMessage) string {
 	if fileName == "" {
 		fileName = "fichier sans nom"
 	}
-	return fmt.Sprintf("J'ai envoyé le fichier « %s ». Confirme que tu l'as bien reçu et dis-moi comment tu peux m'aider ensuite.", fileName)
+	return fmt.Sprintf("J'ai envoyé le fichier « %s ». Confirme que tu l'as bien reçu et dis-moi comment tu peux "+
+		"m'aider ensuite.", fileName)
 }
 
 // processDownloadedFileToKnowledgeBase stores bytes already downloaded for QA.

@@ -928,7 +928,8 @@ func validateKnowledgeBaseSettingsUpdate(
 	}
 	if !ownWorkspace && cfg != nil && cfg.StorageBackendID != nil &&
 		kbStorageBindingChanged(kb, *cfg.StorageBackendID, "") {
-		return apperrors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut modifier la configuration de stockage")
+		return apperrors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut modifier " +
+			"la configuration de stockage")
 	}
 	return nil
 }

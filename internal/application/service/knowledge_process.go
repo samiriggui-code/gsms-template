@@ -525,7 +525,8 @@ func (s *knowledgeService) processChunks(ctx context.Context,
 			totalImages += len(chunkData.Images)
 		}
 	}
-	logger.Infof(ctx, "[DocReader] Chunks contenant des images : %d, total d'images : %d", chunksWithImages, totalImages)
+	logger.Infof(ctx, "[DocReader] Chunks contenant des images : %d, total d'images : "+
+		"%d", chunksWithImages, totalImages)
 
 	// 打印每个Chunk的详细信息
 	for idx, chunkData := range chunks {
@@ -3275,7 +3276,8 @@ func (s *knowledgeService) CancelKnowledgeParse(
 	case types.ParseStatusCompleted, types.ParseStatusFailed:
 		return nil, werrors.NewBadRequestError("L'analyse est terminée et ne peut plus être annulée")
 	case types.ParseStatusDeleting:
-		return nil, werrors.NewBadRequestError("La connaissance est en cours de suppression ; impossible d'annuler l'analyse")
+		return nil, werrors.NewBadRequestError("La connaissance est en cours de suppression ; impossible " +
+			"d'annuler l'analyse")
 	case types.ParseStatusPending, types.ParseStatusProcessing, types.ParseStatusFinalizing:
 		// Cancellable. `finalizing` is the post-process fan-out window
 		// where graph-extract / summary / question subtasks are still

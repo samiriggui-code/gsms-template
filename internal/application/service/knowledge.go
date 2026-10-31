@@ -575,7 +575,8 @@ func (s *knowledgeService) checkStorageEngineConfigured(ctx context.Context, kb 
 			kbIDOrEmpty(kb))
 		return nil
 	}
-	return werrors.NewBadRequestError("Choisissez d'abord un moteur de stockage pour la base de connaissances avant d'envoyer du contenu. Configurez-le dans les paramètres de la base de connaissances.")
+	return werrors.NewBadRequestError("Choisissez d'abord un moteur de stockage pour la base de connaissances " +
+		"avant d'envoyer du contenu. Configurez-le dans les paramètres de la base de connaissances.")
 }
 
 func kbIDOrEmpty(kb *types.KnowledgeBase) string {
@@ -1151,7 +1152,8 @@ func (s *knowledgeService) UpdateKnowledgeTagBatch(
 				return werrors.NewBadRequestError(fmt.Sprintf("Le tag %s n'existe pas", tagID))
 			}
 			if tag.TenantID != tenantID || tag.KnowledgeBaseID != knowledge.KnowledgeBaseID {
-				return werrors.NewBadRequestError(fmt.Sprintf("Le tag %s n'appartient pas à la base de connaissances %s", tagID, knowledge.KnowledgeBaseID))
+				return werrors.NewBadRequestError(fmt.Sprintf("Le tag %s n'appartient pas à la base de "+
+					"connaissances %s", tagID, knowledge.KnowledgeBaseID))
 			}
 		}
 	}

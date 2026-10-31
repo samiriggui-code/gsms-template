@@ -73,7 +73,8 @@ func (s *knowledgeService) createKnowledgeFromFile(ctx context.Context,
 
 	// FAQ knowledge bases should not accept file uploads — use the FAQ import API instead
 	if kb.Type == types.KnowledgeBaseTypeFAQ {
-		return nil, werrors.NewBadRequestError("Les bases FAQ n'acceptent pas l'envoi de fichiers ; utilisez l'import de FAQ")
+		return nil, werrors.NewBadRequestError("Les bases FAQ n'acceptent pas l'envoi de fichiers ; utilisez " +
+			"l'import de FAQ")
 	}
 
 	if err := s.checkStorageEngineConfigured(ctx, kb); err != nil {
@@ -564,7 +565,8 @@ func (s *knowledgeService) createKnowledgeFromFileURLWithReplacement(
 	}
 
 	if kb.Type == types.KnowledgeBaseTypeFAQ {
-		return nil, werrors.NewBadRequestError("Les bases FAQ n'acceptent pas l'envoi de fichiers ; utilisez l'import de FAQ")
+		return nil, werrors.NewBadRequestError("Les bases FAQ n'acceptent pas l'envoi de fichiers ; utilisez " +
+			"l'import de FAQ")
 	}
 
 	if err := s.checkStorageEngineConfigured(ctx, kb); err != nil {
@@ -782,12 +784,14 @@ func (s *knowledgeService) CreateKnowledgeFromManual(ctx context.Context,
 		return nil, werrors.NewValidationError("Le contenu est obligatoire")
 	}
 	if len([]rune(cleanContent)) > manualContentMaxLength {
-		return nil, werrors.NewValidationError(fmt.Sprintf("Le contenu dépasse la longueur maximale (%d caractères au plus)", manualContentMaxLength))
+		return nil, werrors.NewValidationError(fmt.Sprintf("Le contenu dépasse la longueur maximale (%d "+
+			"caractères au plus)", manualContentMaxLength))
 	}
 
 	safeTitle, ok := secutils.ValidateInput(payload.Title)
 	if !ok {
-		return nil, werrors.NewValidationError("Le titre contient des caractères non autorisés ou dépasse la longueur maximale")
+		return nil, werrors.NewValidationError("Le titre contient des caractères non autorisés ou dépasse la " +
+			"longueur maximale")
 	}
 
 	status := strings.ToLower(strings.TrimSpace(payload.Status))
@@ -914,7 +918,8 @@ func (s *knowledgeService) createKnowledgeFromPassageInternal(ctx context.Contex
 		safePassage, isValid := secutils.ValidateInput(p)
 		if !isValid {
 			logger.Errorf(ctx, "Invalid passage content at index %d", i)
-			return nil, werrors.NewValidationError(fmt.Sprintf("Le paragraphe %d contient du contenu non autorisé", i+1))
+			return nil, werrors.NewValidationError(fmt.Sprintf("Le paragraphe %d contient du contenu non "+
+				"autorisé", i+1))
 		}
 		safePassages = append(safePassages, safePassage)
 	}
@@ -1045,12 +1050,14 @@ func (s *knowledgeService) UpdateManualKnowledge(ctx context.Context,
 		return nil, werrors.NewValidationError("Le contenu est obligatoire")
 	}
 	if len([]rune(cleanContent)) > manualContentMaxLength {
-		return nil, werrors.NewValidationError(fmt.Sprintf("Le contenu dépasse la longueur maximale (%d caractères au plus)", manualContentMaxLength))
+		return nil, werrors.NewValidationError(fmt.Sprintf("Le contenu dépasse la longueur maximale (%d "+
+			"caractères au plus)", manualContentMaxLength))
 	}
 
 	safeTitle, ok := secutils.ValidateInput(payload.Title)
 	if !ok {
-		return nil, werrors.NewValidationError("Le titre contient des caractères non autorisés ou dépasse la longueur maximale")
+		return nil, werrors.NewValidationError("Le titre contient des caractères non autorisés ou dépasse la " +
+			"longueur maximale")
 	}
 
 	status := strings.ToLower(strings.TrimSpace(payload.Status))

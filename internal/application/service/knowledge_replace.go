@@ -49,7 +49,8 @@ func (s *knowledgeService) ReplaceKnowledgeFile(ctx context.Context,
 		return nil, err
 	}
 	if kb != nil && kb.Type == types.KnowledgeBaseTypeFAQ {
-		return nil, werrors.NewBadRequestError("Les bases FAQ n'acceptent pas l'envoi de fichiers ; utilisez l'import de FAQ")
+		return nil, werrors.NewBadRequestError("Les bases FAQ n'acceptent pas l'envoi de fichiers ; utilisez " +
+			"l'import de FAQ")
 	}
 	if existing.Type != "file" || existing.FilePath == "" {
 		return nil, werrors.NewBadRequestError("only file knowledge can have its file replaced")

@@ -16,7 +16,10 @@ func newHelpCommand(registry *CommandRegistry) *HelpCommand {
 	return &HelpCommand{registry: registry}
 }
 
+// Name returns the command keyword.
 func (c *HelpCommand) Name() string { return "help" }
+
+// Description returns the help text shown for the command.
 func (c *HelpCommand) Description() string {
 	return "Affiche la liste des commandes disponibles, ou le détail d'une commande"
 }
@@ -28,7 +31,8 @@ func (c *HelpCommand) Execute(_ context.Context, _ *CommandContext, args []strin
 		cmd, _, ok := c.registry.Parse("/" + name)
 		if !ok {
 			return &CommandResult{
-				Content: fmt.Sprintf("Commande inconnue `%s` ; envoyez `/help` pour voir toutes les commandes disponibles.", args[0]),
+				Content: fmt.Sprintf("Commande inconnue `%s` ; envoyez `/help` pour voir toutes les commandes "+
+					"disponibles.", args[0]),
 			}, nil
 		}
 		return &CommandResult{

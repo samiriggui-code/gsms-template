@@ -146,9 +146,10 @@ func respondSandboxesStillLive(c *gin.Context, inv service.SandboxInventory) {
 	c.JSON(http.StatusConflict, gin.H{
 		"success": false,
 		"error": gin.H{
-			"code":    "sandboxes_still_live",
-			"message": "Cette configuration a encore des bacs à sable en cours ou en pause ; terminez ou supprimez les sessions concernées, ou créez une nouvelle configuration",
-			"data":    inv,
+			"code": "sandboxes_still_live",
+			"message": "Cette configuration a encore des bacs à sable en cours ou en pause ; terminez ou " +
+				"supprimez les sessions concernées, ou créez une nouvelle configuration",
+			"data": inv,
 		},
 	})
 }
@@ -167,9 +168,10 @@ func respondSkillSnapshotReleaseFailed(c *gin.Context, remaining []string) {
 	c.JSON(http.StatusConflict, gin.H{
 		"success": false,
 		"error": gin.H{
-			"code":    "skill_snapshot_release_failed",
-			"message": "Impossible de détruire les instantanés de compétences de cette configuration ; suppression annulée pour éviter qu'ils restent facturés",
-			"data":    gin.H{"snapshot_ids": remaining},
+			"code": "skill_snapshot_release_failed",
+			"message": "Impossible de détruire les instantanés de compétences de cette configuration ; " +
+				"suppression annulée pour éviter qu'ils restent facturés",
+			"data": gin.H{"snapshot_ids": remaining},
 		},
 	})
 }
@@ -178,8 +180,10 @@ func respondSkillSnapshotBlocksTemplate(c *gin.Context) {
 	c.JSON(http.StatusConflict, gin.H{
 		"success": false,
 		"error": gin.H{
-			"code":    "skill_snapshot_blocks_template",
-			"message": "Des compétences sont installées sur cette configuration : impossible de changer la connexion, le DNS ou de reconstruire le modèle d'exécution. Créez un nouveau bac à sable avant d'installer des compétences.",
+			"code": "skill_snapshot_blocks_template",
+			"message": "Des compétences sont installées sur cette configuration : impossible de changer la " +
+				"connexion, le DNS ou de reconstruire le modèle d'exécution. Créez un nouveau bac à sable avant " +
+				"d'installer des compétences.",
 		},
 	})
 }

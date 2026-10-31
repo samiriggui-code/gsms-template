@@ -339,7 +339,8 @@ func (s *knowledgeTagService) DeleteTag(ctx context.Context, id string, force bo
 	}
 
 	if !force && (kCount > 0 || cCount > 0) {
-		return werrors.NewBadRequestError("Ce tag est encore utilisé par des connaissances ou des entrées FAQ ; impossible de le supprimer")
+		return werrors.NewBadRequestError("Ce tag est encore utilisé par des connaissances ou des entrées FAQ ; " +
+			"impossible de le supprimer")
 	}
 
 	// When force=true, delete all content under this tag first

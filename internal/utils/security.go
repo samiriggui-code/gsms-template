@@ -1287,15 +1287,18 @@ func FormatSSRFError(label, rawURL string, err error) string {
 	}
 	if errors.Is(err, ErrSSRFHostNotWhitelisted) {
 		return fmt.Sprintf(
-			"%s n'a pas passé la vérification de sécurité : le serveur n'autorise que les sorties en liste blanche (SSRF_DNS_WHITELIST_ONLY), "+
-				"et %s n'y figure pas ; il a donc été refusé avant la résolution DNS. Si cette adresse est fiable, demandez à l'exploitant de l'ajouter à "+
+			"%s n'a pas passé la vérification de sécurité : le serveur n'autorise que les sorties en liste "+
+				"blanche (SSRF_DNS_WHITELIST_ONLY), "+
+				"et %s n'y figure pas ; il a donc été refusé avant la résolution DNS. Si cette adresse est "+
+				"fiable, demandez à l'exploitant de l'ajouter à "+
 				"SSRF_WHITELIST_EXTRA (domaine exact / joker *.example.com / IP / CIDR), "+
 				"par exemple : SSRF_WHITELIST_EXTRA=%s,*.example.com,10.0.0.0/8",
 			label, host, host,
 		)
 	}
 	return fmt.Sprintf(
-		"%s n'a pas passé la vérification de sécurité : %v. Si cette adresse est fiable, demandez à l'exploitant d'ajouter cet hôte à la variable d'environnement "+
+		"%s n'a pas passé la vérification de sécurité : %v. Si cette adresse est fiable, demandez à l'exploitant "+
+			"d'ajouter cet hôte à la variable d'environnement "+
 			"SSRF_WHITELIST_EXTRA du serveur (domaine exact / joker *.example.com / IP / CIDR), "+
 			"par exemple : SSRF_WHITELIST_EXTRA=%s,*.example.com,10.0.0.0/8",
 		label, err, host,

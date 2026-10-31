@@ -328,7 +328,8 @@ func (h *OrganizationHandler) UpdateOrganization(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, service.ErrOrgMemberLimitTooLow) {
-			c.Error(apperrors.NewValidationError("Le nombre actuel de membres dépasse la nouvelle limite ; retirez des membres ou choisissez une limite plus élevée"))
+			_ = c.Error(apperrors.NewValidationError("Le nombre actuel de membres dépasse la nouvelle limite ; " +
+				"retirez des membres ou choisissez une limite plus élevée"))
 			return
 		}
 		c.Error(apperrors.NewForbiddenError("Permission denied or organization not found"))
@@ -638,7 +639,7 @@ func (h *OrganizationHandler) JoinByInviteCode(c *gin.Context) {
 	if err != nil {
 		logger.Errorf(ctx, "Failed to join organization: %v", err)
 		if errors.Is(err, service.ErrOrgMemberLimitReached) {
-			c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible de le rejoindre"))
+			_ = c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible de le rejoindre"))
 			return
 		}
 		c.Error(apperrors.NewNotFoundError("Invalid invite code"))
@@ -707,7 +708,8 @@ func (h *OrganizationHandler) SubmitJoinRequest(c *gin.Context) {
 	if err != nil {
 		logger.Errorf(ctx, "Failed to submit join request: %v", err)
 		if errors.Is(err, service.ErrOrgMemberLimitReached) {
-			c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible d'envoyer une demande d'adhésion"))
+			_ = c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible d'envoyer une demande " +
+				"d'adhésion"))
 			return
 		}
 		if err.Error() == "pending request already exists" {
@@ -796,7 +798,7 @@ func (h *OrganizationHandler) JoinByOrganizationID(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, service.ErrOrgMemberLimitReached) {
-			c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible de le rejoindre"))
+			_ = c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible de le rejoindre"))
 			return
 		}
 		if errors.Is(err, service.ErrInvalidRole) {
@@ -1031,7 +1033,8 @@ func (h *OrganizationHandler) ReviewJoinRequest(c *gin.Context) {
 	if err := h.orgService.ReviewJoinRequest(ctx, orgID, requestID, req.Approved, userID, tenantID, req.Message, assignRole); err != nil {
 		logger.Errorf(ctx, "Failed to review join request: %v", err)
 		if errors.Is(err, service.ErrOrgMemberLimitReached) {
-			c.Error(apperrors.NewValidationError("L'espace est complet ; impossible d'accepter cette demande d'adhésion"))
+			_ = c.Error(apperrors.NewValidationError("L'espace est complet ; impossible d'accepter cette demande " +
+				"d'adhésion"))
 			return
 		}
 		if err.Error() == "request has already been reviewed" {
@@ -2054,7 +2057,7 @@ func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 	if err := h.orgService.AddTenantMember(ctx, orgID, targetTenantID, "", req.Role); err != nil {
 		logger.Errorf(ctx, "Failed to add member: %v", err)
 		if errors.Is(err, service.ErrOrgMemberLimitReached) {
-			c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible d'ajouter un membre"))
+			_ = c.Error(apperrors.NewValidationError("Cet espace est complet ; impossible d'ajouter un membre"))
 			return
 		}
 		c.Error(apperrors.NewInternalServerError("Failed to add member"))

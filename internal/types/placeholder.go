@@ -49,9 +49,10 @@ var (
 	}
 
 	PlaceholderCurrentTime = PromptPlaceholder{
-		Name:        "current_time",
-		Label:       "Date du jour",
-		Description: "Date du jour (format ISO : 2006-01-02). Date seule, sans l'heure, pour ne pas casser le cache de préfixe du fournisseur à chaque seconde.",
+		Name:  "current_time",
+		Label: "Date du jour",
+		Description: "Date du jour (format ISO : 2006-01-02). Date seule, sans l'heure, pour ne pas casser le " +
+			"cache de préfixe du fournisseur à chaque seconde.",
 	}
 
 	PlaceholderCurrentWeek = PromptPlaceholder{
@@ -62,9 +63,10 @@ var (
 
 	// Rewrite prompt placeholders
 	PlaceholderConversation = PromptPlaceholder{
-		Name:        "conversation",
-		Label:       "Historique de la conversation",
-		Description: "Historique de la conversation mis en forme, utilisé pour reformuler les questions sur plusieurs tours",
+		Name:  "conversation",
+		Label: "Historique de la conversation",
+		Description: "Historique de la conversation mis en forme, utilisé pour reformuler les questions sur " +
+			"plusieurs tours",
 	}
 
 	PlaceholderYesterday = PromptPlaceholder{
@@ -81,9 +83,10 @@ var (
 
 	// Agent mode specific placeholders
 	PlaceholderKnowledgeBases = PromptPlaceholder{
-		Name:        "knowledge_bases",
-		Label:       "Liste des bases de connaissances",
-		Description: "Liste des bases de connaissances mise en forme automatiquement, avec nom, description, nombre de documents, etc.",
+		Name:  "knowledge_bases",
+		Label: "Liste des bases de connaissances",
+		Description: "Liste des bases de connaissances mise en forme automatiquement, avec nom, description, " +
+			"nombre de documents, etc.",
 	}
 
 	PlaceholderWebSearchStatus = PromptPlaceholder{
@@ -93,9 +96,10 @@ var (
 	}
 
 	PlaceholderLanguage = PromptPlaceholder{
-		Name:        "language",
-		Label:       "Langue de l'utilisateur",
-		Description: "Langue préférée de l'interface, par exemple French, English, etc., utilisée pour choisir la langue des réponses du LLM",
+		Name:  "language",
+		Label: "Langue de l'utilisateur",
+		Description: "Langue préférée de l'interface, par exemple French, English, etc., utilisée pour choisir la " +
+			"langue des réponses du LLM",
 	}
 )
 

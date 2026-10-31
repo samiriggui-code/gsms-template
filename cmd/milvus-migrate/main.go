@@ -23,7 +23,8 @@ func main() {
 	targetDefault := sourceDefault + "_multilingual"
 
 	source := flag.String("source", sourceDefault, "Préfixe de l'ancienne Collection, par exemple weknora_embeddings")
-	target := flag.String("target", targetDefault, "Préfixe de la nouvelle Collection, par exemple weknora_embeddings_multilingual")
+	target := flag.String("target", targetDefault, "Préfixe de la nouvelle Collection, par exemple "+
+		"weknora_embeddings_multilingual")
 	address := flag.String("address", envOr("MILVUS_ADDRESS", "localhost:19530"), "Adresse Milvus")
 	username := flag.String("username", os.Getenv("MILVUS_USERNAME"), "Nom d'utilisateur Milvus")
 	password := flag.String("password", os.Getenv("MILVUS_PASSWORD"), "Mot de passe Milvus")
@@ -41,7 +42,8 @@ func main() {
 		log.Fatal(err)
 	}
 	if strings.TrimSpace(*source) == strings.TrimSpace(*target) {
-		log.Fatal("--source et --target doivent être différents ; la migration copie vers une nouvelle Collection sans jamais écraser l'ancienne")
+		log.Fatal("--source et --target doivent être différents ; la migration copie vers une nouvelle Collection " +
+			"sans jamais écraser l'ancienne")
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -82,7 +84,8 @@ func main() {
 		)
 	}
 	fmt.Printf(
-		"Migration terminée : %d Collection(s) vérifiée(s), %d Collection(s) copiée(s), %d ligne(s). Les anciennes Collections sont conservées.\n",
+		"Migration terminée : %d Collection(s) vérifiée(s), %d Collection(s) copiée(s), %d ligne(s). Les "+
+			"anciennes Collections sont conservées.\n",
 		summary.ExaminedCollections,
 		summary.MigratedCollections,
 		summary.MigratedRows,

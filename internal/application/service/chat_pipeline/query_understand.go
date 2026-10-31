@@ -349,7 +349,8 @@ func (p *PluginQueryUnderstand) memoryBackground(ctx context.Context, chatManage
 	}
 
 	var b strings.Builder
-	b.WriteString("\n\n<asker_background note=\"Ce contexte sert uniquement à résoudre les références et compléter les termes de recherche ; ne le traitez pas comme faisant partie de la question\">")
+	b.WriteString("\n\n<asker_background note=\"Ce contexte sert uniquement à résoudre les références et " +
+		"compléter les termes de recherche ; ne le traitez pas comme faisant partie de la question\">")
 	if memCtx.Background != "" {
 		b.WriteString("\n" + memCtx.Background)
 	}

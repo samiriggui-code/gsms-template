@@ -157,7 +157,8 @@ func validateDefaultFileImportRequirements(
 	}
 	if IsAudioType(fileType) && !kb.ASRConfig.IsASREnabled() {
 		logger.Error(ctx, "ASR model is not configured")
-		return werrors.NewBadRequestError("L'envoi de fichiers audio nécessite un modèle de reconnaissance vocale (ASR)")
+		return werrors.NewBadRequestError("L'envoi de fichiers audio nécessite un modèle de reconnaissance vocale " +
+			"(ASR)")
 	}
 	return nil
 }
@@ -228,7 +229,8 @@ func validateEffectiveProcessOverrides(eff types.EffectiveProcessConfig, fileTyp
 	}
 
 	if hasAudio && !eff.ASRConfig.IsASREnabled() {
-		return werrors.NewBadRequestError("L'envoi de fichiers audio nécessite un modèle de reconnaissance vocale (ASR)")
+		return werrors.NewBadRequestError("L'envoi de fichiers audio nécessite un modèle de reconnaissance vocale " +
+			"(ASR)")
 	}
 
 	if err := types.ValidateEffectiveProcessPromptInstructions(eff); err != nil {

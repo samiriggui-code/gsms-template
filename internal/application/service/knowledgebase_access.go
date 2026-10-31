@@ -104,7 +104,8 @@ func withKBWriteTenantInfo(
 		return ctx, nil
 	}
 	if tenants == nil {
-		return ctx, apperrors.NewServiceUnavailableError("Impossible de déterminer l'espace propriétaire de la base de connaissances")
+		return ctx, apperrors.NewServiceUnavailableError("Impossible de déterminer l'espace propriétaire de la " +
+			"base de connaissances")
 	}
 	tenant, err := tenants.GetTenantByID(ctx, kb.TenantID)
 	if err != nil {

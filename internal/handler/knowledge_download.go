@@ -82,7 +82,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 
 	items, err := h.kgService.GetKnowledgeBatch(ctx, tenantID, ids)
 	if err != nil {
-		_ = c.Error(errors.NewInternalServerError("Impossible de récupérer les documents à télécharger ; réessayez plus tard"))
+		_ = c.Error(errors.NewInternalServerError("Impossible de récupérer les documents à télécharger ; " +
+			"réessayez plus tard"))
 		return
 	}
 	byID := make(map[string]*types.Knowledge, len(items))
@@ -96,7 +97,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 	for _, id := range ids {
 		item := byID[id]
 		if item == nil {
-			_ = c.Error(errors.NewNotFoundError("Certains documents n'existent pas ou n'appartiennent pas à cette base de connaissances ; actualisez la liste et réessayez"))
+			_ = c.Error(errors.NewNotFoundError("Certains documents n'existent pas ou n'appartiennent pas à cette " +
+				"base de connaissances ; actualisez la liste et réessayez"))
 			return
 		}
 		if !item.IsManual() && item.FilePath == "" {
@@ -105,7 +107,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 		entries = append(entries, knowledgeDownloadEntry{ID: id, FolderPath: item.FolderPath})
 	}
 	if len(entries) == 0 {
-		_ = c.Error(errors.NewBadRequestError("Les documents sélectionnés n'ont pas de fichier original téléchargeable ; désélectionnez-les et réessayez"))
+		_ = c.Error(errors.NewBadRequestError("Les documents sélectionnés n'ont pas de fichier original " +
+			"téléchargeable ; désélectionnez-les et réessayez"))
 		return
 	}
 
@@ -118,7 +121,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 	// 先在临时文件中完整生成压缩包，避免读取失败时向用户返回残缺 ZIP。
 	archive, err := os.CreateTemp("", "weknora-download-*.zip")
 	if err != nil {
-		_ = c.Error(errors.NewInternalServerError("Impossible de créer l'archive de téléchargement ; réessayez plus tard"))
+		_ = c.Error(errors.NewInternalServerError("Impossible de créer l'archive de téléchargement ; réessayez " +
+			"plus tard"))
 		return
 	}
 	archivePath := archive.Name()
@@ -137,7 +141,8 @@ func (h *KnowledgeHandler) BatchDownloadKnowledge(c *gin.Context) {
 		return
 	}
 	if _, err := archive.Seek(0, io.SeekStart); err != nil {
-		_ = c.Error(errors.NewInternalServerError("Impossible de lire l'archive de téléchargement ; réessayez plus tard"))
+		_ = c.Error(errors.NewInternalServerError("Impossible de lire l'archive de téléchargement ; réessayez " +
+			"plus tard"))
 		return
 	}
 	filename := "knowledge-files-" + time.Now().Format("20060102-150405") + ".zip"
@@ -212,7 +217,8 @@ func writeKnowledgeDownloadArchive(
 			if isKnowledgeDownloadCanceled(err) {
 				return err
 			}
-			return errors.NewInternalServerError("Certains fichiers sont illisibles, l'archive n'a pas été créée ; vérifiez les documents et réessayez").WithDetails(
+			return errors.NewInternalServerError("Certains fichiers sont illisibles, l'archive n'a pas été créée " +
+				"; vérifiez les documents et réessayez").WithDetails(
 				gin.H{"knowledge_id": entry.ID},
 			)
 		}
@@ -221,7 +227,8 @@ func writeKnowledgeDownloadArchive(
 		zipEntry, err := writer.CreateHeader(&zip.FileHeader{Name: name, Method: zip.Store})
 		if err != nil {
 			_ = file.Close()
-			return errors.NewInternalServerError("Impossible d'écrire l'archive de téléchargement ; réessayez plus tard")
+			return errors.NewInternalServerError("Impossible d'écrire l'archive de téléchargement ; réessayez " +
+				"plus tard")
 		}
 		n, copyErr := io.Copy(zipEntry, io.LimitReader(
 			&knowledgeDownloadReader{ctx: ctx, reader: file}, limit-total+1,
@@ -229,19 +236,22 @@ func writeKnowledgeDownloadArchive(
 		closeErr := file.Close()
 		total += n
 		if total > limit {
-			return errors.NewBadRequestError("Les fichiers sélectionnés dépassent 512 Mio au total ; téléchargez-les en plusieurs fois")
+			return errors.NewBadRequestError("Les fichiers sélectionnés dépassent 512 Mio au total ; " +
+				"téléchargez-les en plusieurs fois")
 		}
 		if isKnowledgeDownloadCanceled(copyErr) {
 			return copyErr
 		}
 		if copyErr != nil || closeErr != nil {
-			return errors.NewInternalServerError("La lecture de certains fichiers a échoué, l'archive n'a pas été créée ; réessayez plus tard").WithDetails(
+			return errors.NewInternalServerError("La lecture de certains fichiers a échoué, l'archive n'a pas été " +
+				"créée ; réessayez plus tard").WithDetails(
 				gin.H{"knowledge_id": entry.ID},
 			)
 		}
 	}
 	if err := writer.Close(); err != nil {
-		return errors.NewInternalServerError("Impossible de finaliser l'archive de téléchargement ; réessayez plus tard")
+		return errors.NewInternalServerError("Impossible de finaliser l'archive de téléchargement ; réessayez " +
+			"plus tard")
 	}
 	return nil
 }

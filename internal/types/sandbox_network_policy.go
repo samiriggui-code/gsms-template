@@ -175,7 +175,8 @@ func ValidateSandboxNetworkPolicy(cfg *TenantSandboxConfig) error {
 		(len(p.AllowOut) > 0 || len(p.DenyOut) > 0 ||
 			len(p.CubeRules) > 0 || len(p.E2BHostRules) > 0) {
 		return errors.New(
-			"le backend docker ne peut qu'activer ou couper tout l'accès sortant ; il ne sait pas autoriser par IP, domaine ou règle HTTP ; " +
+			"le backend docker ne peut qu'activer ou couper tout l'accès sortant ; il ne sait pas autoriser par " +
+				"IP, domaine ou règle HTTP ; " +
 				"videz les listes d'autorisation/refus, ou passez au backend cube / e2b")
 	}
 
@@ -205,7 +206,8 @@ func ValidateSandboxNetworkPolicy(cfg *TenantSandboxConfig) error {
 		if kind == targetDomain {
 			return fmt.Errorf(
 				"deny_out n'accepte pas de domaine (%q) : le refus ne se fait que sur l'IP de destination. "+
-					"Pour n'autoriser que quelques domaines, activez « refus par défaut » et listez-les dans allow_out", target)
+					"Pour n'autoriser que quelques domaines, activez « refus par défaut » et listez-les dans "+
+					"allow_out", target)
 		}
 		if prior, seen := denyKeys[key]; seen {
 			return fmt.Errorf("dans deny_out, %q et %q désignent la même cible ; n'en gardez qu'une", prior, target)
@@ -220,7 +222,8 @@ func ValidateSandboxNetworkPolicy(cfg *TenantSandboxConfig) error {
 		return errors.New(
 			"quand allow_out contient des domaines, tout le reste du trafic doit aussi être refusé : " +
 				"activez « refus par défaut », ou ajoutez 0.0.0.0/0 à deny_out. " +
-				"Sinon les IP de destination non apprises par DNS restent autorisées par défaut et la liste blanche ne sert à rien")
+				"Sinon les IP de destination non apprises par DNS restent autorisées par défaut et la liste " +
+				"blanche ne sert à rien")
 	}
 
 	if err := validateCubeEgressRules(p.CubeRules); err != nil {
@@ -365,7 +368,8 @@ func validateCubeEgressRules(rules []CubeEgressRule) error {
 	for _, rule := range rules {
 		name := strings.TrimSpace(rule.Name)
 		if name == "" {
-			return errors.New("chaque règle HTTP Cube doit avoir un name, utilisé pour l'audit et la fusion des modèles")
+			return errors.New("chaque règle HTTP Cube doit avoir un name, utilisé pour l'audit et la fusion des " +
+				"modèles")
 		}
 		if names[name] {
 			return fmt.Errorf("le name de règle HTTP cube %q est en double", name)
@@ -374,7 +378,8 @@ func validateCubeEgressRules(rules []CubeEgressRule) error {
 
 		if strings.TrimSpace(rule.Host) == "" && strings.TrimSpace(rule.SNI) == "" {
 			return fmt.Errorf(
-				"la règle HTTP cube %q doit renseigner host ou sni : la couche réseau n'extrait la cible autorisée que de ces deux champs ; "+
+				"la règle HTTP cube %q doit renseigner host ou sni : la couche réseau n'extrait la cible "+
+					"autorisée que de ces deux champs ; "+
 					"une règle avec seulement method / path n'atteint jamais CubeEgress", name)
 		}
 		if host := strings.TrimSpace(rule.Host); host != "" {
@@ -401,7 +406,8 @@ func validateCubeEgressRules(rules []CubeEgressRule) error {
 		}
 		for _, method := range rule.Methods {
 			if !httpMethods[strings.ToUpper(strings.TrimSpace(method))] {
-				return fmt.Errorf("la method %[2]q de la règle HTTP cube %[1]q n'est pas une méthode HTTP standard", name, method)
+				return fmt.Errorf("la method %[2]q de la règle HTTP cube %[1]q n'est pas une méthode HTTP "+
+					"standard", name, method)
 			}
 		}
 		injectHeaders := make(map[string]bool, len(rule.Inject))
@@ -414,7 +420,8 @@ func validateCubeEgressRules(rules []CubeEgressRule) error {
 				return fmt.Errorf("règle %q, nom de header injecté %q : %w", name, header, err)
 			}
 			if injectHeaders[header] {
-				return fmt.Errorf("le nom de header injecté %[2]q de la règle HTTP cube %[1]q est en double", name, header)
+				return fmt.Errorf("le nom de header injecté %[2]q de la règle HTTP cube %[1]q est en "+
+					"double", name, header)
 			}
 			injectHeaders[header] = true
 			if err := validateHTTPHeaderValue(inject.Secret); err != nil {
@@ -424,7 +431,8 @@ func validateCubeEgressRules(rules []CubeEgressRule) error {
 				return fmt.Errorf("règle %q, format du header injecté %q : %w", name, header, err)
 			}
 			if rule.Deny && inject.Secret != "" {
-				return fmt.Errorf("la règle HTTP cube %q est une règle de refus : le header injecté n'aura aucun effet", name)
+				return fmt.Errorf("la règle HTTP cube %q est une règle de refus : le header injecté n'aura aucun "+
+					"effet", name)
 			}
 		}
 	}

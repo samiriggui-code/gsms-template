@@ -252,7 +252,7 @@ func (h *InitializationHandler) UpdateKBConfig(c *gin.Context) {
 	kb, err := h.kbService.GetKnowledgeBaseByID(ctx, kbIdStr)
 	if err != nil || kb == nil {
 		logger.ErrorWithFields(ctx, err, map[string]interface{}{"kbId": utils.SanitizeForLog(kbIdStr)})
-		c.Error(errors.NewNotFoundError("La base de connaissances n'existe pas"))
+		_ = c.Error(errors.NewNotFoundError("La base de connaissances n'existe pas"))
 		return
 	}
 	ownWorkspace, err := kbSettingsAccess(c, kb)
@@ -271,7 +271,8 @@ func (h *InitializationHandler) UpdateKBConfig(c *gin.Context) {
 			}, types.KnowledgeListFilter{})
 		if err == nil && knowledgeList != nil && knowledgeList.Total > 0 {
 			logger.Error(ctx, "Cannot change embedding model when files exist")
-			c.Error(errors.NewBadRequestError("La base de connaissances contient déjà des fichiers ; impossible de changer de modèle d'embedding"))
+			_ = c.Error(errors.NewBadRequestError("La base de connaissances contient déjà des fichiers ; impossible " +
+				"de changer de modèle d'embedding"))
 			return
 		}
 	}
@@ -280,7 +281,7 @@ func (h *InitializationHandler) UpdateKBConfig(c *gin.Context) {
 	llmModel, err := h.modelService.GetModelByID(ctx, req.LLMModelID)
 	if err != nil || llmModel == nil {
 		logger.Error(ctx, "LLM model not found")
-		c.Error(errors.NewBadRequestError("Le modèle LLM n'existe pas"))
+		_ = c.Error(errors.NewBadRequestError("Le modèle LLM n'existe pas"))
 		return
 	}
 
@@ -289,7 +290,7 @@ func (h *InitializationHandler) UpdateKBConfig(c *gin.Context) {
 		embeddingModel, err := h.modelService.GetModelByID(ctx, req.EmbeddingModelID)
 		if err != nil || embeddingModel == nil {
 			logger.Error(ctx, "Embedding model not found")
-			c.Error(errors.NewBadRequestError("Le modèle d'embedding n'existe pas"))
+			_ = c.Error(errors.NewBadRequestError("Le modèle d'embedding n'existe pas"))
 			return
 		}
 	}
@@ -382,7 +383,8 @@ func (h *InitializationHandler) UpdateKBConfig(c *gin.Context) {
 			return
 		}
 	} else if kbStorageBindingChanged(kb, req.StorageBackendID, req.StorageProvider) {
-		_ = c.Error(errors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut modifier la configuration de stockage"))
+		_ = c.Error(errors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut " +
+			"modifier la configuration de stockage"))
 		return
 	}
 
@@ -446,7 +448,7 @@ func (h *InitializationHandler) UpdateKBConfig(c *gin.Context) {
 	// 保存更新后的知识库
 	if err := h.kbRepository.UpdateKnowledgeBase(ctx, kb); err != nil {
 		logger.Error(ctx, "Failed to update knowledge base", err)
-		c.Error(errors.NewInternalServerError("Échec de la mise à jour de la base de connaissances : " + err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Échec de la mise à jour de la base de connaissances : " + err.Error()))
 		return
 	}
 
@@ -468,7 +470,8 @@ func kbSettingsAccess(c *gin.Context, kb *types.KnowledgeBase) (bool, error) {
 	grant, ok := middleware.KBAccessFromContext(c)
 	if !ok || grant.KnowledgeBase == nil || grant.KnowledgeBase.ID != kb.ID ||
 		!grant.Permission.HasPermission(types.OrgRoleAdmin) {
-		return false, errors.NewForbiddenError("Modifier les paramètres d'une base de connaissances partagée nécessite le droit de partage administrateur")
+		return false, errors.NewForbiddenError("Modifier les paramètres d'une base de connaissances partagée " +
+			"nécessite le droit de partage administrateur")
 	}
 	return false, nil
 }
@@ -596,7 +599,8 @@ func (h *InitializationHandler) InitializeByKB(c *gin.Context) {
 
 	if err := h.kbRepository.UpdateKnowledgeBase(ctx, kb); err != nil {
 		logger.ErrorWithFields(ctx, err, map[string]interface{}{"kbId": utils.SanitizeForLog(kbIdStr)})
-		c.Error(errors.NewInternalServerError("Échec de la mise à jour de la configuration de la base de connaissances : " + err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Échec de la mise à jour de la configuration de la base de " +
+			"connaissances : " + err.Error()))
 		return
 	}
 
@@ -635,7 +639,8 @@ func (h *InitializationHandler) getKnowledgeBaseForInitialization(ctx context.Co
 			return nil, errors.NewNotFoundError("La base de connaissances n'existe pas")
 		}
 		logger.ErrorWithFields(ctx, err, map[string]interface{}{"kbId": utils.SanitizeForLog(kbIdStr)})
-		return nil, errors.NewInternalServerError("Échec de la lecture des informations de la base de connaissances : " + err.Error())
+		return nil, errors.NewInternalServerError("Échec de la lecture des informations de la base de " +
+			"connaissances : " + err.Error())
 	}
 	if kb == nil {
 		logger.Error(ctx, "Knowledge base not found")
@@ -856,7 +861,8 @@ func (h *InitializationHandler) processInitializationModels(
 
 		if existingModel != nil {
 			if !h.canUpdateTenantModels(ctx) {
-				return nil, errors.NewForbiddenError("Modifier la configuration d'un modèle existant nécessite les droits d'administrateur de l'espace")
+				return nil, errors.NewForbiddenError("Modifier la configuration d'un modèle existant nécessite " +
+					"les droits d'administrateur de l'espace")
 			}
 			existingModel.Name = model.Name
 			existingModel.Source = model.Source
@@ -1130,7 +1136,7 @@ func (h *InitializationHandler) CheckOllamaModels(c *gin.Context) {
 		err := h.ollamaService.StartService(ctx)
 		if err != nil {
 			logger.ErrorWithFields(ctx, err, nil)
-			c.Error(errors.NewInternalServerError("Service Ollama indisponible : " + err.Error()))
+			_ = c.Error(errors.NewInternalServerError("Service Ollama indisponible : " + err.Error()))
 			return
 		}
 	}
@@ -1192,7 +1198,7 @@ func (h *InitializationHandler) DownloadOllamaModel(c *gin.Context) {
 		err := h.ollamaService.StartService(ctx)
 		if err != nil {
 			logger.ErrorWithFields(ctx, err, nil)
-			c.Error(errors.NewInternalServerError("Service Ollama indisponible : " + err.Error()))
+			_ = c.Error(errors.NewInternalServerError("Service Ollama indisponible : " + err.Error()))
 			return
 		}
 	}
@@ -1200,7 +1206,7 @@ func (h *InitializationHandler) DownloadOllamaModel(c *gin.Context) {
 	// 检查模型是否已存在
 	available, err := h.ollamaService.IsModelAvailable(ctx, req.ModelName)
 	if err != nil {
-		c.Error(errors.NewInternalServerError("Échec de la vérification de l'état du modèle : " + err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Échec de la vérification de l'état du modèle : " + err.Error()))
 		return
 	}
 
@@ -1288,7 +1294,7 @@ func (h *InitializationHandler) GetDownloadProgress(c *gin.Context) {
 	taskID := c.Param("taskId")
 
 	if taskID == "" {
-		c.Error(errors.NewBadRequestError("L'ID de tâche est obligatoire"))
+		_ = c.Error(errors.NewBadRequestError("L'ID de tâche est obligatoire"))
 		return
 	}
 
@@ -1297,7 +1303,7 @@ func (h *InitializationHandler) GetDownloadProgress(c *gin.Context) {
 	tasksMutex.RUnlock()
 
 	if !exists {
-		c.Error(errors.NewNotFoundError("La tâche de téléchargement n'existe pas"))
+		_ = c.Error(errors.NewNotFoundError("La tâche de téléchargement n'existe pas"))
 		return
 	}
 
@@ -1351,7 +1357,7 @@ func (h *InitializationHandler) ListOllamaModels(c *gin.Context) {
 	if !h.ollamaService.IsAvailable() {
 		if err := h.ollamaService.StartService(ctx); err != nil {
 			logger.ErrorWithFields(ctx, err, nil)
-			c.Error(errors.NewInternalServerError("Service Ollama indisponible : " + err.Error()))
+			_ = c.Error(errors.NewInternalServerError("Service Ollama indisponible : " + err.Error()))
 			return
 		}
 	}
@@ -1360,7 +1366,7 @@ func (h *InitializationHandler) ListOllamaModels(c *gin.Context) {
 	models, err := h.ollamaService.ListModelsDetailed(ctx)
 	if err != nil {
 		logger.ErrorWithFields(ctx, err, nil)
-		c.Error(errors.NewInternalServerError("Échec de la récupération de la liste des modèles : " + err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Échec de la récupération de la liste des modèles : " + err.Error()))
 		return
 	}
 
@@ -1493,17 +1499,18 @@ func (h *InitializationHandler) GetCurrentConfigByKB(c *gin.Context) {
 		// Mirror getKnowledgeBaseForInitialization above: missing /
 		// cross-tenant kb ids are 404, not 500.
 		if stderrors.Is(err, repository.ErrKnowledgeBaseNotFound) {
-			c.Error(errors.NewNotFoundError("La base de connaissances n'existe pas"))
+			_ = c.Error(errors.NewNotFoundError("La base de connaissances n'existe pas"))
 			return
 		}
 		logger.Error(ctx, "Failed to get knowledge base", err)
-		c.Error(errors.NewInternalServerError("Échec de la lecture des informations de la base de connaissances : " + err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Échec de la lecture des informations de la base de connaissances : " +
+			"" + err.Error()))
 		return
 	}
 
 	if kb == nil {
 		logger.Error(ctx, "Knowledge base not found")
-		c.Error(errors.NewNotFoundError("La base de connaissances n'existe pas"))
+		_ = c.Error(errors.NewNotFoundError("La base de connaissances n'existe pas"))
 		return
 	}
 
@@ -1930,7 +1937,7 @@ func (h *InitializationHandler) CheckRemoteModel(c *gin.Context) {
 
 	if req.ModelName == "" || req.BaseURL == "" {
 		logger.Error(ctx, "Model name and base URL are required")
-		c.Error(errors.NewBadRequestError("Le nom du modèle et la Base URL sont obligatoires"))
+		_ = c.Error(errors.NewBadRequestError("Le nom du modèle et la Base URL sont obligatoires"))
 		return
 	}
 
@@ -1942,7 +1949,7 @@ func (h *InitializationHandler) CheckRemoteModel(c *gin.Context) {
 	appID, appSecret, ok := h.resolveTenantWeKnoraCloudCreds(ctx)
 	if !ok {
 		logger.Error(ctx, "Tenant info not found")
-		c.Error(errors.NewBadRequestError("Informations de l'espace introuvables"))
+		_ = c.Error(errors.NewBadRequestError("Informations de l'espace introuvables"))
 		return
 	}
 
@@ -2005,7 +2012,8 @@ func (h *InitializationHandler) TestEmbeddingModel(c *gin.Context) {
 				"success": true,
 				"data": gin.H{
 					"available": false,
-					"message":   "Les modèles d'embedding multimodaux d'Alibaba Cloud ne sont pas encore pris en charge ; utilisez un modèle d'embedding texte (par exemple text-embedding-v4)",
+					"message": "Les modèles d'embedding multimodaux d'Alibaba Cloud ne sont pas encore pris en " +
+						"charge ; utilisez un modèle d'embedding texte (par exemple text-embedding-v4)",
 					"dimension": 0,
 				},
 			})
@@ -2016,7 +2024,7 @@ func (h *InitializationHandler) TestEmbeddingModel(c *gin.Context) {
 	appID, appSecret, ok := h.resolveTenantWeKnoraCloudCreds(ctx)
 	if !ok {
 		logger.Error(ctx, "Tenant info not found")
-		c.Error(errors.NewBadRequestError("Informations de l'espace introuvables"))
+		_ = c.Error(errors.NewBadRequestError("Informations de l'espace introuvables"))
 		return
 	}
 
@@ -2026,7 +2034,8 @@ func (h *InitializationHandler) TestEmbeddingModel(c *gin.Context) {
 		logger.ErrorWithFields(ctx, err, map[string]interface{}{"model": utils.SanitizeForLog(req.ModelName)})
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
-			"data":    gin.H{`available`: false, `message`: fmt.Sprintf("Échec de création de l'Embedder : %v", err), `dimension`: 0},
+			"data": gin.H{`available`: false, `message`: fmt.Sprintf("Échec de création de l'Embedder : "+
+				"%v", err), `dimension`: 0},
 		})
 		return
 	}
@@ -2036,7 +2045,8 @@ func (h *InitializationHandler) TestEmbeddingModel(c *gin.Context) {
 		logger.Error(ctx, "Failed to call embedder", err)
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
-			"data":    gin.H{`available`: false, `message`: fmt.Sprintf("Échec de l'appel d'embedding : %v", err), `dimension`: 0},
+			"data": gin.H{`available`: false, `message`: fmt.Sprintf("Échec de l'appel d'embedding : "+
+				"%v", err), `dimension`: 0},
 		})
 		return
 	}
@@ -2044,7 +2054,8 @@ func (h *InitializationHandler) TestEmbeddingModel(c *gin.Context) {
 	logger.Infof(ctx, "Embedding test succeeded, dimension: %d", len(vec))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data":    gin.H{`available`: true, `message`: fmt.Sprintf("Test réussi, dimension des vecteurs=%d", len(vec)), `dimension`: len(vec)},
+		"data": gin.H{`available`: true, `message`: fmt.Sprintf("Test réussi, dimension des "+
+			"vecteurs=%d", len(vec)), `dimension`: len(vec)},
 	})
 }
 
@@ -2183,7 +2194,7 @@ func (h *InitializationHandler) CheckRerankModel(c *gin.Context) {
 
 	if req.ModelName == "" || req.BaseURL == "" {
 		logger.Error(ctx, "Model name and base URL are required")
-		c.Error(errors.NewBadRequestError("Le nom du modèle et la Base URL sont obligatoires"))
+		_ = c.Error(errors.NewBadRequestError("Le nom du modèle et la Base URL sont obligatoires"))
 		return
 	}
 
@@ -2196,7 +2207,7 @@ func (h *InitializationHandler) CheckRerankModel(c *gin.Context) {
 	appID, appSecret, ok := h.resolveTenantWeKnoraCloudCreds(ctx)
 	if !ok {
 		logger.Error(ctx, "Tenant info not found")
-		c.Error(errors.NewBadRequestError("Informations de l'espace introuvables"))
+		_ = c.Error(errors.NewBadRequestError("Informations de l'espace introuvables"))
 		return
 	}
 
@@ -2247,7 +2258,7 @@ func (h *InitializationHandler) CheckASRModel(c *gin.Context) {
 
 	if req.ModelName == "" || req.BaseURL == "" {
 		logger.Error(ctx, "Model name and base URL are required for ASR check")
-		c.Error(errors.NewBadRequestError("Le nom du modèle et la Base URL sont obligatoires"))
+		_ = c.Error(errors.NewBadRequestError("Le nom du modèle et la Base URL sont obligatoires"))
 		return
 	}
 
@@ -2370,7 +2381,7 @@ func (h *InitializationHandler) TestMultimodalFunction(c *gin.Context) {
 	var req testMultimodalForm
 	if err := c.ShouldBind(&req); err != nil {
 		logger.Error(ctx, "Failed to parse form data", err)
-		c.Error(errors.NewBadRequestError("Échec de l'analyse des paramètres du formulaire"))
+		_ = c.Error(errors.NewBadRequestError("Échec de l'analyse des paramètres du formulaire"))
 		return
 	}
 	// ollama 场景自动拼接 base url
@@ -2382,7 +2393,7 @@ func (h *InitializationHandler) TestMultimodalFunction(c *gin.Context) {
 
 	if req.VLMModel == "" || req.VLMBaseURL == "" {
 		logger.Error(ctx, "VLM model name and base URL are required")
-		c.Error(errors.NewBadRequestError("Le nom du modèle VLM et la Base URL sont obligatoires"))
+		_ = c.Error(errors.NewBadRequestError("Le nom du modèle VLM et la Base URL sont obligatoires"))
 		return
 	}
 
@@ -2400,18 +2411,18 @@ func (h *InitializationHandler) TestMultimodalFunction(c *gin.Context) {
 			req.COSRegion == "" || req.COSBucketName == "" ||
 			req.COSAppID == "" {
 			logger.Error(ctx, "COS configuration is required")
-			c.Error(errors.NewBadRequestError("La configuration COS est obligatoire"))
+			_ = c.Error(errors.NewBadRequestError("La configuration COS est obligatoire"))
 			return
 		}
 	case "minio":
 		if req.MinioBucketName == "" {
 			logger.Error(ctx, "MinIO configuration is required")
-			c.Error(errors.NewBadRequestError("La configuration MinIO est obligatoire"))
+			_ = c.Error(errors.NewBadRequestError("La configuration MinIO est obligatoire"))
 			return
 		}
 	default:
 		logger.Error(ctx, "Invalid storage type")
-		c.Error(errors.NewBadRequestError("Type de stockage non valide"))
+		_ = c.Error(errors.NewBadRequestError("Type de stockage non valide"))
 		return
 	}
 
@@ -2429,11 +2440,11 @@ func (h *InitializationHandler) TestMultimodalFunction(c *gin.Context) {
 	if err != nil {
 		if isRequestBodyTooLarge(err) {
 			logger.Error(ctx, "File size too large")
-			c.Error(errors.NewBadRequestError(fmt.Sprintf("L'image ne doit pas dépasser %d Mo", maxSizeMB)))
+			_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("L'image ne doit pas dépasser %d Mo", maxSizeMB)))
 			return
 		}
 		logger.Error(ctx, "Failed to get uploaded image", err)
-		c.Error(errors.NewBadRequestError("Impossible de lire l'image envoyée"))
+		_ = c.Error(errors.NewBadRequestError("Impossible de lire l'image envoyée"))
 		return
 	}
 	defer file.Close()
@@ -2441,13 +2452,13 @@ func (h *InitializationHandler) TestMultimodalFunction(c *gin.Context) {
 	// 验证文件类型
 	if !strings.HasPrefix(header.Header.Get("Content-Type"), "image/") {
 		logger.Error(ctx, "Invalid file type, only images are allowed")
-		c.Error(errors.NewBadRequestError("Seuls les fichiers image sont acceptés"))
+		_ = c.Error(errors.NewBadRequestError("Seuls les fichiers image sont acceptés"))
 		return
 	}
 
 	if header.Size > maxSize {
 		logger.Error(ctx, "File size too large")
-		c.Error(errors.NewBadRequestError(fmt.Sprintf("L'image ne doit pas dépasser %d Mo", maxSizeMB)))
+		_ = c.Error(errors.NewBadRequestError(fmt.Sprintf("L'image ne doit pas dépasser %d Mo", maxSizeMB)))
 		return
 	}
 	logger.Infof(ctx, "Processing image: %s", utils.SanitizeForLog(header.Filename))
@@ -2488,7 +2499,7 @@ func (h *InitializationHandler) TestMultimodalFunction(c *gin.Context) {
 	imageContent, err := io.ReadAll(file)
 	if err != nil {
 		logger.Error(ctx, "Failed to read image file", err)
-		c.Error(errors.NewBadRequestError("Échec de la lecture du fichier image"))
+		_ = c.Error(errors.NewBadRequestError("Échec de la lecture du fichier image"))
 		return
 	}
 
@@ -2553,10 +2564,10 @@ func (h *InitializationHandler) testMultimodalWithDocReader(
 		RequestID:   requestID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Échec de l'appel au service DocReader : %v", err)
+		return nil, fmt.Errorf("échec de l'appel au service DocReader : %v", err)
 	}
 	if readResult.Error != "" {
-		return nil, fmt.Errorf("Le service DocReader a renvoyé une erreur : %s", readResult.Error)
+		return nil, fmt.Errorf("le service DocReader a renvoyé une erreur : %s", readResult.Error)
 	}
 
 	result := map[string]string{
@@ -2598,24 +2609,24 @@ func (h *InitializationHandler) ExtractTextRelations(c *gin.Context) {
 	var req TextRelationExtractionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Paramètres de la requête d'extraction de relations non valides")
-		c.Error(errors.NewBadRequestError("Paramètres de la requête d'extraction de relations non valides"))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de la requête d'extraction de relations non valides"))
 		return
 	}
 
 	// 验证文本内容
 	if len(req.Text) == 0 {
-		c.Error(errors.NewBadRequestError("Le texte est obligatoire"))
+		_ = c.Error(errors.NewBadRequestError("Le texte est obligatoire"))
 		return
 	}
 
 	if len(req.Text) > 5000 {
-		c.Error(errors.NewBadRequestError("Le texte ne doit pas dépasser 5000 caractères"))
+		_ = c.Error(errors.NewBadRequestError("Le texte ne doit pas dépasser 5000 caractères"))
 		return
 	}
 
 	// 验证标签
 	if len(req.Tags) == 0 {
-		c.Error(errors.NewBadRequestError("Sélectionnez au moins un type de relation"))
+		_ = c.Error(errors.NewBadRequestError("Sélectionnez au moins un type de relation"))
 		return
 	}
 
@@ -2623,7 +2634,7 @@ func (h *InitializationHandler) ExtractTextRelations(c *gin.Context) {
 	chatModel, err := h.modelService.GetChatModel(ctx, req.ModelID)
 	if err != nil {
 		logger.Error(ctx, "Échec de la récupération du modèle", err)
-		c.Error(errors.NewBadRequestError("Échec de la récupération du modèle : " + err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Échec de la récupération du modèle : " + err.Error()))
 		return
 	}
 
@@ -2631,7 +2642,7 @@ func (h *InitializationHandler) ExtractTextRelations(c *gin.Context) {
 	result, err := h.extractRelationsFromText(ctx, req.Text, req.Tags, chatModel)
 	if err != nil {
 		logger.Error(ctx, "Échec de l'extraction des relations du texte", err)
-		c.Error(errors.NewInternalServerError("Échec de l'extraction des relations du texte : " + err.Error()))
+		_ = c.Error(errors.NewInternalServerError("Échec de l'extraction des relations du texte : " + err.Error()))
 		return
 	}
 
@@ -2706,7 +2717,7 @@ func (h *InitializationHandler) FabriText(c *gin.Context) {
 	chatModel, err := h.modelService.GetChatModel(ctx, req.ModelID)
 	if err != nil {
 		logger.Error(ctx, "Échec de la récupération du modèle", err)
-		c.Error(errors.NewBadRequestError("Échec de la récupération du modèle : " + err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Échec de la récupération du modèle : " + err.Error()))
 		return
 	}
 

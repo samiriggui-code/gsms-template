@@ -124,16 +124,21 @@ var registry = map[string]settingSpec{
 		EnvName:  "SSRF_WHITELIST",
 		Default:  []string{},
 		Category: "security",
-		Description: "Liste blanche de protection SSRF. Exemples : example.com / *.foo.com / 10.0.0.0/8 / 2001:db8::1." +
-			"Prend effet immédiatement. La variable d'environnement SSRF_WHITELIST_EXTRA reste gérée par l'exploitant et n'est pas remplacée ici.",
+		Description: "Liste blanche de protection SSRF. Exemples : example.com / *.foo.com / 10.0.0.0/8 / " +
+			"2001:db8::1." +
+			"Prend effet immédiatement. La variable d'environnement SSRF_WHITELIST_EXTRA reste gérée par " +
+			"l'exploitant et n'est pas remplacée ici.",
 	},
 	"sandbox.docker_enabled": {
 		Type:     "bool",
 		EnvName:  sandbox.DockerBackendEnabledEnv,
 		Default:  false,
 		Category: "security",
-		Description: "Autorise ou non le bac à sable Docker. L'accès au docker.sock local équivaut à root sur l'hôte ; désactivé par défaut." +
-			"Activable uniquement par un administrateur système ; prend effet immédiatement, sans redémarrage. À activer seulement sur une installation privée mono-machine avec le socket du daemon monté, ou avec un tcp:// distant protégé par TLS.",
+		Description: "Autorise ou non le bac à sable Docker. L'accès au docker.sock local équivaut à root sur " +
+			"l'hôte ; désactivé par défaut." +
+			"Activable uniquement par un administrateur système ; prend effet immédiatement, sans redémarrage. À " +
+			"activer seulement sur une installation privée mono-machine avec le socket du daemon monté, ou " +
+			"avec un tcp:// distant protégé par TLS.",
 	},
 	"auth.registration_mode": {
 		Type:     "string",
@@ -141,8 +146,10 @@ var registry = map[string]settingSpec{
 		Default:  "self_serve",
 		Enum:     []string{"self_serve", "invite_register", "invite_only"},
 		Category: "auth",
-		Description: "Mode d'inscription. self_serve = inscription ouverte ; invite_register = seuls les nouveaux utilisateurs avec un lien d'invitation valide peuvent s'inscrire ; " +
-			"invite_only = inscription fermée, les invitations servent uniquement à faire rejoindre un espace à des comptes existants. Prend effet dès l'enregistrement.",
+		Description: "Mode d'inscription. self_serve = inscription ouverte ; invite_register = seuls les nouveaux " +
+			"utilisateurs avec un lien d'invitation valide peuvent s'inscrire ; " +
+			"invite_only = inscription fermée, les invitations servent uniquement à faire rejoindre un espace à " +
+			"des comptes existants. Prend effet dès l'enregistrement.",
 	},
 	"auth.default_tenant_mode": {
 		Type:     "string",
@@ -150,16 +157,20 @@ var registry = map[string]settingSpec{
 		Default:  "create_personal",
 		Enum:     []string{"create_personal", "tenantless"},
 		Category: "auth",
-		Description: "Stratégie d'espace par défaut après une inscription publique. create_personal = crée automatiquement un espace personnel dont l'utilisateur est Owner ; " +
-			"tenantless = crée seulement l'utilisateur, qui attend une invitation ou crée lui-même un espace. Ne concerne que les nouveaux inscrits.",
+		Description: "Stratégie d'espace par défaut après une inscription publique. create_personal = crée " +
+			"automatiquement un espace personnel dont l'utilisateur est Owner ; " +
+			"tenantless = crée seulement l'utilisateur, qui attend une invitation ou crée lui-même un espace. Ne " +
+			"concerne que les nouveaux inscrits.",
 	},
 	"auth.complex_password_enabled": {
 		Type:     "bool",
 		EnvName:  "WEKNORA_AUTH_COMPLEX_PASSWORD_ENABLED",
 		Default:  false,
 		Category: "auth",
-		Description: "Active ou non les mots de passe complexes. Une fois activé, le mot de passe doit contenir majuscules, minuscules, chiffres et caractères spéciaux." +
-			"Prend effet immédiatement et ne concerne que les nouvelles inscriptions et les changements ou réinitialisations de mot de passe. Caractères spéciaux : !@#$%^&*()_+-=[]{}|;:,.<>?",
+		Description: "Active ou non les mots de passe complexes. Une fois activé, le mot de passe doit contenir " +
+			"majuscules, minuscules, chiffres et caractères spéciaux." +
+			"Prend effet immédiatement et ne concerne que les nouvelles inscriptions et les changements ou " +
+			"réinitialisations de mot de passe. Caractères spéciaux : !@#$%^&*()_+-=[]{}|;:,.<>?",
 	},
 	// gallery.policy is the platform-wide image-gallery attribute policy:
 	// a JSON document (types.GalleryPolicyTier) that can toggle attribute
@@ -174,10 +185,12 @@ var registry = map[string]settingSpec{
 		EnvName:  "",
 		Default:  "",
 		Category: "gallery",
-		Description: "Stratégie des attributs de la galerie (JSON, facultatif). Permet d'activer ou désactiver des sources d'attributs (sources) ou d'en redéfinir l'usage par ID d'attribut" +
+		Description: "Stratégie des attributs de la galerie (JSON, facultatif). Permet d'activer ou désactiver " +
+			"des sources d'attributs (sources) ou d'en redéfinir l'usage par ID d'attribut" +
 			"（overrides，字段级：in_filter / in_searchfield / in_sortfield），例如：" +
 			"{\"overrides\":{\"system:contain.text\":{\"in_searchfield\":true}}}。" +
-			"Vide = utilise entièrement ce que déclarent les sources. Prend effet immédiatement ; rechargez la page de la galerie pour le voir.",
+			"Vide = utilise entièrement ce que déclarent les sources. Prend effet immédiatement ; rechargez la " +
+			"page de la galerie pour le voir.",
 	},
 	// tenant.max_owned_per_user caps how many tenants a single non-superuser
 	// can create (and Own) via self-service POST /tenants. Read on every
@@ -191,15 +204,18 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_MAX_OWNED_PER_USER",
 		Default:  int64(10),
 		Category: "tenant",
-		Description: "Nombre maximal d'espaces qu'un utilisateur non super-admin peut créer lui-même. Lu à chaque création d'espace, " +
-			"prend effet immédiatement. 0 = valeur intégrée par défaut (10) ; une valeur négative supprime toute limite (déconseillé pour un déploiement public).",
+		Description: "Nombre maximal d'espaces qu'un utilisateur non super-admin peut créer lui-même. Lu à chaque " +
+			"création d'espace, " +
+			"prend effet immédiatement. 0 = valeur intégrée par défaut (10) ; une valeur négative supprime toute " +
+			"limite (déconseillé pour un déploiement public).",
 	},
 	"tenant.self_service_creation_enabled": {
 		Type:     "bool",
 		EnvName:  "WEKNORA_TENANT_SELF_SERVICE_CREATION_ENABLED",
 		Default:  true,
 		Category: "tenant",
-		Description: "Autorise ou non les utilisateurs non super-admin à créer des espaces. Si désactivé, les utilisateurs ordinaires ne peuvent rejoindre un espace que sur invitation ; " +
+		Description: "Autorise ou non les utilisateurs non super-admin à créer des espaces. Si désactivé, les " +
+			"utilisateurs ordinaires ne peuvent rejoindre un espace que sur invitation ; " +
 			"les super-admins multi-espaces peuvent toujours en créer. Prend effet immédiatement.",
 	},
 	// tenant.default_storage_quota_gb is the default storage quota (in GB)
@@ -214,8 +230,10 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_DEFAULT_STORAGE_QUOTA_GB",
 		Default:  int64(10),
 		Category: "tenant",
-		Description: "Quota de stockage attribué par défaut à un nouvel espace (Go), vecteurs, originaux, textes et index compris." +
-			"Lu uniquement à la création ; une modification ne s'applique qu'aux espaces créés ensuite, sans toucher aux espaces existants." +
+		Description: "Quota de stockage attribué par défaut à un nouvel espace (Go), vecteurs, originaux, textes " +
+			"et index compris." +
+			"Lu uniquement à la création ; une modification ne s'applique qu'aux espaces créés ensuite, sans " +
+			"toucher aux espaces existants." +
 			"0 ou une valeur négative = valeur intégrée par défaut (10 Go).",
 	},
 	"tenant.default_storage_quota_mb": {
@@ -223,8 +241,10 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_DEFAULT_STORAGE_QUOTA_MB",
 		Default:  int64(0),
 		Category: "tenant",
-		Description: "Quota de stockage par défaut d'un nouvel espace (Mo), y compris l'espace personnel créé à l'inscription." +
-			"Une valeur positive l'emporte sur le quota en Go ; 0 ou une valeur négative reprend le réglage en Go. Lu uniquement à la création, sans modifier les espaces existants.",
+		Description: "Quota de stockage par défaut d'un nouvel espace (Mo), y compris l'espace personnel créé à " +
+			"l'inscription." +
+			"Une valeur positive l'emporte sur le quota en Go ; 0 ou une valeur négative reprend le réglage en " +
+			"Go. Lu uniquement à la création, sans modifier les espaces existants.",
 	},
 	// tenant.auto_create_api_key restores the legacy behaviour where creating
 	// a tenant also minted a full-access API key and returned its plaintext
@@ -239,9 +259,12 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_AUTO_CREATE_API_KEY",
 		Default:  false,
 		Category: "tenant",
-		Description: "Crée ou non automatiquement une clé API avec tous les droits (full_access) à la création d'un espace, et renvoie son jeton en clair dans la réponse." +
-			"Sert à garder l'ancien comportement « créer un espace fournit une clé API par défaut » (option de retour arrière après un changement incompatible)." +
-			"Lu à chaque création d'espace, prend effet immédiatement. false par défaut (aucune création automatique ; créez les clés explicitement dans la gestion des clés API).",
+		Description: "Crée ou non automatiquement une clé API avec tous les droits (full_access) à la création " +
+			"d'un espace, et renvoie son jeton en clair dans la réponse." +
+			"Sert à garder l'ancien comportement « créer un espace fournit une clé API par défaut » (option de " +
+			"retour arrière après un changement incompatible)." +
+			"Lu à chaque création d'espace, prend effet immédiatement. false par défaut (aucune création " +
+			"automatique ; créez les clés explicitement dans la gestion des clés API).",
 	},
 	// tenant.auto_accept_invitation: invite = auto-join switch (default false).
 	"tenant.auto_accept_invitation": {
@@ -249,9 +272,12 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_TENANT_AUTO_ACCEPT_INVITATION",
 		Default:  false,
 		Category: "tenant",
-		Description: "Option globale : une fois activée, quand un administrateur d'espace invite par e-mail un utilisateur déjà inscrit, " +
-			"la personne invitée est ajoutée immédiatement (membre créé directement), sans accepter dans sa boîte de réception et sans invitation en attente." +
-			"Désactivée, le circuit habituel « envoi de l'invitation → acceptation par la personne invitée » est conservé. Lu à chaque invitation, prend effet immédiatement. false par défaut.",
+		Description: "Option globale : une fois activée, quand un administrateur d'espace invite par e-mail un " +
+			"utilisateur déjà inscrit, " +
+			"la personne invitée est ajoutée immédiatement (membre créé directement), sans accepter dans sa boîte " +
+			"de réception et sans invitation en attente." +
+			"Désactivée, le circuit habituel « envoi de l'invitation → acceptation par la personne invitée » est " +
+			"conservé. Lu à chaque invitation, prend effet immédiatement. false par défaut.",
 	},
 	"asynq.core_concurrency": {
 		Type:            "int",
@@ -259,7 +285,9 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultCoreWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "Concurrence minimale par instance pour les tâches principales (analyse de documents, réanalyse manuelle, etc.). Peut emprunter au pool élastique partagé ; redémarrage nécessaire après modification.",
+		Description: "Concurrence minimale par instance pour les tâches principales (analyse de documents, " +
+			"réanalyse manuelle, etc.). Peut emprunter au pool élastique partagé ; redémarrage nécessaire après " +
+			"modification.",
 	},
 	"asynq.postprocess_concurrency": {
 		Type:            "int",
@@ -267,7 +295,8 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultPostProcessWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "Concurrence dédiée à l'orchestration légère et à l'enrichissement après analyse, pour ne pas être bloquée par les longues analyses de documents ; redémarrage nécessaire après modification.",
+		Description: "Concurrence dédiée à l'orchestration légère et à l'enrichissement après analyse, pour " +
+			"ne pas être bloquée par les longues analyses de documents ; redémarrage nécessaire après modification.",
 	},
 	"asynq.enrichment_concurrency": {
 		Type:            "int",
@@ -275,7 +304,8 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultEnrichmentWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "Concurrence minimale par instance pour la génération de résumés, d'images, de graphes et de questions. Peut emprunter au pool élastique partagé ; redémarrage nécessaire après modification.",
+		Description: "Concurrence minimale par instance pour la génération de résumés, d'images, de graphes " +
+			"et de questions. Peut emprunter au pool élastique partagé ; redémarrage nécessaire après modification.",
 	},
 	"asynq.maintenance_concurrency": {
 		Type:            "int",
@@ -283,7 +313,9 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultMaintenanceWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "Concurrence minimale par instance pour la synchronisation des sources de données, les traitements par lots, les déplacements et le nettoyage des suppressions, totalement isolée du pipeline utilisateur ; redémarrage nécessaire après modification.",
+		Description: "Concurrence minimale par instance pour la synchronisation des sources de données, les " +
+			"traitements par lots, les déplacements et le nettoyage des suppressions, totalement isolée du " +
+			"pipeline utilisateur ; redémarrage nécessaire après modification.",
 	},
 	"asynq.shared_concurrency": {
 		Type:            "int",
@@ -291,7 +323,9 @@ var registry = map[string]settingSpec{
 		Default:         int64(types.DefaultSharedWorkerConcurrency),
 		Category:        "worker",
 		RequiresRestart: true,
-		Description:     "Concurrence élastique par instance partagée entre l'analyse principale et l'enrichissement. La capacité libre est empruntée par le côté qui a du retard ; redémarrage nécessaire après modification.",
+		Description: "Concurrence élastique par instance partagée entre l'analyse principale et " +
+			"l'enrichissement. La capacité libre est empruntée par le côté qui a du retard ; redémarrage " +
+			"nécessaire après modification.",
 	},
 	// asynq.wiki_concurrency is the size of the DEDICATED wiki worker pool,
 	// separate from the upstream pools. Read once when the wiki asynq server
@@ -304,8 +338,10 @@ var registry = map[string]settingSpec{
 		Category:        "worker",
 		RequiresRestart: true,
 		Description: "Nombre de workers du pool dédié à la génération du wiki (isolé du pool d'analyse de documents)." +
-			"La génération du wiki repose surtout sur des appels au grand modèle ; un budget de concurrence séparé évite qu'elle soit affamée par les analyses lors des pics d'envoi, " +
-			"et qu'un pic de wiki ralentisse l'analyse côté utilisateur. Redémarrez le service pour appliquer une modification.",
+			"La génération du wiki repose surtout sur des appels au grand modèle ; un budget de concurrence " +
+			"séparé évite qu'elle soit affamée par les analyses lors des pics d'envoi, " +
+			"et qu'un pic de wiki ralentisse l'analyse côté utilisateur. Redémarrez le service pour appliquer une " +
+			"modification.",
 	},
 	// model.max_concurrency is the DEFAULT per-model cap on concurrent
 	// background (ingestion/enrichment) LLM/embedding/VLM calls, keyed by
@@ -320,9 +356,12 @@ var registry = map[string]settingSpec{
 		EnvName:  "WEKNORA_MODEL_MAX_CONCURRENCY",
 		Default:  int64(32),
 		Category: "worker",
-		Description: "Limite de concurrence par défaut des tâches de fond (ingestion et enrichissement de documents) pour un même modèle, partagée entre toutes les répliques par ID de modèle." +
-			"Lue à chaque appel ; prend effet immédiatement, sans redémarrage. 0 ou une valeur négative désactive la limite par défaut" +
-			"(chaque modèle respecte toujours sa propre limite configurée dans la gestion des modèles). Ne concerne que les tâches de fond, pas les conversations interactives.",
+		Description: "Limite de concurrence par défaut des tâches de fond (ingestion et enrichissement de " +
+			"documents) pour un même modèle, partagée entre toutes les répliques par ID de modèle." +
+			"Lue à chaque appel ; prend effet immédiatement, sans redémarrage. 0 ou une valeur négative désactive " +
+			"la limite par défaut" +
+			"(chaque modèle respecte toujours sa propre limite configurée dans la gestion des modèles). Ne " +
+			"concerne que les tâches de fond, pas les conversations interactives.",
 	},
 }
 

@@ -14,7 +14,8 @@ func SanitizeStorageConnectivityError(err error) string {
 	msg := err.Error()
 	switch {
 	case strings.Contains(msg, "Endpoint url cannot have fully qualified paths"):
-		return "Format d'Endpoint incorrect : retirez le préfixe http:// ou https:// et indiquez seulement le domaine ou l'IP avec le port (par exemple : minio.example.com:9000)"
+		return "Format d'Endpoint incorrect : retirez le préfixe http:// ou https:// et indiquez seulement le " +
+			"domaine ou l'IP avec le port (par exemple : minio.example.com:9000)"
 	case strings.Contains(msg, "no such host"):
 		return "Échec de la résolution DNS ; vérifiez l'adresse"
 	case strings.Contains(msg, "connection refused"):

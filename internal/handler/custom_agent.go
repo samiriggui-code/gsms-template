@@ -1064,7 +1064,8 @@ func (h *CustomAgentHandler) validateAgentSandboxConfig(
 	configID := strings.TrimSpace(cfg.SandboxConfigID)
 	if h.desktop {
 		if configID != "" {
-			return errors.NewBadRequestError("La version Lite ne permet pas d'associer une configuration de bac à sable à un agent")
+			return errors.NewBadRequestError("La version Lite ne permet pas d'associer une configuration de bac à " +
+				"sable à un agent")
 		}
 		return nil
 	}
@@ -1082,7 +1083,8 @@ func (h *CustomAgentHandler) validateAgentSandboxConfig(
 			WithDetails(err.Error())
 	}
 	if stored == nil {
-		return errors.NewBadRequestError("La configuration de bac à sable choisie n'existe pas ; choisissez-en une autre")
+		return errors.NewBadRequestError("La configuration de bac à sable choisie n'existe pas ; choisissez-en " +
+			"une autre")
 	}
 	return nil
 }

@@ -388,7 +388,8 @@ func (s *sessionService) AgentQA(
 		)
 		if agentModelSupportsVision && len(agentImageURLs) > 0 {
 			logger.Infof(ctx, "Agent model supports vision, passing %d image(s) directly", len(agentImageURLs))
-		} else if len(req.ImageURLs) > 0 && strings.Contains(agentQuery, "[Contenu de l'image envoyée par l'utilisateur]") {
+		} else if len(req.ImageURLs) > 0 && strings.Contains(agentQuery, "[Contenu de l'image envoyée par "+
+			"l'utilisateur]") {
 			logger.Infof(ctx, "Agent model does not support vision, appending image description")
 		} else if len(req.ImageURLs) > 0 {
 			logger.Warnf(ctx, "Agent model cannot view %d image(s) and no description was produced", len(req.ImageURLs))

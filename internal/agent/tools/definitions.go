@@ -115,22 +115,34 @@ type AvailableTool struct {
 // with registered tools in this package.
 func AvailableToolDefinitions() []AvailableTool {
 	return []AvailableTool{
-		{Name: ToolThinking, Label: "Réflexion", Description: "Outil de réflexion dynamique pour résoudre les problèmes", Group: ToolGroupBase},
-		{Name: ToolTodoWrite, Label: "Établir un plan", Description: "Créer un plan de recherche structuré", Group: ToolGroupBase},
-		{Name: ToolAskUser, Label: "Poser une question à l'utilisateur", Description: "Affiche une carte et attend la réponse quand il faut un complément d'information ou un choix de l'utilisateur", Group: ToolGroupBase},
+		{Name: ToolThinking, Label: "Réflexion", Description: "Outil de réflexion dynamique pour résoudre les " +
+			"problèmes", Group: ToolGroupBase},
+		{Name: ToolTodoWrite, Label: "Établir un plan", Description: "Créer un plan de recherche " +
+			"structuré", Group: ToolGroupBase},
+		{Name: ToolAskUser, Label: "Poser une question à l'utilisateur", Description: "Affiche une carte et " +
+			"attend la réponse quand il faut un complément d'information ou un choix de " +
+			"l'utilisateur", Group: ToolGroupBase},
 		{
 			Name:        ToolSearchConversations,
 			Label:       "Revoir les conversations passées",
 			Description: "Retrouver ce qui a déjà été abordé dans les conversations passées de l'utilisateur",
 			Group:       ToolGroupBase,
 		},
-		{Name: ToolSearchKnowledge, Label: "Rechercher dans la base de connaissances", Description: "Recherche sémantique, par mots-clés ou hybride dans les fragments de la base de connaissances", Group: ToolGroupRAG},
-		{Name: ToolReadDocument, Label: "Lire un document", Description: "Lit les métadonnées et les fragments d'un document, avec pagination et recherche dans le texte", Group: ToolGroupRAG},
-		{Name: ToolListDocuments, Label: "Parcourir la liste des documents", Description: "Liste les documents de la base de connaissances, page par page", Group: ToolGroupRAG},
-		{Name: ToolQueryKnowledgeGraph, Label: "Interroger le graphe de connaissances", Description: "Interroge les relations du graphe de connaissances", Group: ToolGroupRAG},
-		{Name: ToolDatabaseQuery, Label: "Interroger la base de données", Description: "Interroge les informations de la base de données", Group: ToolGroupRAG},
-		{Name: ToolWikiSearch, Label: "Rechercher dans le wiki", Description: "Recherche des pages dans le wiki", Group: ToolGroupWikiRead},
-		{Name: ToolWikiReadPage, Label: "Lire une page wiki", Description: "Lit le contenu d'une page wiki donnée", Group: ToolGroupWikiRead},
+		{Name: ToolSearchKnowledge, Label: "Rechercher dans la base de connaissances", Description: "Recherche " +
+			"sémantique, par mots-clés ou hybride dans les fragments de la base de " +
+			"connaissances", Group: ToolGroupRAG},
+		{Name: ToolReadDocument, Label: "Lire un document", Description: "Lit les métadonnées et les fragments " +
+			"d'un document, avec pagination et recherche dans le texte", Group: ToolGroupRAG},
+		{Name: ToolListDocuments, Label: "Parcourir la liste des documents", Description: "Liste les documents de " +
+			"la base de connaissances, page par page", Group: ToolGroupRAG},
+		{Name: ToolQueryKnowledgeGraph, Label: "Interroger le graphe de connaissances", Description: "Interroge " +
+			"les relations du graphe de connaissances", Group: ToolGroupRAG},
+		{Name: ToolDatabaseQuery, Label: "Interroger la base de données", Description: "Interroge les " +
+			"informations de la base de données", Group: ToolGroupRAG},
+		{Name: ToolWikiSearch, Label: "Rechercher dans le wiki", Description: "Recherche des pages dans le " +
+			"wiki", Group: ToolGroupWikiRead},
+		{Name: ToolWikiReadPage, Label: "Lire une page wiki", Description: "Lit le contenu d'une page wiki " +
+			"donnée", Group: ToolGroupWikiRead},
 		{
 			Name:        ToolWikiFlagIssue,
 			Label:       "Signaler un problème wiki",
@@ -165,10 +177,14 @@ func AvailableToolDefinitions() []AvailableTool {
 			Group:       ToolGroupWikiEdit,
 			Danger:      true,
 		},
-		{Name: ToolWikiReadIssue, Label: "Voir les problèmes wiki", Description: "Affiche le détail d'un problème sur une page wiki", Group: ToolGroupWikiIssue},
-		{Name: ToolWikiUpdateIssue, Label: "Mettre à jour un problème wiki", Description: "Met à jour l'état d'un problème sur une page wiki", Group: ToolGroupWikiIssue},
-		{Name: ToolDataAnalysis, Label: "Analyse de données", Description: "Comprend un fichier de données et en fait l'analyse", Group: ToolGroupData},
-		{Name: ToolDataSchema, Label: "Voir les métadonnées des données", Description: "Obtient les métadonnées d'un fichier tableur", Group: ToolGroupData},
+		{Name: ToolWikiReadIssue, Label: "Voir les problèmes wiki", Description: "Affiche le détail d'un problème " +
+			"sur une page wiki", Group: ToolGroupWikiIssue},
+		{Name: ToolWikiUpdateIssue, Label: "Mettre à jour un problème wiki", Description: "Met à jour l'état d'un " +
+			"problème sur une page wiki", Group: ToolGroupWikiIssue},
+		{Name: ToolDataAnalysis, Label: "Analyse de données", Description: "Comprend un fichier de données et en " +
+			"fait l'analyse", Group: ToolGroupData},
+		{Name: ToolDataSchema, Label: "Voir les métadonnées des données", Description: "Obtient les métadonnées " +
+			"d'un fichier tableur", Group: ToolGroupData},
 	}
 }
 

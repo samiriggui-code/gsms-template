@@ -113,7 +113,8 @@ func (h *SystemHandler) CheckSandboxConfig(c *gin.Context) {
 	incoming := req.Config
 	if req.ConfigID != "" {
 		if h.sandboxConfigSvc == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "Le service de configuration du bac à sable est indisponible"})
+			c.JSON(http.StatusBadRequest, gin.H{"code": 1, "msg": "Le service de configuration du bac à sable est " +
+				"indisponible"})
 			return
 		}
 		entity, err := h.sandboxConfigSvc.Get(ctx, tenant.ID, req.ConfigID)
@@ -485,7 +486,8 @@ func explainSandboxCreateFailure(
 		}
 		if tpl.Status == sandbox.TemplateStatusUntagged {
 			return fmt.Sprintf(
-				"La construction du modèle %s est terminée, mais aucune construction ne porte le tag %q, donc la création du bac à sable ne peut pas le résoudre ; "+
+				"La construction du modèle %s est terminée, mais aucune construction ne porte le tag %q, donc la "+
+					"création du bac à sable ne peut pas le résoudre ; "+
 					"reconstruisez le modèle (supprimez-le, WeKnora le recréera)",
 				templateID, sandbox.DefaultE2BTemplateTag,
 			)
@@ -493,17 +495,20 @@ func explainSandboxCreateFailure(
 		if tpl.Status == "ready" || tpl.Status == "" {
 			return fmt.Sprintf(
 				"Le modèle %s est prêt dans la liste, mais le cluster refuse de créer le bac à sable (HTTP 404) ; "+
-					"en général l'instantané de construction n'est pas encore actif ; réessayez plus tard ou reconstruisez le modèle",
+					"en général l'instantané de construction n'est pas encore actif ; réessayez plus tard ou "+
+					"reconstruisez le modèle",
 				templateID,
 			)
 		}
 		return fmt.Sprintf(
-			"Le modèle %s existe, mais son état de construction est %s et il ne peut pas encore lancer de bac à sable ; attendez la fin de la construction ou consultez les journaux",
+			"Le modèle %s existe, mais son état de construction est %s et il ne peut pas encore lancer de bac à "+
+				"sable ; attendez la fin de la construction ou consultez les journaux",
 			templateID, tpl.Status,
 		)
 	}
 	return fmt.Sprintf(
-		"La clé API actuelle ne voit pas le modèle %s : il a peut-être été supprimé, ou la clé appartient à une autre équipe ou un autre cluster",
+		"La clé API actuelle ne voit pas le modèle %s : il a peut-être été supprimé, ou la clé appartient à une "+
+			"autre équipe ou un autre cluster",
 		templateID,
 	)
 }

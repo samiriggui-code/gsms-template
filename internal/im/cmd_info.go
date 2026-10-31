@@ -19,7 +19,10 @@ func newInfoCommand(kbService interfaces.KnowledgeBaseService) *InfoCommand {
 	return &InfoCommand{kbService: kbService}
 }
 
+// Name returns the command keyword.
 func (c *InfoCommand) Name() string { return "info" }
+
+// Description returns the help text shown for the command.
 func (c *InfoCommand) Description() string {
 	return "Affiche les informations et capacités de l'agent actuel"
 }
@@ -67,7 +70,7 @@ func (c *InfoCommand) Execute(ctx context.Context, cmdCtx *CommandContext, _ []s
 			for _, kb := range kbs {
 				sb.WriteString(fmt.Sprintf("  · %s\n", kb.Name))
 			}
-			sb.WriteString(fmt.Sprintf("  %d au total (toutes activées)\n", len(kbs)))
+			fmt.Fprintf(&sb, "  %d au total (toutes activées)\n", len(kbs))
 		} else {
 			sb.WriteString("  Toutes activées\n")
 		}
@@ -86,7 +89,7 @@ func (c *InfoCommand) Execute(ctx context.Context, cmdCtx *CommandContext, _ []s
 				sb.WriteString(fmt.Sprintf("  · %s\n", label))
 			}
 		} else {
-			sb.WriteString(fmt.Sprintf("  %d sélectionnée(s)\n", len(cfg.KnowledgeBases)))
+			fmt.Fprintf(&sb, "  %d sélectionnée(s)\n", len(cfg.KnowledgeBases))
 		}
 	} else {
 		sb.WriteString("  Non configuré\n")
@@ -109,7 +112,7 @@ func (c *InfoCommand) Execute(ctx context.Context, cmdCtx *CommandContext, _ []s
 	if cfg.MCPSelectionMode == "all" {
 		sb.WriteString("  Tous connectés\n")
 	} else if cfg.MCPSelectionMode == "selected" && len(cfg.MCPServices) > 0 {
-		sb.WriteString(fmt.Sprintf("  %d service(s) connecté(s)\n", len(cfg.MCPServices)))
+		fmt.Fprintf(&sb, "  %d service(s) connecté(s)\n", len(cfg.MCPServices))
 	} else {
 		sb.WriteString("  Non configuré\n")
 	}
@@ -127,7 +130,7 @@ func (c *InfoCommand) Execute(ctx context.Context, cmdCtx *CommandContext, _ []s
 	if cmdCtx.ChannelOutputMode == "full" {
 		outputLabel = "Sortie complète"
 	}
-	sb.WriteString(fmt.Sprintf("\n⚙️ **Mode de sortie**\n  %s\n", outputLabel))
+	fmt.Fprintf(&sb, "\n⚙️ **Mode de sortie**\n  %s\n", outputLabel)
 	sb.WriteString("\n---\nEnvoyez `/help` pour voir toutes les commandes disponibles")
 
 	return &CommandResult{Content: sb.String()}, nil

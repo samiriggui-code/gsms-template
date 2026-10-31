@@ -30,9 +30,13 @@ func newSearchCommand(sessionService interfaces.SessionService, kbService interf
 	return &SearchCommand{sessionService: sessionService, kbService: kbService}
 }
 
+// Name returns the command keyword.
 func (c *SearchCommand) Name() string { return "search" }
+
+// Description returns the help text shown for the command.
 func (c *SearchCommand) Description() string {
-	return "Recherche directement le texte original de la base de connaissances (sans résumé par l'IA), par exemple : /search politique de remboursement"
+	return "Recherche directement le texte original de la base de connaissances (sans résumé par l'IA), par " +
+		"exemple : /search politique de remboursement"
 }
 
 func (c *SearchCommand) Execute(ctx context.Context, cmdCtx *CommandContext, args []string) (*CommandResult, error) {
@@ -103,7 +107,7 @@ func (c *SearchCommand) Execute(ctx context.Context, cmdCtx *CommandContext, arg
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("🔍 **Recherche « %s »** : %d résultat(s)\n\n", query, len(results)))
+	fmt.Fprintf(&sb, "🔍 **Recherche « %s »** : %d résultat(s)\n\n", query, len(results))
 
 	for i, r := range shown {
 		// Trim content to a readable length.
@@ -123,13 +127,14 @@ func (c *SearchCommand) Execute(ctx context.Context, cmdCtx *CommandContext, arg
 		sb.WriteString(fmt.Sprintf("**[%d]** %s\n> %s%s\n", i+1, source, string(content), suffix))
 
 		if r.Score > 0 {
-			sb.WriteString(fmt.Sprintf("Pertinence : %.0f%%\n", r.Score*100))
+			fmt.Fprintf(&sb, "Pertinence : %.0f%%\n", r.Score*100)
 		}
 		sb.WriteString("\n")
 	}
 
 	if len(results) > searchMaxResults {
-		sb.WriteString(fmt.Sprintf("_(seuls les %d premiers résultats sont affichés, sur %d)_", searchMaxResults, len(results)))
+		fmt.Fprintf(&sb, "_(seuls les %d premiers résultats sont affichés, sur "+
+			"%d)_", searchMaxResults, len(results))
 	}
 
 	return &CommandResult{Content: sb.String()}, nil

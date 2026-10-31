@@ -97,7 +97,8 @@ func (h *Handler) analyzeImageAttachments(ctx context.Context, images []ImageAtt
 // single analysis call that is tailored to the user's intent.
 func buildImageAnalysisPrompt(userQuery string) string {
 	if strings.TrimSpace(userQuery) == "" {
-		return "Analyze the content of this image. If it contains text, extract the key text; if it is a natural image, describe its main content. Answer concisely, in the user's language."
+		return "Analyze the content of this image. If it contains text, extract the key text; if it is a natural " +
+			"image, describe its main content. Answer concisely, in the user's language."
 	}
 	return fmt.Sprintf(
 		"The user's question is: %s\n\nAnalyze the parts of the image relevant to the user's question. "+

@@ -761,7 +761,8 @@ func (s *knowledgeBaseService) updateStorageBackend(
 		return false, nil
 	}
 	if types.CallerFromContext(ctx).TenantID != kb.TenantID {
-		return false, apperrors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut modifier la configuration de stockage")
+		return false, apperrors.NewForbiddenError("Seul l'espace propriétaire de la base de connaissances peut " +
+			"modifier la configuration de stockage")
 	}
 	total, err := s.kgRepo.CountKnowledgeByKnowledgeBaseID(ctx, kb.TenantID, kb.ID)
 	if err != nil {
@@ -799,7 +800,8 @@ func (s *knowledgeBaseService) rejectEmbeddingModelChange(
 		return err
 	}
 	if total > 0 {
-		return apperrors.NewBadRequestError("La base de connaissances contient déjà des fichiers ; impossible de changer de modèle d'embedding")
+		return apperrors.NewBadRequestError("La base de connaissances contient déjà des fichiers ; impossible de " +
+			"changer de modèle d'embedding")
 	}
 	return nil
 }

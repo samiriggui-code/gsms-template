@@ -196,7 +196,7 @@ func (c *OllamaChat) Chat(ctx context.Context, messages []Message, opts *ChatOpt
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Échec de la requête de chat : %w", err)
+		return nil, fmt.Errorf("échec de la requête de chat : %w", err)
 	}
 
 	usage := types.TokenUsage{

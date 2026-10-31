@@ -93,7 +93,7 @@ func (h *TagHandler) ListTags(c *gin.Context) {
 	var page types.Pagination
 	if err := c.ShouldBindQuery(&page); err != nil {
 		logger.Error(ctx, "Failed to bind pagination query", err)
-		c.Error(errors.NewBadRequestError("Paramètres de pagination non valides").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de pagination non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -142,7 +142,7 @@ func (h *TagHandler) CreateTag(c *gin.Context) {
 	var req CreateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind create tag payload", err)
-		c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -198,7 +198,7 @@ func (h *TagHandler) UpdateTag(c *gin.Context) {
 	var req UpdateTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error(ctx, "Failed to bind update tag payload", err)
-		c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
+		_ = c.Error(errors.NewBadRequestError("Paramètres de requête non valides").WithDetails(err.Error()))
 		return
 	}
 
@@ -275,7 +275,8 @@ func (h *TagHandler) DeleteTag(c *gin.Context) {
 			}
 			if chunk.TenantID != tenantID || chunk.KnowledgeBaseID != c.Param("id") ||
 				chunk.ChunkType != types.ChunkTypeFAQ {
-				_ = c.Error(errors.NewForbiddenError("Une entrée exclue n'appartient pas à cette base de connaissances"))
+				_ = c.Error(errors.NewForbiddenError("Une entrée exclue n'appartient pas à cette base de " +
+					"connaissances"))
 				return
 			}
 			excludeUUIDs = append(excludeUUIDs, chunk.ID)

@@ -9,7 +9,10 @@ type ClearCommand struct{}
 
 func newClearCommand() *ClearCommand { return &ClearCommand{} }
 
+// Name returns the command keyword.
 func (c *ClearCommand) Name() string { return "clear" }
+
+// Description returns the help text shown for the command.
 func (c *ClearCommand) Description() string {
 	return "Efface la mémoire de la conversation ; le prochain message ouvrira une nouvelle conversation"
 }
