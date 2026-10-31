@@ -53,7 +53,7 @@ Ordre prévu par le plan doc 12 : Meeting → SDK → Speech → TIM. Ce plan **
 
 ## 5. Règles à respecter
 
-- Tout passe par branche + PR, avec des changements additifs. CodeRabbit relit, son Autofix reste désactivé, et Claude fait les corrections.
+- Tout passe par branche + PR. Changements additifs par défaut ; une suppression n'est permise qu'avec l'accord explicite de samir (ex. retrait de `textract`/ebooklib). CodeRabbit relit, son Autofix reste désactivé, et Claude fait les corrections.
 - Déploiement sur le VPS global-it-ss.com : il se fait depuis le PC de samir (Omarchy, Claude local). **Aucune nouvelle instance LLM.** On réutilise les 2 LLM de Qualiopi, la même clé OpenRouter, le même utilisateur SMTP et le même compte admin, renseignés uniquement dans le `.env` du VPS. Base de données séparée, projet Compose isolé `globalitss`.
 - Ne jamais écrire de secret dans le repo ou la mémoire.
 - Retrait de `textract`/ebooklib : attendre le « ok installe » de samir.
